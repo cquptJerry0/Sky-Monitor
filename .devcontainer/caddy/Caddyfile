@@ -1,0 +1,78 @@
+# # 本地调试示例
+# :5173 {
+
+
+#         encode zstd gzip
+
+#         header +Cache-Control "max-age=0, private, must-revalidate"
+
+#         # 保留 /api 前缀
+#         # handle_path /api/* {
+#         #         rewrite * {path}
+#         #         reverse_proxy 192.168.3.19:3000
+#         # }
+
+#         handle_path /api/* {
+#                 # reverse_proxy 192.168.3.19:3000
+#                 rewrite * /api{path}
+#                 reverse_proxy 192.168.31.94:8081
+#         }
+
+
+#         uri strip_suffix /
+
+#         root * /app/frontend/monitor/dist
+
+#         handle {
+
+
+#                 templates
+#                 try_files {path}.html {path} /
+#                 file_server
+#         }
+
+# }
+
+
+# 用于证书测试
+# let encrypt 有请求限制，如果每周请求次数超过 5 次，就会被限制
+# 因为测试次数较多，被限制了，换一个域名  monitor -> monitoring
+# {
+#         acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+# }
+
+# 线上监控示例
+monitoring.miaomaedu.com {
+
+
+        encode zstd gzip
+
+        header +Cache-Control "max-age=0, private, must-revalidate"
+
+        # 保留 /api 前缀
+        # handle_path /api/* {
+        #         rewrite * {path}
+        #         reverse_proxy 192.168.3.19:3000
+        # }
+
+        handle_path /api/* {
+                # rewrite * /{path.1}   # 重写去掉 /api 前缀
+                rewrite * /api{path}
+                # reverse_proxy 47.98.248.76:8081
+                reverse_proxy 172.28.49.109:8081
+        }
+
+
+        uri strip_suffix /
+
+        root * /app/frontend/monitor/dist
+
+        handle {
+
+
+                templates
+                try_files {path}.html {path} /
+                file_server
+        }
+
+}

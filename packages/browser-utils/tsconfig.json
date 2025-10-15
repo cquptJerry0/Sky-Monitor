@@ -1,0 +1,10 @@
+{
+    "extends": "../../tsconfig.json",
+    "include": ["src/**/*"],
+    "compilerOptions": {
+        // package specific compiler options
+        "types": ["node"],
+        "lib": ["dom", "es6"]
+    },
+    "exclude": ["src/metrics/**/*"]
+}

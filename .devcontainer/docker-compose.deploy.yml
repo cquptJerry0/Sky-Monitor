@@ -1,0 +1,35 @@
+include:
+    - docker-compose.yml
+
+services:
+    # 应用部署相关
+    sky-monitor-server:
+        image: bitnami/node:latest
+        container_name: sky-monitor-server
+        ports:
+            - 8081:8081
+        volumes:
+            - ../:/app/monitor
+        # command: "node /app/server.js"
+        environment:
+            - NODE_ENV=production
+        working_dir: /app/monitor/apps/backend/monitor
+        command: 'node dist/main.js'
+        depends_on:
+            - sky-monitor-postgresql
+            - sky-monitor-redis
+            - sky-monitor-clickhouse
+            - sky-monitor-kafka
+    sky-monitor-caddy:
+        image: caddy:latest
+        container_name: sky-monitor-caddy
+        ports:
+            - 80:80
+            - 443:443
+            - 443:443/udp
+            - 5173:5173
+        volumes:
+            - ./caddy:/etc/caddy
+            # - ../:/app
+            - ../apps/frontend/monitor/dist:/app/frontend/monitor/dist
+        # command: ["caddy", "run", "--resume", "--config", "/etc/caddy/Caddyfile"]

@@ -1,0 +1,38 @@
+{
+    "name": "Miaoma Monitor Development Environment",
+    "dockerComposeFile": ["docker-compose.yml"],
+    "service": "sky-monitor",
+    "workspaceFolder": "/workspace",
+    "postCreateCommand": "pnpm i",
+    "remoteUser": "root",
+    "portsAttributes": {
+        "9092": {
+            "label": "Kafka Broker"
+        },
+        "9093": {
+            "label": "Kafka Controller"
+        },
+        "8123": {
+            "label": "ClickHouse HTTP"
+        },
+        "9000": {
+            "label": "ClickHouse Native"
+        },
+        "5432": {
+            "label": "PostgreSQL"
+        },
+        "6379": {
+            "label": "Redis"
+        }
+    },
+    "remoteEnv": {
+        "CLICKHOUSE_USER": "default",
+        "CLICKHOUSE_PASSWORD": "heyiclickhouse",
+        "CLICKHOUSE_DATABASE": "default",
+        "POSTGRESQL_USERNAME": "postgres",
+        "REDIS_PASSWORD": "heyiredis"
+    },
+    "shutdownAction": "none",
+    "runServices": ["sky-monitor-kafka", "sky-monitor-clickhouse", "sky-monitor-postgresql", "sky-monitor-redis"],
+    "forwardPorts": [9092, 9093, 8123, 9000, 5432, 6379]
+}
