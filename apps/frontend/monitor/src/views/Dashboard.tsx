@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query'
 import {
     Area,
     AreaChart,
@@ -20,8 +21,22 @@ import {
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 import { Separator } from '@/components/ui/separator'
+import { fetchEventStats } from '@/services'
 
 export function Dashboard() {
+    const { data: statsData } = useQuery({
+        queryKey: ['dashboardStats'],
+        queryFn: () => fetchEventStats({}),
+    })
+
+    const eventTypeCounts = statsData?.data?.eventTypeCounts || []
+    const errorTrend = statsData?.data?.errorTrend || []
+    const webVitals = statsData?.data?.webVitals || []
+
+    const totalEvents = eventTypeCounts.reduce((sum, item) => sum + item.count, 0)
+    const errorCount = eventTypeCounts.find(item => item.event_type === 'error')?.count || 0
+    const performanceCount = eventTypeCounts.find(item => item.event_type === 'webVital')?.count || 0
+
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <div className="grid w-full gap-6 sm:grid-cols-2  lg:grid-cols-1">

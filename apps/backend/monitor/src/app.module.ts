@@ -7,6 +7,8 @@ import { ClickhouseModule } from './fundamentals/clickhouse/clickhouse.module'
 import { LoggerMiddleware } from './fundamentals/common/middleware/logger.middleware'
 import { ApplicationModule } from './modules/application/application.module'
 import { AuthModule } from './modules/auth/auth.module'
+import { EventsModule } from './modules/events/events.module'
+import { HealthModule } from './modules/health/health.module'
 import { VersionModule } from './modules/version/version.module'
 
 @Module({
@@ -19,13 +21,15 @@ import { VersionModule } from './modules/version/version.module'
             },
             inject: [ConfigService],
         }),
+        ClickhouseModule.forRoot({
+            url: 'http://localhost:8123',
+            username: 'default',
+            password: 'skyClickhouse2024',
+        }),
         AuthModule,
         VersionModule,
-        ClickhouseModule.forRoot({
-            url: 'http://localhost:8123', // ClickHouse 服务地址
-            username: 'default', // ClickHouse 用户名
-            password: 'skyClickhouse2024', // ClickHouse 密码
-        }),
+        EventsModule,
+        HealthModule,
         ApplicationModule,
     ],
     providers: [],

@@ -1,0 +1,141 @@
+---
+alwaysApply: true
+---
+
+# Sky Monitor 编码行为规范
+
+## 1. 禁止提前封装
+
+**规则**: 必须出现 2-3 次以上，才能考虑抽象和封装
+
+**原则**:
+
+-   先写直接可用的代码，不要为"可能的复用"而设计
+-   等待真实的重复出现后再重构
+-   避免过度设计导致代码复杂性增加
+
+**示例 - 错误做法**:
+
+```typescript
+// 提前为了可能的复用而创建复杂接口
+interface DataTransformer<T, R> {
+    transform(data: T): R
+    validate(data: T): boolean
+    cache(key: string): void
+}
+```
+
+**示例 - 正确做法**:
+
+```typescript
+// 先写出可用的代码
+async function processEvent(event: MonitoringEvent) {
+    return transformToClickhouse(event)
+}
+```
+
+---
+
+## 2. 禁止随意 Log
+
+**规则**: 只在关键业务流程点记录日志，避免过度日志
+
+**日志级别使用**:
+
+-   `logger.error()` - 错误导致功能失败
+-   `logger.warn()` - 警告但功能继续
+-   `logger.log()` - 重要的业务事件
+-   `logger.debug()` - 调试信息（开发阶段）
+
+**允许的日志点**:
+
+-   应用启动/停止
+-   数据库操作的成功/失败
+-   外部服务调用结果
+-   关键错误和异常
+
+**禁止的做法**:
+
+-   不要使用 console.log()
+-   不要在循环中记录
+-   不要记录所有中间变量值
+-   不要记录过于详细的调试信息
+
+**示例 - 正确做法**:
+
+```typescript
+async getEvents() {
+    try {
+        const data = await this.query()
+        this.logger.log(`Retrieved ${data.length} events`)
+        return data
+    } catch (error) {
+        this.logger.error(`Failed to retrieve events: ${error.message}`)
+        throw error
+    }
+}
+```
+
+---
+
+## 3. 禁止表情包
+
+**规则**: 代码中不要使用任何表情符号
+
+**禁止范围**:
+
+-   代码注释中
+-   日志消息中
+-   字符串中
+
+**禁止例子**:
+
+```typescript
+// 启动系统 (不要)
+logger.log('✅ Success')(不要)
+logger.error('❌ Failed')(不要)
+```
+
+**正确例子**:
+
+```typescript
+// Start system
+logger.log('System started')
+logger.error('Failed to initialize')
+```
+
+**文档中允许使用表情** (markdown 文件可以):
+
+-   README.md
+-   系统设计文档
+-   故障排查指南
+
+---
+
+## 4. 禁止随意生成 Markdown
+
+**规则**: 编码时集中编码，设计时集中设计，避免混杂
+
+**禁止的做法**:
+
+-   不要在编码中途突然生成大量 Markdown 文档
+-   不要先写设计文档再编码
+-   不要重复描述方案和编码
+
+-
+
+## 应用检查清单
+
+提交代码前检查:
+
+-   [ ] 没有提前抽象，代码直接清晰
+-   [ ] 没有过度的 log 语句
+-   [ ] 没有 console.log()，使用 Logger 替代
+-   [ ] 没有代码注释中的表情符号
+-   [ ] 没有日志消息中的表情符号
+-   [ ] 没有混杂的设计和编码文档
+
+---
+
+**版本**: 1.0.0  
+**最后更新**: 2025-10-29

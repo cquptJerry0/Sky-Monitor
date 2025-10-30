@@ -2,7 +2,7 @@
     "extends": "../../tsconfig.json",
     "include": ["src/**/*"],
     "compilerOptions": {
-        // package specific compiler options
+        "module": "esnext",
         "types": ["node"],
         "lib": ["dom", "es6"]
     }

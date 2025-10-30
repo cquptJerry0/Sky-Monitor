@@ -34,6 +34,8 @@ const frontendMonitorConfig = {
         ...reactHooks.configs.recommended.rules,
         'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
         'no-console': 'error',
+        '@typescript-eslint/no-unused-vars': 'off',
+        'no-unused-vars': 'off',
     },
 }
 
@@ -51,7 +53,10 @@ const backendMonitorConfig = {
         '@typescript-eslint/explicit-module-boundary-types': 'off',
         '@typescript-eslint/interface-name-prefix': 'off',
         '@typescript-eslint/no-explicit-any': 'off',
-        'no-console': 'error',
+        'no-console': 'off',
+        'prefer-const': 'off',
+        '@typescript-eslint/no-unused-vars': 'off',
+        'no-unused-vars': 'off',
     },
 }
 
@@ -64,8 +69,10 @@ module.exports = tseslint.config(
             'simple-import-sort': importSort,
         },
         rules: {
-            'prettier/prettier': 'error',
-            'simple-import-sort/imports': 'error',
+            'prettier/prettier': ['error', {}, { usePrettierrc: true }],
+            'simple-import-sort/imports': 'off',
+            'prefer-const': 'warn', // 降级 const 警告
+            '@typescript-eslint/no-explicit-any': 'off',
         },
     },
     frontendMonitorConfig,

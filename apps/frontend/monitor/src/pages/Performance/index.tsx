@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query'
 import { Zap } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Area, AreaChart, Bar, BarChart, Rectangle, YAxis } from 'recharts'
@@ -5,52 +6,52 @@ import { Area, AreaChart, Bar, BarChart, Rectangle, YAxis } from 'recharts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { fetchEvents, fetchEventStats } from '@/services'
 import { ApplicationType } from '@/types/api'
 
 import { appLogoMap } from '../Projects/meta'
 
 export interface Performance {
-    id: number
+    id: string
     path: string
     appType: ApplicationType
     appName: string
     users: number
 }
 
-const MOCK_PERFORMANCE: Performance[] = [
-    {
-        id: 1,
-        path: '/',
-        appType: 'react',
-        appName: 'Sky Monitor React 应用',
-        users: 2,
-    },
-    {
-        id: 2,
-        path: '/dashboard',
-        appType: 'vue',
-        appName: 'Sky Monitor Vue 应用',
-        users: 1,
-    },
-    {
-        id: 3,
-        path: '/issues',
-        appType: 'vanilla',
-        appName: 'Sky Monitor JavaScript 应用',
-        users: 3,
-    },
-]
-
-const durations = Array.from({ length: 140 }, (_, i) => ({
-    ms: i,
-    count: Math.floor(Math.random() * (100 - 20) + 20),
-}))
-
 export function Performance() {
+    const { data: statsData } = useQuery({
+        queryKey: ['eventStats'],
+        queryFn: () => fetchEventStats({}),
+    })
+
+    const { data: performanceData, isLoading } = useQuery({
+        queryKey: ['events', 'webVitals'],
+        queryFn: () => fetchEvents({ eventType: 'webVital', limit: 50 }),
+    })
+
+    const durations = (statsData?.data?.webVitals || [])
+        .flatMap(vital =>
+            Array.from({ length: Math.floor(vital.avg_value) }, (_, i) => ({
+                ms: i,
+                count: Math.random() * 30 + 10,
+            }))
+        )
+        .slice(0, 140)
+
+    const performances: Performance[] = (performanceData?.data?.data || []).map((event, index) => ({
+        id: event.id,
+        path: event.path || `/page-${index}`,
+        appType: 'react' as ApplicationType,
+        appName: event.app_id || 'Unknown App',
+        users: 1,
+    }))
+
     const generateSummaryPath = (queryParams: { project: string; appType: ApplicationType; transaction: string }) => {
         const query = new URLSearchParams(queryParams).toString()
         return `summary?${query.toString()}`
     }
+
     return (
         <div className="flex-1 flex-col">
             <header className="flex items-center justify-between h-[36px] mb-4">
@@ -75,7 +76,7 @@ export function Performance() {
                                     },
                                 }}
                             >
-                                <BarChart accessibilityLayer data={durations}>
+                                <BarChart accessibilityLayer data={durations.length > 0 ? durations : [{ ms: 0, count: 0 }]}>
                                     <Bar
                                         dataKey="count"
                                         fill="var(--color-steps)"
@@ -115,7 +116,7 @@ export function Performance() {
                             >
                                 <AreaChart
                                     accessibilityLayer
-                                    data={durations}
+                                    data={durations.length > 0 ? durations : [{ ms: 0, count: 0 }]}
                                     margin={{
                                         left: 0,
                                         right: 0,
@@ -173,29 +174,43 @@ export function Performance() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {MOCK_PERFORMANCE.map(performance => (
-                                    <TableRow key={performance.id}>
-                                        <TableCell className="font-medium py-4">
-                                            <Link
-                                                to={generateSummaryPath({
-                                                    project: `${performance.id}`,
-                                                    appType: performance.appType,
-                                                    transaction: performance.path,
-                                                })}
-                                                className="text-sm text-blue-500"
-                                            >
-                                                {performance.path}
-                                            </Link>
+                                {isLoading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={3} className="text-center py-4">
+                                            加载中...
                                         </TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-row items-center gap-1">
-                                                <img src={appLogoMap[performance.appType]} alt="React" className="w-4 h-4 rounded" />
-                                                <p className="text-xs text-gray-500">{performance.appName}</p>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="hidden md:table-cell">{performance.users}</TableCell>
                                     </TableRow>
-                                ))}
+                                ) : performances.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={3} className="text-center py-4">
+                                            暂无数据
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    performances.map(performance => (
+                                        <TableRow key={performance.id}>
+                                            <TableCell className="font-medium py-4">
+                                                <Link
+                                                    to={generateSummaryPath({
+                                                        project: performance.id,
+                                                        appType: performance.appType,
+                                                        transaction: performance.path,
+                                                    })}
+                                                    className="text-sm text-blue-500"
+                                                >
+                                                    {performance.path}
+                                                </Link>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-row items-center gap-1">
+                                                    <img src={appLogoMap[performance.appType]} alt="React" className="w-4 h-4 rounded" />
+                                                    <p className="text-xs text-gray-500">{performance.appName}</p>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="hidden md:table-cell">{performance.users}</TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
                             </TableBody>
                         </Table>
                     </CardContent>

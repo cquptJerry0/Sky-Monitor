@@ -10,6 +10,13 @@ import { HttpExceptionFilter } from './fundamentals/common/filters/http-exceptio
 async function bootstrap() {
     const app = await NestFactory.create(AppModule)
 
+    // 启用 CORS
+    app.enableCors({
+        origin: '*',
+        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+        preflightContinue: false,
+    })
+
     // 全局使用中间件
     // app.use(logger)
 

@@ -4,23 +4,31 @@ import { Transport } from '@sky-monitor/monitor-sdk-core'
  * 错误处理
  */
 export class Errors {
-    constructor(private transport: Transport) {}
+    private transport: Transport | null = null
 
-    init() {
+    constructor() {}
+
+    init(transport: Transport) {
+        this.transport = transport
+
         window.onerror = (message, source /* , lineno, colno, error */) => {
-            this.transport.send({
-                type: message,
-                message: source,
-                path: window.location.pathname,
-            })
+            if (this.transport) {
+                this.transport.send({
+                    type: 'error',
+                    message: `${message} at ${source}`,
+                    path: window.location.pathname,
+                })
+            }
         }
 
         window.onunhandledrejection = event => {
-            this.transport.send({
-                type: 'unhandledrejection',
-                message: event.reason,
-                path: window.location.pathname,
-            })
+            if (this.transport) {
+                this.transport.send({
+                    type: 'unhandledrejection',
+                    message: String(event.reason),
+                    path: window.location.pathname,
+                })
+            }
         }
     }
 }

@@ -26,18 +26,21 @@ export function Projects() {
         queryKey: ['applications'],
         queryFn: async () => {
             const res = await srv.fetchApplicationList()
-            return res.data.applications.map(app => {
-                const data = new Array(7).fill(0).map((_, index) => ({
-                    date: new Date(new Date().setDate(new Date().getDate() - index)).toISOString(),
-                    resting: Math.floor(Math.random() * (100 - 20) + 20),
-                }))
-                return {
-                    ...app,
-                    bugs: Math.floor(Math.random() * (100 - 20) + 20),
-                    transactions: Math.floor(Math.random() * (100 - 20) + 20),
-                    data,
-                }
-            })
+            return Promise.all(
+                res.data.applications.map(async app => {
+                    const summary = await srv.fetchAppSummary(app.appId)
+                    const data = new Array(7).fill(0).map((_, index) => ({
+                        date: new Date(new Date().setDate(new Date().getDate() - index)).toISOString(),
+                        resting: Math.floor(Math.random() * (100 - 20) + 20),
+                    }))
+                    return {
+                        ...app,
+                        bugs: summary?.data?.error_count || 0,
+                        transactions: summary?.data?.total_events || 0,
+                        data,
+                    }
+                })
+            )
         },
     })
 

@@ -19,6 +19,12 @@
         "strict": true,
         "strictBindCallApply": false,
         "target": "es2018",
-        "noUncheckedIndexedAccess": true
+        "noUncheckedIndexedAccess": true,
+        "baseUrl": ".",
+        "paths": {
+            "@sky-monitor/monitor-sdk-core": ["packages/core/build/esm/index.js"],
+            "@sky-monitor/monitor-sdk-browser-utils": ["packages/browser-utils/build/esm/index.js"],
+            "@sky-monitor/monitor-sdk-browser": ["packages/browser/build/esm/index.js"]
+        }
     }
 }

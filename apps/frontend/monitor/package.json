@@ -4,11 +4,10 @@
     "version": "0.0.0",
     "type": "module",
     "scripts": {
-        "dev": "vite",
+        "start:dev": "vite",
         "build": "tsc -b && vite build",
         "preview": "vite preview",
-        "typecheck": "tsc --noEmit",
-        "clean": "rimraf dist"
+        "typecheck": "tsc --noEmit"
     },
     "dependencies": {
         "@hookform/resolvers": "^3.9.0",
@@ -31,6 +30,8 @@
         "canvas-confetti": "1.9.3",
         "class-variance-authority": "0.7.0",
         "clsx": "2.1.1",
+        "copy-text-to-clipboard": "3.2.0",
+        "date-fns": "4.1.0",
         "lucide-react": "0.453.0",
         "postcss": "8.4.47",
         "react": "18.3.1",
@@ -42,13 +43,12 @@
         "tailwindcss": "3.4.14",
         "tailwindcss-animate": "1.0.7",
         "vaul": "^1.1.0",
-        "zod": "^3.23.8",
-        "date-fns": "4.1.0",
-        "copy-text-to-clipboard": "3.2.0"
+        "zod": "^3.23.8"
     },
     "devDependencies": {
         "@types/bcryptjs": "2.4.6",
         "@types/canvas-confetti": "1.6.4",
+        "@types/jest": "^30.0.0",
         "@types/react": "18.3.11",
         "@types/react-dom": "18.3.1",
         "@vitejs/plugin-react": "4.3.2",

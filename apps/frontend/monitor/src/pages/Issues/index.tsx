@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query'
 import { formatDate } from 'date-fns'
 import { Bug, ListFilter, Timer } from 'lucide-react'
 import { CartesianGrid, Line, LineChart } from 'recharts'
@@ -17,12 +18,13 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { fetchEvents } from '@/services'
 import { ApplicationType } from '@/types/api'
 
 import { appLogoMap } from '../Projects/meta'
 
 export interface Issue {
-    id: number
+    id: string
     title: string
     description: string
     appType: ApplicationType
@@ -32,40 +34,26 @@ export interface Issue {
     createdAt: Date
 }
 
-const MOCK_ISSUES: Issue[] = [
-    {
-        id: 1,
-        title: 'ReferenceError',
-        description: 'myUndefinedFunction is not defined',
-        appType: 'react',
-        events: 13,
-        users: 2,
-        status: 'active',
-        createdAt: new Date(),
-    },
-    {
-        id: 2,
-        title: 'TypeError',
-        description: 'Cannot read property "name" of undefined',
-        appType: 'vue',
-        events: 6,
-        users: 1,
-        status: 'active',
-        createdAt: new Date(),
-    },
-    {
-        id: 3,
-        title: 'SyntaxError',
-        description: 'Unexpected token <',
-        appType: 'vanilla',
-        events: 8,
-        users: 3,
-        status: 'active',
-        createdAt: new Date(),
-    },
-]
-
 export function Issues() {
+    const { data: eventsData, isLoading } = useQuery({
+        queryKey: ['events', 'errors'],
+        queryFn: () => fetchEvents({ eventType: 'error', limit: 50 }),
+    })
+
+    const issues: Issue[] = (eventsData?.data?.data || []).map(event => {
+        const eventDataObj = typeof event.event_data === 'string' ? JSON.parse(event.event_data) : event.event_data
+        return {
+            id: event.id,
+            title: event.event_type.toUpperCase(),
+            description: eventDataObj?.message || 'No message',
+            appType: 'react' as ApplicationType,
+            events: 1,
+            users: 1,
+            status: 'active' as const,
+            createdAt: new Date(event.timestamp),
+        }
+    })
+
     return (
         <div className="flex-1 flex-col">
             <header className="flex items-center justify-between h-[36px] mb-4">
@@ -73,7 +61,6 @@ export function Issues() {
                     <Bug className="h-6 w-6 mr-2" />
                     缺陷
                 </h1>
-                {/* <CreateProjectsModal onCreateProject={createApplication} /> */}
             </header>
             <Tabs defaultValue="all">
                 <div className="flex items-center">
@@ -147,114 +134,107 @@ export function Issues() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {MOCK_ISSUES.map(issue => (
-                                        <TableRow key={issue.id}>
-                                            <TableCell className="font-medium flex flex-col gap-1 my-2">
-                                                <p className="text-sm text-blue-500">{issue.title}</p>
-                                                <p className="flex items-center gap-1 marker:text-xs text-gray-500">
-                                                    <div className="w-2 h-2 bg-destructive rounded" />
-                                                    {issue.description}
-                                                </p>
-                                                <div className="flex flex-row items-center gap-2">
-                                                    <div className="flex flex-row items-center gap-1">
-                                                        <img src={appLogoMap[issue.appType]} alt="React" className="w-4 h-4 rounded" />
-                                                        <p className="text-xs text-gray-500">Sky Monitor React 应用</p>
-                                                    </div>
-                                                    <p className="flex flex-row items-center text-xs text-gray-500">
-                                                        <Timer className="h-3 w-3 mr-1" />
-                                                        {formatDate(issue.createdAt, 'yyyy-MM-dd')}
-                                                    </p>
-                                                </div>
+                                    {isLoading ? (
+                                        <TableRow>
+                                            <TableCell colSpan={4} className="text-center py-4">
+                                                加载中...
                                             </TableCell>
-                                            <TableCell className="px-0">
-                                                <ChartContainer
-                                                    config={{
-                                                        resting: {
-                                                            label: 'Resting',
-                                                            color: `hsl(var(--chart-${issue.id}))`,
-                                                        },
-                                                    }}
-                                                    className="w-[90%] h-16"
-                                                >
-                                                    <LineChart
-                                                        accessibilityLayer
-                                                        margin={{
-                                                            left: 14,
-                                                            right: 14,
-                                                            top: 10,
-                                                        }}
-                                                        data={[
-                                                            {
-                                                                date: '2024-01-01',
-                                                                resting: 62,
-                                                            },
-                                                            {
-                                                                date: '2024-01-02',
-                                                                resting: 72,
-                                                            },
-                                                            {
-                                                                date: '2024-01-03',
-                                                                resting: 35,
-                                                            },
-                                                            {
-                                                                date: '2024-01-04',
-                                                                resting: 62,
-                                                            },
-                                                            {
-                                                                date: '2024-01-05',
-                                                                resting: 52,
-                                                            },
-                                                            {
-                                                                date: '2024-01-06',
-                                                                resting: 62,
-                                                            },
-                                                            {
-                                                                date: '2024-01-07',
-                                                                resting: 70,
-                                                            },
-                                                        ]}
-                                                    >
-                                                        <CartesianGrid
-                                                            strokeDasharray="4 4"
-                                                            vertical={false}
-                                                            stroke="hsl(var(--muted-foreground))"
-                                                            strokeOpacity={0.5}
-                                                        />
-                                                        <Line
-                                                            dataKey="resting"
-                                                            type="natural"
-                                                            fill="var(--color-resting)"
-                                                            stroke="var(--color-resting)"
-                                                            strokeWidth={2}
-                                                            dot={false}
-                                                            activeDot={{
-                                                                fill: 'var(--color-resting)',
-                                                                stroke: 'var(--color-resting)',
-                                                                r: 4,
-                                                            }}
-                                                        />
-                                                        <ChartTooltip
-                                                            content={
-                                                                <ChartTooltipContent
-                                                                    indicator="line"
-                                                                    labelFormatter={value => {
-                                                                        return new Date(value).toLocaleDateString('en-US', {
-                                                                            day: 'numeric',
-                                                                            month: 'long',
-                                                                            year: 'numeric',
-                                                                        })
-                                                                    }}
-                                                                />
-                                                            }
-                                                            cursor={false}
-                                                        />
-                                                    </LineChart>
-                                                </ChartContainer>
-                                            </TableCell>
-                                            <TableCell>{issue.events}</TableCell>
-                                            <TableCell className="hidden md:table-cell">{issue.users}</TableCell>
                                         </TableRow>
-                                    ))}
+                                    ) : issues.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={4} className="text-center py-4">
+                                                暂无数据
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : (
+                                        issues.map(issue => (
+                                            <TableRow key={issue.id}>
+                                                <TableCell className="font-medium flex flex-col gap-1 my-2">
+                                                    <p className="text-sm text-blue-500">{issue.title}</p>
+                                                    <p className="flex items-center gap-1 marker:text-xs text-gray-500">
+                                                        <div className="w-2 h-2 bg-destructive rounded" />
+                                                        {issue.description}
+                                                    </p>
+                                                    <div className="flex flex-row items-center gap-2">
+                                                        <div className="flex flex-row items-center gap-1">
+                                                            <img src={appLogoMap[issue.appType]} alt="React" className="w-4 h-4 rounded" />
+                                                            <p className="text-xs text-gray-500">应用事件</p>
+                                                        </div>
+                                                        <p className="flex flex-row items-center text-xs text-gray-500">
+                                                            <Timer className="h-3 w-3 mr-1" />
+                                                            {formatDate(issue.createdAt, 'yyyy-MM-dd HH:mm')}
+                                                        </p>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="px-0">
+                                                    <ChartContainer
+                                                        config={{
+                                                            resting: {
+                                                                label: 'Resting',
+                                                                color: `hsl(var(--chart-1))`,
+                                                            },
+                                                        }}
+                                                        className="w-[90%] h-16"
+                                                    >
+                                                        <LineChart
+                                                            accessibilityLayer
+                                                            margin={{
+                                                                left: 14,
+                                                                right: 14,
+                                                                top: 10,
+                                                            }}
+                                                            data={[
+                                                                { date: '2024-01-01', resting: 62 },
+                                                                { date: '2024-01-02', resting: 72 },
+                                                                { date: '2024-01-03', resting: 35 },
+                                                                { date: '2024-01-04', resting: 62 },
+                                                                { date: '2024-01-05', resting: 52 },
+                                                                { date: '2024-01-06', resting: 62 },
+                                                                { date: '2024-01-07', resting: 70 },
+                                                            ]}
+                                                        >
+                                                            <CartesianGrid
+                                                                strokeDasharray="4 4"
+                                                                vertical={false}
+                                                                stroke="hsl(var(--muted-foreground))"
+                                                                strokeOpacity={0.5}
+                                                            />
+                                                            <Line
+                                                                dataKey="resting"
+                                                                type="natural"
+                                                                fill="var(--color-resting)"
+                                                                stroke="var(--color-resting)"
+                                                                strokeWidth={2}
+                                                                dot={false}
+                                                                activeDot={{
+                                                                    fill: 'var(--color-resting)',
+                                                                    stroke: 'var(--color-resting)',
+                                                                    r: 4,
+                                                                }}
+                                                            />
+                                                            <ChartTooltip
+                                                                content={
+                                                                    <ChartTooltipContent
+                                                                        indicator="line"
+                                                                        labelFormatter={value => {
+                                                                            return new Date(value).toLocaleDateString('en-US', {
+                                                                                day: 'numeric',
+                                                                                month: 'long',
+                                                                                year: 'numeric',
+                                                                            })
+                                                                        }}
+                                                                    />
+                                                                }
+                                                                cursor={false}
+                                                            />
+                                                        </LineChart>
+                                                    </ChartContainer>
+                                                </TableCell>
+                                                <TableCell>{issue.events}</TableCell>
+                                                <TableCell className="hidden md:table-cell">{issue.users}</TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
                                 </TableBody>
                             </Table>
                         </CardContent>

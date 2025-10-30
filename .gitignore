@@ -13,6 +13,10 @@ build
 dist-ssr
 *.local
 
+# packages/*/build 是编译输出产物，需要保留用于 workspace 链接
+# 但应用层的 build/dist 应该被忽略
+
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -29,6 +33,6 @@ dist-ssr
 script
 .turbo
 
-markdown
+docs
 .devcontainer/data
 .devcontainer/postgresql_data

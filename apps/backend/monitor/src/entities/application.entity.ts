@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
 
 import { AdminEntity } from './admin.entity'
 
@@ -55,6 +55,12 @@ export class ApplicationEntity {
     updatedAt?: Date
 
     /**
+     * 用户ID 外键
+     */
+    @Column({ type: 'integer', nullable: false })
+    userId: number
+
+    /**
      * 项目所属用户
      * 这就是我们讲到的，表之间的关联关系
      * 这里我们定义了一个多对一的关系，即一个用户可以有多个项目
@@ -62,5 +68,6 @@ export class ApplicationEntity {
      * 分别为：@OneToOne、@OneToMany、@ManyToMany、
      */
     @ManyToOne('AdminEntity', 'applications')
+    @JoinColumn({ name: 'userId' })
     user: AdminEntity
 }

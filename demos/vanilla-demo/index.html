@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sky Monitor SDK Demo</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 14px;
+    }
+
+    .section {
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      color: #333;
+      margin-bottom: 20px;
+      font-size: 20px;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 10px;
+    }
+
+    .button-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .info-box {
+      background: #f0f4ff;
+      padding: 15px;
+      border-radius: 5px;
+      border-left: 4px solid #667eea;
+      margin-bottom: 15px;
+    }
+
+    .info-box p {
+      color: #555;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .info-box code {
+      background: white;
+      padding: 2px 6px;
+      border-radius: 3px;
+      color: #667eea;
+      font-family: 'Courier New', monospace;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      background: #10b981;
+      color: white;
+    }
+
+    .performance-test {
+      margin-top: 15px;
+    }
+
+    .slow-resource {
+      width: 100%;
+      height: 200px;
+      background: #f3f4f6;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #999;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🚀 Sky Monitor SDK 测试平台</h1>
+      <p class="subtitle">测试监控SDK的各项功能 | <span class="status">已连接</span></p>
+    </div>
+
+    <div class="section">
+      <h2>📊 性能监控测试</h2>
+      <div class="info-box">
+        <p>
+          SDK会自动收集 Web Vitals 指标：<code>LCP</code>、<code>FCP</code>、<code>CLS</code>、<code>TTFB</code>
+        </p>
+        <p>刷新页面或执行操作后，这些指标会自动上报到服务器。</p>
+      </div>
+      <div class="button-group">
+        <button onclick="triggerSlowResource()">加载慢资源</button>
+        <button onclick="triggerLayoutShift()">触发布局偏移</button>
+        <button onclick="triggerLongTask()">执行长任务</button>
+      </div>
+      <div class="performance-test" id="performanceTest"></div>
+    </div>
+
+    <div class="section">
+      <h2>❌ 错误监控测试</h2>
+      <div class="info-box">
+        <p>测试SDK的错误捕获能力，包括同步错误、异步错误、Promise拒绝等。</p>
+      </div>
+      <div class="button-group">
+        <button onclick="triggerSyncError()">触发同步错误</button>
+        <button onclick="triggerAsyncError()">触发异步错误</button>
+        <button onclick="triggerPromiseError()">触发Promise错误</button>
+        <button onclick="triggerReferenceError()">触发引用错误</button>
+        <button onclick="triggerTypeError()">触发类型错误</button>
+        <button onclick="triggerCustomError()">触发自定义错误</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>🔍 用户行为测试</h2>
+      <div class="info-box">
+        <p>测试用户交互事件的捕获，如点击、输入、路由变化等。</p>
+      </div>
+      <div class="button-group">
+        <button onclick="simulateClick()">模拟点击事件</button>
+        <button onclick="simulateInput()">模拟输入事件</button>
+        <button onclick="simulateScroll()">模拟滚动事件</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>📡 网络请求测试</h2>
+      <div class="info-box">
+        <p>测试API请求监控，包括成功、失败、超时等情况。</p>
+      </div>
+      <div class="button-group">
+        <button onclick="triggerSuccessAPI()">成功请求</button>
+        <button onclick="triggerFailedAPI()">失败请求</button>
+        <button onclick="triggerSlowAPI()">慢请求</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>📝 控制台日志</h2>
+      <div class="info-box">
+        <p>在此处查看SDK的运行状态和上报日志。打开浏览器控制台查看更多详情。</p>
+      </div>
+      <div class="button-group">
+        <button onclick="console.log('测试日志消息')">输出日志</button>
+        <button onclick="console.warn('测试警告消息')">输出警告</button>
+        <button onclick="console.error('测试错误消息')">输出错误</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+  <script type="module" src="/src/test-functions.js"></script>
+</body>
+
+</html>

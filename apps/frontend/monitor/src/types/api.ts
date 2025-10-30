@@ -1,12 +1,3 @@
-/*
-.##.....##..######..########.########.
-.##.....##.##....##.##.......##.....##
-.##.....##.##.......##.......##.....##
-.##.....##..######..######...########.
-.##.....##.......##.##.......##...##..
-.##.....##.##....##.##.......##....##.
-..#######...######..########.##.....##
-*/
 /**
  * 用户相关
  */
@@ -51,15 +42,6 @@ export interface ApplicationData {
     createdAt: Date
 }
 
-/*
-....###....########..########..##.......####..######.....###....########.####..#######..##....##
-...##.##...##.....##.##.....##.##........##..##....##...##.##......##.....##..##.....##.###...##
-..##...##..##.....##.##.....##.##........##..##........##...##.....##.....##..##.....##.####..##
-.##.....##.########..########..##........##..##.......##.....##....##.....##..##.....##.##.##.##
-.#########.##........##........##........##..##.......#########....##.....##..##.....##.##..####
-.##.....##.##........##........##........##..##....##.##.....##....##.....##..##.....##.##...###
-.##.....##.##........##........########.####..######..##.....##....##....####..#######..##....##
-*/
 /**
  * 应用列表
  */
@@ -73,4 +55,36 @@ export interface ApplicationListRes {
 export interface CreateApplicationPayload {
     name: string
     type: ApplicationType
+}
+
+/**
+ * 监控事件相关
+ */
+export interface MonitorEvent {
+    id: string
+    app_id: string
+    event_type: string
+    event_name: string
+    event_data: string
+    path: string
+    user_agent: string
+    timestamp: string
+    created_at: string
+}
+
+export interface EventsListRes {
+    data: {
+        data: MonitorEvent[]
+        total: number
+        limit: number
+        offset: number
+    }
+}
+
+export interface EventStatsRes {
+    data: {
+        eventTypeCounts: Array<{ event_type: string; count: number }>
+        errorTrend: Array<{ hour: string; count: number }>
+        webVitals: Array<{ event_name: string; avg_value: number; p75_value: number; p95_value: number }>
+    }
 }

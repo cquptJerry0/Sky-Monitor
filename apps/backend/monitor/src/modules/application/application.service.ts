@@ -12,8 +12,8 @@ export class ApplicationService {
     ) {}
 
     async create(payload) {
-        this.applicationRepository.save(payload)
-        return payload
+        const saved = await this.applicationRepository.save(payload)
+        return saved
     }
 
     async update(payload) {
@@ -22,7 +22,7 @@ export class ApplicationService {
 
     async list(params: { userId: number }) {
         const [data, count] = await this.applicationRepository.findAndCount({
-            where: { user: { id: params.userId } },
+            where: { userId: params.userId },
         })
 
         return {
@@ -32,12 +32,15 @@ export class ApplicationService {
     }
 
     async delete(payload: { appId: string; userId: number }) {
-        const res = await this.applicationRepository.delete({ appId: payload.appId, user: { id: payload.userId } })
+        const res = await this.applicationRepository.delete({
+            appId: payload.appId,
+            userId: payload.userId,
+        })
 
         if (res.affected === 0) {
             return new NotFoundException('Application not found')
         }
 
-        return res.raw[0]
+        return res.affected
     }
 }
