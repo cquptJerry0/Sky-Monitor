@@ -35,3 +35,17 @@ export interface MonitoringOptions {
     dsn: string
     integrations: Integration[]
 }
+
+/**
+ * 检查是否为错误类型事件
+ */
+export function isErrorEvent(event: MonitoringEvent): boolean {
+    return ['error', 'unhandledrejection', 'exception'].includes(event.type)
+}
+
+/**
+ * 检查是否为性能类型事件
+ */
+export function isPerformanceEvent(event: MonitoringEvent): boolean {
+    return ['webVital', 'performance'].includes(event.type)
+}

@@ -2,7 +2,7 @@ import { defineConfig } from 'tsup'
 
 export default defineConfig([
     {
-        entry: ['src'],
+        entry: ['src/index.ts', 'src/tracing/**/*.ts', 'src/transport/**/*.ts'],
         format: ['cjs'],
         sourcemap: true,
         bundle: true,
@@ -12,7 +12,7 @@ export default defineConfig([
         outDir: 'build/cjs',
     },
     {
-        entry: ['src'],
+        entry: ['src/index.ts', 'src/tracing/**/*.ts', 'src/transport/**/*.ts'],
         format: ['esm'],
         sourcemap: true,
         bundle: true,

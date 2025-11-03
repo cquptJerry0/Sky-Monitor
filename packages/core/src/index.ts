@@ -1,10 +1,7 @@
-export { captureConsoleIntegration } from './integrations/captureConsoleIntegration'
-export type * from './integrations/captureConsoleIntegration'
-
 export { SamplingIntegration } from './integrations/sampling'
 export type { SamplingConfig, SamplingMetadata } from './integrations/sampling'
 
-export { Integration } from './types'
+export { Integration, isErrorEvent, isPerformanceEvent } from './types'
 export type { MonitoringEvent, MonitoringOptions } from './types'
 
 export { Transport } from './transport'

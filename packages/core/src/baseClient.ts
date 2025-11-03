@@ -82,4 +82,21 @@ export class Monitoring {
     reportEvent(event: unknown): void {
         this.captureEvent({ type: 'event', event })
     }
+
+    /**
+     * 刷新传输缓冲区
+     * 如果transport支持flush，则立即发送所有缓存的事件
+     */
+    flush(): void {
+        this.transport?.flush?.()
+    }
+
+    /**
+     * 关闭并清理资源
+     */
+    close(): void {
+        this.flush()
+        this.transport = null
+        setCurrentClient(null)
+    }
 }

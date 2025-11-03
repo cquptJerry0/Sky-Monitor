@@ -1,4 +1,4 @@
-import { init, Errors, Metrics } from '@sky-monitor/monitor-sdk-browser'
+import { init, Errors, Metrics, SamplingIntegration } from '@sky-monitor/monitor-sdk-browser'
 
 // 初始化SDK
 // 注意：将这里的appId替换为你从管理后台创建的实际应用ID
@@ -8,12 +8,19 @@ console.log('🚀 初始化 Sky Monitor SDK...')
 
 const monitoring = init({
     dsn: `http://localhost:8080/api/monitoring/${APP_ID}`,
-    integrations: [new Errors(), new Metrics()],
+    integrations: [
+        new Errors(),
+        new SamplingIntegration({
+            errorSampleRate: 1.0, // 错误100%采样
+            performanceSampleRate: 0.3, // 性能30%采样
+        }),
+        new Metrics(),
+    ],
 })
 
 console.log('✅ Sky Monitor SDK 初始化成功')
 console.log('📊 DSN:', `http://localhost:8080/api/monitoring/${APP_ID}`)
-console.log('🔧 已启用的集成:', ['Errors', 'Metrics'])
+console.log('🔧 已启用的集成:', ['Errors', 'Sampling(error:100%, perf:30%)', 'Metrics'])
 
 // 导出monitoring实例供其他模块使用
 window.monitoring = monitoring
