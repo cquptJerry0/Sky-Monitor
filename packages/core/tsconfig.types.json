@@ -5,6 +5,10 @@
         "declaration": true,
         "declarationMap": true,
         "emitDeclarationOnly": true,
-        "outDir": "build/types"
-    }
+        "outDir": "build/types",
+        "skipLibCheck": true
+    },
+
+    "include": ["src/**/*"],
+    "exclude": ["src/**/*.test.ts", "src/**/__tests__/**", "node_modules"]
 }

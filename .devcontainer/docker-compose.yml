@@ -1,38 +1,22 @@
-# 这是只能外部访问的配置
-version: '3'
-
+# 使用官方镜像的配置
 services:
-    sky-monitor-kafka:
-        image: bitnami/kafka:latest
-        container_name: sky-monitor-kafka
-        ports:
-            - '9092:9092'
-            - '9093:9093'
-        environment:
-            - KAFKA_CFG_PROCESS_ROLES=broker,controller
-            - KAFKA_CFG_NODE_ID=1
-            - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@localhost:9093
-            - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
-            - KAFKA_CFG_LISTENERS=PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
-            - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
-            - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
-            - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
-            - ALLOW_PLAINTEXT_LISTENER=yes
-        # volumes:
-        #     - ./kafka_data:/bitnami/kafka/data
-
     sky-monitor-clickhouse:
-        image: bitnami/clickhouse:latest
+        image: clickhouse/clickhouse-server:latest
         container_name: sky-monitor-clickhouse
         ports:
             - '8123:8123' # HTTP interface
             - '9000:9000' # Native interface for clients
         environment:
+            - CLICKHOUSE_DB=default
             - CLICKHOUSE_USER=default
             - CLICKHOUSE_PASSWORD=skyClickhouse2024
-            - CLICKHOUSE_DATABASE=default
+            - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+        ulimits:
+            nofile:
+                soft: 262144
+                hard: 262144
         # volumes:
-        #     - ./clickhouse_data:/bitnami/clickhouse
+        #     - ./clickhouse_data:/var/lib/clickhouse
 
     sky-monitor-postgresql:
         image: bitnami/postgresql:latest
@@ -58,7 +42,7 @@ services:
 
 networks:
     default:
-        name: sky-monitor-kafka-clickhouse-network
+        name: sky-monitor-network
         driver: bridge
 # # 这是只能内部访问的配置
 # version: '3'

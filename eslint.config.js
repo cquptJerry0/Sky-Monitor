@@ -60,6 +60,14 @@ const backendMonitorConfig = {
     },
 }
 
+const packagesConfig = {
+    files: ['packages/**/*.{ts,tsx}'],
+    rules: {
+        '@typescript-eslint/no-unused-vars': 'off',
+        'no-unused-vars': 'off',
+    },
+}
+
 module.exports = tseslint.config(
     {
         ignores,
@@ -76,5 +84,6 @@ module.exports = tseslint.config(
         },
     },
     frontendMonitorConfig,
-    backendMonitorConfig
+    backendMonitorConfig,
+    packagesConfig
 )

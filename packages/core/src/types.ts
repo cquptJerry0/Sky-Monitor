@@ -1,22 +1,30 @@
 import { Transport } from './transport'
 
 /**
+ * 监控事件标准接口
+ */
+export interface MonitoringEvent {
+    type: string
+    timestamp?: string
+    [key: string]: unknown
+}
+
+/**
  * Integration interface
  * 集成接口
  * 基于插件化设计
  */
-export interface IIntegration {
-    init(transport: Transport): void
-}
+export interface Integration {
+    name: string
 
-export class Integration implements IIntegration {
-    constructor(private callback: () => void) {}
+    // 全局初始化，仅执行一次（注册全局监听器）
+    setupOnce?(): void
 
-    transport: Transport | null = null
+    // 每次SDK初始化时调用（接收transport）
+    init?(transport: Transport): void
 
-    init(transport: Transport) {
-        this.transport = transport
-    }
+    // 事件发送前处理钩子（修改/过滤事件）
+    beforeSend?(event: MonitoringEvent): MonitoringEvent | null | Promise<MonitoringEvent | null>
 }
 
 /**

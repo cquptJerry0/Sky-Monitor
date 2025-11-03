@@ -33,6 +33,11 @@ dist-ssr
 script
 .turbo
 
+# Test coverage
+coverage
+*.lcov
+.nyc_output
+
 docs
 .devcontainer/data
 .devcontainer/postgresql_data

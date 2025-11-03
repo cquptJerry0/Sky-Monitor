@@ -2,7 +2,7 @@ import { init, Errors, Metrics } from '@sky-monitor/monitor-sdk-browser'
 
 // 初始化SDK
 // 注意：将这里的appId替换为你从管理后台创建的实际应用ID
-const APP_ID = 'vanillafmoxti' // 示例appId，请替换为真实的
+const APP_ID = 'vanillasx6GyT' // 示例appId，请替换为真实的
 
 console.log('🚀 初始化 Sky Monitor SDK...')
 
