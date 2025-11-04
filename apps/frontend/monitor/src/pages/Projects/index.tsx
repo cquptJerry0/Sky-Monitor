@@ -183,11 +183,11 @@ export function Projects() {
                         </LineChart>
                     </ChartContainer>
                 </CardContent>
-                <CardFooter className="flex flex-row items-center justify-between pt-6 gap-2 w-full">
+                <CardFooter className="flex flex-row items-center justify-between pt-6 gap-2 w-full flex-wrap">
                     <p className="text-xs text-muted-foreground">创建时间：{lightFormat(application.createdAt, 'yyyy-MM-dd HH:mm:ss')}</p>
-                    <Button variant="secondary" size="sm" onClick={() => copyAppId(application.appId)}>
-                        <p className="text-xs text-left">应用 ID：{application.appId}</p>
-                        <Copy className="h-4 w-4 ml-2" />
+                    <Button variant="secondary" size="sm" onClick={() => copyAppId(application.appId)} className="max-w-full">
+                        <p className="text-xs text-left truncate">应用 ID：{application.appId}</p>
+                        <Copy className="h-4 w-4 ml-2 flex-shrink-0" />
                     </Button>
                 </CardFooter>
             </Card>

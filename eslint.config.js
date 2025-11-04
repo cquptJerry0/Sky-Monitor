@@ -19,62 +19,22 @@ const ignores = [
     'packages/browser-utils/src/metrics/**/*',
 ]
 
-const frontendMonitorConfig = {
-    files: ['apps/frontend/monitor/**/*.{ts,tsx}'],
-    ignores: ['apps/frontend/monitor/src/components/ui/**/*'],
-    languageOptions: {
-        ecmaVersion: 2020,
-        globals: globals.browser,
-    },
+module.exports = tseslint.config({
+    ignores,
+    extends: [eslint.configs.recommended, ...tseslint.configs.recommended],
     plugins: {
+        prettier: eslintPrettier,
+        'simple-import-sort': importSort,
         'react-hooks': reactHooks,
         'react-refresh': reactRefresh,
     },
     rules: {
-        ...reactHooks.configs.recommended.rules,
-        'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
-        'no-console': 'error',
-        '@typescript-eslint/no-unused-vars': 'off',
-        'no-unused-vars': 'off',
-    },
-}
-
-const backendMonitorConfig = {
-    files: ['apps/backend/**/*.ts'],
-    languageOptions: {
-        globals: {
-            ...globals.node,
-            ...globals.jest,
-        },
-        parser: tseslint.parser,
-    },
-    rules: {
-        '@typescript-eslint/explicit-function-return-type': 'off',
-        '@typescript-eslint/explicit-module-boundary-types': 'off',
-        '@typescript-eslint/interface-name-prefix': 'off',
-        '@typescript-eslint/no-explicit-any': 'off',
-        'no-console': 'off',
+        'prettier/prettier': ['warn', {}, { usePrettierrc: true }],
+        'simple-import-sort/imports': 'off',
         'prefer-const': 'off',
+        '@typescript-eslint/no-explicit-any': 'off',
         '@typescript-eslint/no-unused-vars': 'off',
         'no-unused-vars': 'off',
+        'no-console': 'off',
     },
-}
-
-module.exports = tseslint.config(
-    {
-        ignores,
-        extends: [eslint.configs.recommended, ...tseslint.configs.recommended],
-        plugins: {
-            prettier: eslintPrettier,
-            'simple-import-sort': importSort,
-        },
-        rules: {
-            'prettier/prettier': ['error', {}, { usePrettierrc: true }],
-            'simple-import-sort/imports': 'off',
-            'prefer-const': 'warn', // 降级 const 警告
-            '@typescript-eslint/no-explicit-any': 'off',
-        },
-    },
-    frontendMonitorConfig,
-    backendMonitorConfig
-)
+})

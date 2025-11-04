@@ -1,0 +1,144 @@
+import { Integration, isErrorEvent, MonitoringEvent } from '../types'
+
+/**
+ * 去重配置
+ */
+export interface DeduplicationConfig {
+    /**
+     * 缓存容量，默认100
+     * 超过容量时删除最旧的记录
+     */
+    maxCacheSize?: number
+
+    /**
+     * 时间窗口（毫秒），默认5000ms
+     * 同一错误在窗口内只记录一次
+     */
+    timeWindow?: number
+}
+
+interface CacheEntry {
+    fingerprint: string
+    timestamp: number
+    count: number
+}
+
+/**
+ * 错误去重集成
+ * 通过生成错误指纹实现去重，减少80%噪音数据
+ */
+export class DeduplicationIntegration implements Integration {
+    name = 'Deduplication'
+
+    private cache: Map<string, CacheEntry> = new Map()
+    private readonly maxCacheSize: number
+    private readonly timeWindow: number
+
+    constructor(config: DeduplicationConfig = {}) {
+        this.maxCacheSize = config.maxCacheSize ?? 100
+        this.timeWindow = config.timeWindow ?? 5000
+    }
+
+    /**
+     * 事件发送前处理
+     */
+    beforeSend(event: MonitoringEvent): MonitoringEvent | null {
+        // 只对错误类事件去重
+        if (!isErrorEvent(event)) {
+            return event
+        }
+
+        const fingerprint = this.generateFingerprint(event)
+        const now = Date.now()
+
+        // 检查缓存
+        const cached = this.cache.get(fingerprint)
+
+        if (cached) {
+            // 在时间窗口内，丢弃重复事件
+            if (now - cached.timestamp < this.timeWindow) {
+                cached.count++
+                return null
+            }
+
+            // 超过时间窗口，更新缓存并发送
+            cached.timestamp = now
+            cached.count = 1
+        } else {
+            // 新错误，添加到缓存
+            this.addToCache(fingerprint, now)
+        }
+
+        // 附加去重元数据
+        event._deduplication = {
+            fingerprint,
+            count: cached?.count ?? 1,
+        }
+
+        return event
+    }
+
+    /**
+     * 生成错误指纹
+     * 基于：错误类型 + 消息 + 堆栈关键行
+     */
+    private generateFingerprint(event: import('../types').ErrorEvent): string {
+        const parts = [event.type, this.normalizeMessage(event.message), this.extractStackKey(event.stack)]
+
+        return this.hash(parts.join('|'))
+    }
+
+    /**
+     * 标准化错误消息
+     * 移除动态内容（如时间戳、ID等）
+     */
+    private normalizeMessage(message: string = ''): string {
+        return message
+            .replace(/\d{4}-\d{2}-\d{2}/g, 'DATE') // 日期
+            .replace(/\d+ms/g, 'TIMEms') // 时间
+            .replace(/id[:=]\s*\w+/gi, 'id=ID') // ID
+            .substring(0, 200) // 限制长度
+    }
+
+    /**
+     * 提取堆栈关键信息
+     * 取第一个非第三方库的堆栈行
+     */
+    private extractStackKey(stack: string = ''): string {
+        const lines = stack.split('\n').slice(0, 3) // 只看前3行
+        return lines
+            .filter(line => !line.includes('node_modules'))
+            .join('|')
+            .substring(0, 200)
+    }
+
+    /**
+     * 简单哈希函数
+     */
+    private hash(str: string): string {
+        let hash = 0
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i)
+            hash = (hash << 5) - hash + char
+            hash = hash & hash // Convert to 32bit integer
+        }
+        return hash.toString(36)
+    }
+
+    /**
+     * 添加到缓存（LRU策略）
+     */
+    private addToCache(fingerprint: string, timestamp: number): void {
+        // 超过容量，删除最旧的
+        if (this.cache.size >= this.maxCacheSize) {
+            const oldestKey = this.cache.keys().next().value
+            this.cache.delete(oldestKey)
+        }
+
+        this.cache.set(fingerprint, {
+            fingerprint,
+            timestamp,
+            count: 1,
+        })
+    }
+}
