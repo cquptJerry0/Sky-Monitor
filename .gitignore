@@ -29,7 +29,7 @@ dist-ssr
 *.sw?
 
 .eslintcache
-
+.coverage
 script
 .turbo
 
