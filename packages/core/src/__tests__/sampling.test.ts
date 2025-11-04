@@ -81,19 +81,17 @@ describe('SamplingIntegration', () => {
             expect(result).toBeNull()
         })
 
-        it('应该正确识别不同类型的错误事件', () => {
+        it('应该正确识别错误事件类型', () => {
             const sampling = new SamplingIntegration({
                 errorSampleRate: 1.0,
                 performanceSampleRate: 0,
             })
 
-            const errorTypes = ['error', 'unhandledrejection', 'exception']
-
-            errorTypes.forEach(type => {
-                const event = createTestEvent({ type })
-                const result = sampling.beforeSend(event)
-                expect(result).toBeTruthy()
-            })
+            // 错误事件应该使用 errorSampleRate
+            const errorEvent = createTestEvent({ type: 'error' })
+            const result = sampling.beforeSend(errorEvent)
+            expect(result).toBeTruthy()
+            expect(result?._sampling?.rate).toBe(1.0)
         })
 
         it('应该正确识别不同类型的性能事件', () => {
@@ -148,14 +146,14 @@ describe('SamplingIntegration', () => {
             const monitoring = new Monitoring()
             const transport = new MockTransport()
 
-            monitoring
-                .addIntegration(
-                    new SamplingIntegration({
-                        errorSampleRate: 1.0,
-                        performanceSampleRate: 0,
-                    })
-                )
-                .init(transport)
+            monitoring.addIntegration(
+                new SamplingIntegration({
+                    errorSampleRate: 1.0,
+                    performanceSampleRate: 0,
+                })
+            )
+
+            await monitoring.init(transport)
 
             // 发送错误事件（应该通过）
             await monitoring.captureEvent(createTestEvent({ type: 'error' }))
@@ -187,7 +185,7 @@ describe('SamplingIntegration', () => {
                 })
             )
 
-            monitoring.init(transport)
+            await monitoring.init(transport)
 
             await monitoring.captureEvent(createTestEvent({ type: 'error' }))
 

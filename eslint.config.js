@@ -29,7 +29,7 @@ module.exports = tseslint.config({
         'react-refresh': reactRefresh,
     },
     rules: {
-        'prettier/prettier': ['error', {}, { usePrettierrc: true }],
+        'prettier/prettier': ['warn', {}, { usePrettierrc: true }],
         'simple-import-sort/imports': 'off',
         'prefer-const': 'off',
         '@typescript-eslint/no-explicit-any': 'off',

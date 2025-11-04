@@ -1,3 +1,4 @@
+import { BullModule } from '@nestjs/bull'
 import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { TypeOrmModule } from '@nestjs/typeorm'
@@ -17,6 +18,12 @@ import { VersionModule } from './modules/version/version.module'
                 return config.get('database')
             },
             inject: [ConfigService],
+        }),
+        BullModule.forRoot({
+            redis: {
+                host: 'localhost',
+                port: 6379,
+            },
         }),
         VersionModule,
         MonitoringModule,

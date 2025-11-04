@@ -22,9 +22,9 @@
         "noUncheckedIndexedAccess": true,
         "baseUrl": ".",
         "paths": {
-            "@sky-monitor/monitor-sdk-core": ["packages/core/build/esm/index.js"],
-            "@sky-monitor/monitor-sdk-browser-utils": ["packages/browser-utils/build/esm/index.js"],
-            "@sky-monitor/monitor-sdk-browser": ["packages/browser/build/esm/index.js"]
+            "@sky-monitor/monitor-sdk-core": ["packages/core/src/index.ts"],
+            "@sky-monitor/monitor-sdk-browser-utils": ["packages/browser-utils/src/index.ts"],
+            "@sky-monitor/monitor-sdk-browser": ["packages/browser/src/index.ts"]
         }
     }
 }

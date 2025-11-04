@@ -1,6 +1,8 @@
+import { InjectQueue } from '@nestjs/bull'
 import { ClickHouseClient } from '@clickhouse/client'
 import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
+import { Queue } from 'bull'
 import { Repository } from 'typeorm'
 
 import { ApplicationEntity } from '../../entities/application.entity'
@@ -13,7 +15,8 @@ export class MonitoringService {
     constructor(
         @Inject('CLICKHOUSE_CLIENT') private clickhouseClient: ClickHouseClient,
         @InjectRepository(ApplicationEntity)
-        private readonly applicationRepository: Repository<ApplicationEntity>
+        private readonly applicationRepository: Repository<ApplicationEntity>,
+        @InjectQueue('sourcemap-parser') private parseQueue: Queue
     ) {}
 
     private formatTimestamp(date: Date): string {
@@ -28,7 +31,9 @@ export class MonitoringService {
 
     async receiveEvent(appId: string, event: MonitoringEventDto, userAgent?: string) {
         try {
+            const eventId = this.generateEventId()
             const eventData = {
+                id: eventId,
                 app_id: appId,
                 event_type: event.type,
                 event_name: event.name || '',
@@ -36,11 +41,47 @@ export class MonitoringService {
                     value: event.value,
                     message: event.message,
                     event: event.event,
+                    stack: event.stack,
+                    release: event.release,
                     ...event,
                 }),
                 path: event.path || '',
                 user_agent: userAgent || event.userAgent || '',
                 timestamp: this.formatTimestamp(new Date()),
+
+                // 错误相关字段
+                error_message: event.message || '',
+                error_stack: event.stack || '',
+                error_lineno: event.lineno || 0,
+                error_colno: event.colno || 0,
+                error_fingerprint: event.errorFingerprint?.hash || '',
+
+                // 设备信息
+                device_browser: event.device?.browser || '',
+                device_browser_version: event.device?.browserVersion || '',
+                device_os: event.device?.os || '',
+                device_os_version: event.device?.osVersion || '',
+                device_type: event.device?.deviceType || '',
+                device_screen: event.device?.screenResolution || '',
+
+                // 网络信息
+                network_type: event.network?.effectiveType || '',
+                network_rtt: event.network?.rtt || 0,
+
+                // 框架信息
+                framework: event.framework || '',
+                component_name: event.vueError?.componentName || event.reactError?.componentName || '',
+                component_stack: event.vueError?.componentHierarchy?.join(' > ') || event.reactError?.componentStack || '',
+
+                // HTTP 错误
+                http_url: event.httpError?.url || '',
+                http_method: event.httpError?.method || '',
+                http_status: event.httpError?.status || 0,
+                http_duration: event.httpError?.duration || 0,
+
+                // 资源错误
+                resource_url: event.resourceError?.url || '',
+                resource_type: event.resourceError?.resourceType || '',
             }
 
             await this.clickhouseClient.insert({
@@ -51,11 +92,29 @@ export class MonitoringService {
 
             this.logger.log(`Event received for app: ${appId}, type: ${event.type}`)
 
+            if (event.stack && event.release && this.isErrorEvent(event.type)) {
+                await this.parseQueue.add('parse-stack', {
+                    eventId,
+                    stack: event.stack,
+                    release: event.release,
+                    appId,
+                })
+                this.logger.log(`Stack parsing queued for event: ${eventId}`)
+            }
+
             return { success: true, message: 'Event recorded' }
         } catch (error) {
             this.logger.error(`Failed to record event: ${error.message}`, error.stack)
             throw error
         }
+    }
+
+    private generateEventId(): string {
+        return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    }
+
+    private isErrorEvent(type: string): boolean {
+        return ['error', 'exception', 'unhandledrejection'].includes(type)
     }
 
     async receiveBatchEvents(appId: string, events: MonitoringEventDto[], userAgent?: string) {
@@ -74,6 +133,40 @@ export class MonitoringService {
                 path: event.path || '',
                 user_agent: userAgent || event.userAgent || '',
                 timestamp: this.formatTimestamp(now),
+
+                // 错误相关字段
+                error_message: event.message || '',
+                error_stack: event.stack || '',
+                error_lineno: event.lineno || 0,
+                error_colno: event.colno || 0,
+                error_fingerprint: event.errorFingerprint?.hash || '',
+
+                // 设备信息
+                device_browser: event.device?.browser || '',
+                device_browser_version: event.device?.browserVersion || '',
+                device_os: event.device?.os || '',
+                device_os_version: event.device?.osVersion || '',
+                device_type: event.device?.deviceType || '',
+                device_screen: event.device?.screenResolution || '',
+
+                // 网络信息
+                network_type: event.network?.effectiveType || '',
+                network_rtt: event.network?.rtt || 0,
+
+                // 框架信息
+                framework: event.framework || '',
+                component_name: event.vueError?.componentName || event.reactError?.componentName || '',
+                component_stack: event.vueError?.componentHierarchy?.join(' > ') || event.reactError?.componentStack || '',
+
+                // HTTP 错误
+                http_url: event.httpError?.url || '',
+                http_method: event.httpError?.method || '',
+                http_status: event.httpError?.status || 0,
+                http_duration: event.httpError?.duration || 0,
+
+                // 资源错误
+                resource_url: event.resourceError?.url || '',
+                resource_type: event.resourceError?.resourceType || '',
             }))
 
             await this.clickhouseClient.insert({

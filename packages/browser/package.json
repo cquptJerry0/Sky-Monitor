@@ -25,7 +25,12 @@
         "build:transpile": "tsup",
         "build:types": "tsc -p tsconfig.types.json",
         "clean": "rimraf build",
-        "typecheck": "tsc --noEmit"
+        "typecheck": "tsc --noEmit",
+        "test": "vitest",
+        "test:run": "vitest run",
+        "test:watch": "vitest watch",
+        "test:coverage": "vitest run --coverage",
+        "test:ui": "vitest --ui"
     },
     "keywords": [],
     "author": "",
@@ -34,5 +39,11 @@
     "dependencies": {
         "@sky-monitor/monitor-sdk-core": "workspace:*",
         "@sky-monitor/monitor-sdk-browser-utils": "workspace:*"
+    },
+    "devDependencies": {
+        "vitest": "^1.0.0",
+        "@vitest/ui": "^1.0.0",
+        "@vitest/coverage-v8": "^1.0.0",
+        "jsdom": "^24.0.0"
     }
 }

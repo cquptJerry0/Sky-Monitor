@@ -1,3 +1,4 @@
+import { BullModule } from '@nestjs/bull'
 import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { TypeOrmModule } from '@nestjs/typeorm'
@@ -9,6 +10,7 @@ import { ApplicationModule } from './modules/application/application.module'
 import { AuthModule } from './modules/auth/auth.module'
 import { EventsModule } from './modules/events/events.module'
 import { HealthModule } from './modules/health/health.module'
+import { SourceMapModule } from './modules/sourcemap/sourcemap.module'
 import { VersionModule } from './modules/version/version.module'
 
 @Module({
@@ -21,6 +23,12 @@ import { VersionModule } from './modules/version/version.module'
             },
             inject: [ConfigService],
         }),
+        BullModule.forRoot({
+            redis: {
+                host: 'localhost',
+                port: 6379,
+            },
+        }),
         ClickhouseModule.forRoot({
             url: 'http://localhost:8123',
             username: 'default',
@@ -31,6 +39,7 @@ import { VersionModule } from './modules/version/version.module'
         EventsModule,
         HealthModule,
         ApplicationModule,
+        SourceMapModule,
     ],
     providers: [],
 })

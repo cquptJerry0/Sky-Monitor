@@ -7,5 +7,9 @@ export default defineConfig({
     },
     build: {
         outDir: 'dist',
+        sourcemap: 'hidden',
+    },
+    define: {
+        __RELEASE__: JSON.stringify(process.env.RELEASE_VERSION || 'dev'),
     },
 })

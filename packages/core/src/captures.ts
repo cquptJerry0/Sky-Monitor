@@ -8,7 +8,7 @@ export function captureException(error: Error): void {
     const client = getCurrentClient()
     if (client) {
         client.captureEvent({
-            type: 'exception',
+            type: 'error',
             message: error.message,
             stack: error.stack,
             timestamp: new Date().toISOString(),

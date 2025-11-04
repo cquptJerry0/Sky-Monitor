@@ -67,7 +67,7 @@ export class SamplingIntegration implements Integration {
      */
     private getSampleRate(event: MonitoringEvent): number {
         // 错误类事件使用错误采样率
-        if (event.type === 'error' || event.type === 'unhandledrejection' || event.type === 'exception') {
+        if (event.type === 'error') {
             return this.config.errorSampleRate
         }
 

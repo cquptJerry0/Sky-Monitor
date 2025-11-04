@@ -18,29 +18,29 @@ class SamplingIntegration implements Integration {
 }
 
 describe('Integration Lifecycle', () => {
-    it('应该正确调用setupOnce', () => {
+    it('应该正确调用setupOnce', async () => {
         const integration = new MockIntegration()
         const monitoring = new Monitoring()
         const transport = new MockTransport()
 
         monitoring.addIntegration(integration)
-        monitoring.init(transport)
+        await monitoring.init(transport)
 
         expect(integration.setupOnceCalled).toBe(1)
     })
 
-    it('应该正确调用init', () => {
+    it('应该正确调用init', async () => {
         const integration = new MockIntegration()
         const monitoring = new Monitoring()
         const transport = new MockTransport()
 
         monitoring.addIntegration(integration)
-        monitoring.init(transport)
+        await monitoring.init(transport)
 
         expect(integration.initCalled).toBe(1)
     })
 
-    it('setupOnce应该只执行一次', () => {
+    it('setupOnce应该只执行一次', async () => {
         const integration = new MockIntegration()
         const setupOnceSpy = vi.fn()
         integration.setupOnce = setupOnceSpy
@@ -49,8 +49,8 @@ describe('Integration Lifecycle', () => {
         const transport = new MockTransport()
 
         monitoring.addIntegration(integration)
-        monitoring.init(transport)
-        monitoring.init(transport) // 第二次调用
+        await monitoring.init(transport)
+        await monitoring.init(transport) // 第二次调用
 
         expect(setupOnceSpy).toHaveBeenCalledTimes(1)
     })
@@ -61,7 +61,7 @@ describe('Integration Lifecycle', () => {
         const transport = new MockTransport()
 
         monitoring.addIntegration(integration)
-        monitoring.init(transport)
+        await monitoring.init(transport)
 
         await monitoring.captureEvent(createTestEvent({ message: 'hello' }))
 
@@ -75,7 +75,7 @@ describe('Integration Lifecycle', () => {
         const transport = new MockTransport()
 
         monitoring.addIntegration(sampling)
-        monitoring.init(transport)
+        await monitoring.init(transport)
 
         // 这个应该被丢弃
         await monitoring.captureEvent(createTestEvent({ message: 'should be dropped' }))
@@ -100,7 +100,7 @@ describe('Integration Lifecycle', () => {
         const transport = new MockTransport()
 
         monitoring.addIntegration(integration1).addIntegration(integration2)
-        monitoring.init(transport)
+        await monitoring.init(transport)
 
         await monitoring.captureEvent(createTestEvent({ count: 0 }))
 
