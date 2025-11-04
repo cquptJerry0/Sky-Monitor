@@ -5,6 +5,8 @@
         "module": "esnext",
         "types": ["node"],
         "lib": ["dom", "es6"],
-        "jsx": "react"
+        "jsx": "react",
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true
     }
 }

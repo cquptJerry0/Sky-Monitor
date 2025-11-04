@@ -73,7 +73,7 @@ export class SessionIntegration implements Integration {
         this.session.lastActivityTime = now
         this.session.eventCount++
 
-        if (event.type === 'error' || event.type === 'exception' || event.type === 'unhandledrejection') {
+        if (event.type === 'error') {
             this.session.errorCount++
         }
 

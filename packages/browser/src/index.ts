@@ -7,13 +7,24 @@ import { BatchedTransport } from './transport/batched'
 
 export { Metrics } from '@sky-monitor/monitor-sdk-browser-utils'
 export { Errors } from './tracing/errorsIntegration'
-export { SamplingIntegration, setUser, setTag, addBreadcrumb, configureScope } from '@sky-monitor/monitor-sdk-core'
-export type { SamplingConfig, Breadcrumb, User, Scope } from '@sky-monitor/monitor-sdk-core'
+export {
+    SamplingIntegration,
+    DeduplicationIntegration,
+    setUser,
+    setTag,
+    addBreadcrumb,
+    configureScope,
+} from '@sky-monitor/monitor-sdk-core'
+export type { SamplingConfig, DeduplicationConfig, Breadcrumb, User, Scope } from '@sky-monitor/monitor-sdk-core'
 export type { ErrorsOptions } from './tracing/errorsIntegration'
 export { HttpErrorIntegration } from './integrations/httpErrorIntegration'
 export type { HttpErrorIntegrationOptions } from './integrations/httpErrorIntegration'
 export { ResourceErrorIntegration } from './integrations/resourceErrorIntegration'
 export type { ResourceErrorIntegrationOptions } from './integrations/resourceErrorIntegration'
+export { SessionIntegration } from './integrations/session'
+export type { SessionConfig } from './integrations/session'
+export { PerformanceIntegration } from './tracing/performanceIntegration'
+export type { PerformanceConfig } from './tracing/performanceIntegration'
 export { BatchedTransport } from './transport/batched'
 export type { BatchedTransportOptions } from './transport/batched'
 

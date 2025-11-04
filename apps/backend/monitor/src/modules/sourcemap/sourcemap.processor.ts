@@ -42,7 +42,7 @@ export class SourceMapProcessor {
             `
 
             const result = await this.clickhouseClient.query({ query })
-            const data = await result.json()
+            const data = (await result.json()) as { data: Array<{ event_data: string }> }
 
             if (data.data && data.data.length > 0) {
                 const eventData = JSON.parse(data.data[0].event_data)

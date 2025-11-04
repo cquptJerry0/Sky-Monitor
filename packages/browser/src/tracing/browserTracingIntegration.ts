@@ -1,4 +1,4 @@
-import { captureConsoleIntegration, captureMessage } from '@sky-monitor/monitor-sdk-core'
+import { captureMessage } from '@sky-monitor/monitor-sdk-core'
 
 export const browserTracingIntegration = () => {
     /**
@@ -8,7 +8,7 @@ export const browserTracingIntegration = () => {
     return {
         name: 'browserTracingIntegration',
         setupOnce() {
-            captureConsoleIntegration()
+            // TODO: 实现浏览器追踪逻辑
         },
     }
 }

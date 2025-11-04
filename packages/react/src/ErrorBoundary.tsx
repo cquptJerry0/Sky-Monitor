@@ -1,4 +1,4 @@
-import { Component, ErrorInfo, ReactNode } from 'react'
+import React, { Component, ErrorInfo, ReactNode } from 'react'
 import { captureEvent } from '@sky-monitor/monitor-sdk-core'
 import type { DeviceInfo, NetworkInfo } from '@sky-monitor/monitor-sdk-browser'
 import { collectDeviceInfo, collectNetworkInfo, generateErrorFingerprint } from '@sky-monitor/monitor-sdk-browser'

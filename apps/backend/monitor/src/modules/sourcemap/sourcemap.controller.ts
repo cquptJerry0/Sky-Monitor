@@ -13,7 +13,7 @@ export class SourceMapController {
     @ApiOperation({ summary: 'Upload source map file' })
     @UseInterceptors(FileInterceptor('file'))
     async upload(
-        @UploadedFile() file: Express.Multer.File,
+        @UploadedFile() file: any,
         @Body('release') release: string,
         @Body('appId') appId: string,
         @Body('urlPrefix') urlPrefix?: string

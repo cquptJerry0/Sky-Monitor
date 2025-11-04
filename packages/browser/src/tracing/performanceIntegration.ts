@@ -74,20 +74,24 @@ export class PerformanceIntegration implements Integration {
         this.originalFetch = window.fetch
         const originalFetch = this.originalFetch
 
-        window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
+        const handleResponse = this.handleResponse.bind(this)
+        const handleError = this.handleError.bind(this)
+
+        window.fetch = function (input: any, init?: RequestInit): Promise<Response> {
             const url = typeof input === 'string' ? input : input instanceof Request ? input.url : String(input)
             const method = init?.method?.toUpperCase() || 'GET'
             const startTime = performance.now()
 
             const request = { url, method, startTime }
 
-            return originalFetch(input, init)
-                .then(response => {
-                    this.handleResponse(request, response.status, response.ok)
+            return originalFetch
+                .call(this, input, init)
+                .then((response: Response) => {
+                    handleResponse(request, response.status, response.ok)
                     return response
                 })
-                .catch(error => {
-                    this.handleError(request, error)
+                .catch((error: Error) => {
+                    handleError(request, error)
                     throw error
                 })
         }

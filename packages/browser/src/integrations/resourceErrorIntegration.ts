@@ -49,7 +49,7 @@ export class ResourceErrorIntegration implements Integration {
     private handleResourceError(event: ErrorEvent | Event): void {
         // 只处理真正的资源加载错误
         const target = event.target as HTMLElement | null
-        if (!target || target === window) {
+        if (!target || target === (window as any)) {
             return
         }
 
@@ -83,9 +83,8 @@ export class ResourceErrorIntegration implements Integration {
         }
 
         const resourceEvent: BrowserErrorEvent = {
-            type: 'resourceError',
+            type: 'error',
             message: `Failed to load ${tagName}: ${url}`,
-            path: window.location.pathname,
             timestamp: new Date().toISOString(),
             errorFingerprint: fingerprint,
             resourceError: {

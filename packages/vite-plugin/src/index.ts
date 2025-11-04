@@ -1,4 +1,5 @@
 import type { Plugin } from 'vite'
+import type { IncomingMessage } from 'http'
 import fs from 'fs'
 import path from 'path'
 import FormData from 'form-data'
@@ -123,11 +124,11 @@ async function uploadSourceMap(
             },
         }
 
-        const req = httpModule.request(requestOptions, res => {
+        const req = httpModule.request(requestOptions, (res: IncomingMessage) => {
             let data = ''
 
-            res.on('data', chunk => {
-                data += chunk
+            res.on('data', (chunk: Buffer) => {
+                data += chunk.toString()
             })
 
             res.on('end', () => {
@@ -140,7 +141,7 @@ async function uploadSourceMap(
             })
         })
 
-        req.on('error', error => {
+        req.on('error', (error: Error) => {
             reject(error)
         })
 

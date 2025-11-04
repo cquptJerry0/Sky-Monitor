@@ -4,7 +4,8 @@ export type { SamplingConfig, SamplingMetadata } from './integrations/sampling'
 export { DeduplicationIntegration } from './integrations/deduplication'
 export type { DeduplicationConfig } from './integrations/deduplication'
 
-export { Integration, isErrorEvent, isPerformanceEvent } from './types'
+export type { Integration } from './types'
+export { isErrorEvent, isPerformanceEvent } from './types'
 export type {
     MonitoringEvent,
     MonitoringOptions,
@@ -21,7 +22,8 @@ export type {
     EventType,
 } from './types'
 
-export { Transport, BaseTransport, TransportCallbacks } from './transport'
+export type { Transport, TransportCallbacks } from './transport'
+export { BaseTransport } from './transport'
 
 export { Monitoring, getCurrentClient } from './baseClient'
 

@@ -77,7 +77,6 @@ export class Errors implements Integration {
             lineno,
             colno,
             stack: error ? enhanceStack(error) : undefined,
-            path: window.location.pathname,
             timestamp: new Date().toISOString(),
             errorFingerprint: fingerprint,
             device: this.deviceInfo,
@@ -104,10 +103,9 @@ export class Errors implements Integration {
         }
 
         const errorEvent: BrowserErrorEvent = {
-            type: 'unhandledrejection',
+            type: 'error',
             message,
             stack: reason?.stack || error.stack,
-            path: window.location.pathname,
             timestamp: new Date().toISOString(),
             errorFingerprint: fingerprint,
             device: this.deviceInfo,
@@ -123,7 +121,7 @@ export class Errors implements Integration {
     private handleResourceError(event: ErrorEvent | Event): void {
         // 只处理真正的资源加载错误
         const target = event.target as HTMLElement | null
-        if (!target || target === window) {
+        if (!target || target === (window as any)) {
             return
         }
 
@@ -144,9 +142,8 @@ export class Errors implements Integration {
         }
 
         const resourceEvent: BrowserErrorEvent = {
-            type: 'resourceError',
+            type: 'error',
             message: `Failed to load ${tagName}: ${url}`,
-            path: window.location.pathname,
             timestamp: new Date().toISOString(),
             errorFingerprint: fingerprint,
             resourceError: {

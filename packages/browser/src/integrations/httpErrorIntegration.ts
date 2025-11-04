@@ -77,7 +77,7 @@ export class HttpErrorIntegration implements Integration {
 
         window.fetch = (...args: Parameters<typeof fetch>): Promise<Response> => {
             const startTime = Date.now()
-            const url = typeof args[0] === 'string' ? args[0] : args[0].url
+            const url = typeof args[0] === 'string' ? args[0] : args[0] instanceof Request ? args[0].url : String(args[0])
             const options = args[1] || {}
             const method = options.method || 'GET'
 
@@ -301,9 +301,8 @@ export class HttpErrorIntegration implements Integration {
         }
 
         const event: BrowserErrorEvent = {
-            type: 'httpError',
+            type: 'error',
             message: `HTTP ${status} ${statusText}: ${method} ${url}`,
-            path: window.location.pathname,
             timestamp: new Date().toISOString(),
             errorFingerprint: fingerprint,
             httpError: {

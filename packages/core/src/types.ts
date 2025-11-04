@@ -69,6 +69,7 @@ export interface PerformanceEvent extends BaseEvent {
     value?: number
     metrics?: Record<string, number>
     duration?: number
+    path?: string
     // HTTP 性能相关字段
     category?: string
     url?: string

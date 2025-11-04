@@ -288,13 +288,6 @@ export class MonitoringEventDto {
     @IsString()
     @IsOptional()
     release?: string
-
-    /**
-     * 错误堆栈信息
-     */
-    @IsString()
-    @IsOptional()
-    stack?: string
 }
 
 /**
