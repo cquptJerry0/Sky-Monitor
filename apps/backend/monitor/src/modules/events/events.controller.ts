@@ -126,4 +126,155 @@ export class EventsController {
             data: summary,
         }
     }
+
+    /**
+     * 获取会话列表
+     * GET /api/events/sessions
+     */
+    @Get('sessions/list')
+    @ApiOperation({ summary: '获取会话列表' })
+    @ApiQuery({ name: 'appId', required: true })
+    @ApiQuery({ name: 'limit', required: false })
+    @ApiQuery({ name: 'offset', required: false })
+    async getSessions(
+        @Query('appId') appId: string,
+        @Query('limit') limit?: string,
+        @Query('offset') offset?: string,
+        @Request() req?: any
+    ) {
+        // 验证权限
+        await this.validateUserOwnsApp(appId, req.user.id)
+
+        const result = await this.eventsService.getSessions({
+            appId,
+            limit: limit ? parseInt(limit, 10) : undefined,
+            offset: offset ? parseInt(offset, 10) : undefined,
+        })
+
+        return {
+            success: true,
+            data: result,
+        }
+    }
+
+    /**
+     * 按会话ID查询事件
+     * GET /api/events/sessions/:sessionId
+     */
+    @Get('sessions/:sessionId')
+    @ApiOperation({ summary: '按会话ID查询事件' })
+    async getEventsBySession(@Param('sessionId') sessionId: string, @Query('appId') appId: string, @Request() req?: any) {
+        // 验证权限
+        if (appId) {
+            await this.validateUserOwnsApp(appId, req.user.id)
+        }
+
+        const result = await this.eventsService.getEventsBySession(sessionId)
+
+        return {
+            success: true,
+            data: result,
+        }
+    }
+
+    /**
+     * 获取慢请求列表
+     * GET /api/events/performance/slow-requests
+     */
+    @Get('performance/slow-requests')
+    @ApiOperation({ summary: '获取慢请求列表' })
+    @ApiQuery({ name: 'appId', required: true })
+    @ApiQuery({ name: 'threshold', required: false, description: '慢请求阈值(ms)，默认3000' })
+    @ApiQuery({ name: 'limit', required: false })
+    async getSlowRequests(
+        @Query('appId') appId: string,
+        @Query('threshold') threshold?: string,
+        @Query('limit') limit?: string,
+        @Request() req?: any
+    ) {
+        // 验证权限
+        await this.validateUserOwnsApp(appId, req.user.id)
+
+        const result = await this.eventsService.getSlowRequests({
+            appId,
+            threshold: threshold ? parseInt(threshold, 10) : undefined,
+            limit: limit ? parseInt(limit, 10) : undefined,
+        })
+
+        return {
+            success: true,
+            data: result,
+        }
+    }
+
+    /**
+     * 获取错误聚合（按指纹分组）
+     * GET /api/events/errors/groups
+     */
+    @Get('errors/groups')
+    @ApiOperation({ summary: '获取错误聚合（按指纹分组）' })
+    @ApiQuery({ name: 'appId', required: true })
+    @ApiQuery({ name: 'limit', required: false })
+    async getErrorGroups(@Query('appId') appId: string, @Query('limit') limit?: string, @Request() req?: any) {
+        // 验证权限
+        await this.validateUserOwnsApp(appId, req.user.id)
+
+        const result = await this.eventsService.getErrorGroups({
+            appId,
+            limit: limit ? parseInt(limit, 10) : undefined,
+        })
+
+        return {
+            success: true,
+            data: result,
+        }
+    }
+
+    /**
+     * 按用户查询事件
+     * GET /api/events/users/:userId
+     */
+    @Get('users/:userId')
+    @ApiOperation({ summary: '按用户查询事件' })
+    @ApiQuery({ name: 'appId', required: true })
+    @ApiQuery({ name: 'limit', required: false })
+    async getUserEvents(
+        @Param('userId') userId: string,
+        @Query('appId') appId: string,
+        @Query('limit') limit?: string,
+        @Request() req?: any
+    ) {
+        // 验证权限
+        await this.validateUserOwnsApp(appId, req.user.id)
+
+        const result = await this.eventsService.getUserEvents({
+            userId,
+            appId,
+            limit: limit ? parseInt(limit, 10) : undefined,
+        })
+
+        return {
+            success: true,
+            data: result,
+        }
+    }
+
+    /**
+     * 获取采样率统计
+     * GET /api/events/stats/sampling
+     */
+    @Get('stats/sampling')
+    @ApiOperation({ summary: '获取采样率统计' })
+    @ApiQuery({ name: 'appId', required: true })
+    async getSamplingStats(@Query('appId') appId: string, @Request() req?: any) {
+        // 验证权限
+        await this.validateUserOwnsApp(appId, req.user.id)
+
+        const result = await this.eventsService.getSamplingStats(appId)
+
+        return {
+            success: true,
+            data: result,
+        }
+    }
 }

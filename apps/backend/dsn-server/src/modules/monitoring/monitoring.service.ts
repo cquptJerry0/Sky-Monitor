@@ -82,6 +82,44 @@ export class MonitoringService {
                 // 资源错误
                 resource_url: event.resourceError?.url || '',
                 resource_type: event.resourceError?.resourceType || '',
+
+                // Session 会话追踪
+                session_id: event.sessionId || '',
+                session_start_time: event._session?.startTime || 0,
+                session_duration: event._session?.duration || 0,
+                session_event_count: event._session?.eventCount || 0,
+                session_error_count: event._session?.errorCount || 0,
+                session_page_views: event._session?.pageViews || 0,
+
+                // User 用户信息
+                user_id: event.user?.id || '',
+                user_email: event.user?.email || '',
+                user_username: event.user?.username || '',
+                user_ip: event.user?.ip_address || '',
+
+                // Scope 上下文（JSON 序列化）
+                tags: event.tags ? JSON.stringify(event.tags) : '',
+                extra: event.extra ? JSON.stringify(event.extra) : '',
+                breadcrumbs: event.breadcrumbs ? JSON.stringify(event.breadcrumbs) : '',
+                contexts: event.contexts ? JSON.stringify(event.contexts) : '',
+
+                // Event Level & Environment
+                event_level: event.level || '',
+                environment: event.environment || '',
+
+                // Performance 性能
+                perf_category: event.category || '',
+                perf_value: typeof event.value === 'number' ? event.value : 0,
+                perf_is_slow: event.isSlow ? 1 : 0,
+                perf_success: event.success !== false ? 1 : 0,
+                perf_metrics: event.metrics ? JSON.stringify(event.metrics) : '',
+
+                // Deduplication 去重
+                dedup_count: event._deduplication?.count || 1,
+
+                // Sampling 采样
+                sampling_rate: event._sampling?.rate || 1.0,
+                sampling_sampled: event._sampling?.sampled !== false ? 1 : 0,
             }
 
             await this.clickhouseClient.insert({
@@ -167,6 +205,44 @@ export class MonitoringService {
                 // 资源错误
                 resource_url: event.resourceError?.url || '',
                 resource_type: event.resourceError?.resourceType || '',
+
+                // Session 会话追踪
+                session_id: event.sessionId || '',
+                session_start_time: event._session?.startTime || 0,
+                session_duration: event._session?.duration || 0,
+                session_event_count: event._session?.eventCount || 0,
+                session_error_count: event._session?.errorCount || 0,
+                session_page_views: event._session?.pageViews || 0,
+
+                // User 用户信息
+                user_id: event.user?.id || '',
+                user_email: event.user?.email || '',
+                user_username: event.user?.username || '',
+                user_ip: event.user?.ip_address || '',
+
+                // Scope 上下文（JSON 序列化）
+                tags: event.tags ? JSON.stringify(event.tags) : '',
+                extra: event.extra ? JSON.stringify(event.extra) : '',
+                breadcrumbs: event.breadcrumbs ? JSON.stringify(event.breadcrumbs) : '',
+                contexts: event.contexts ? JSON.stringify(event.contexts) : '',
+
+                // Event Level & Environment
+                event_level: event.level || '',
+                environment: event.environment || '',
+
+                // Performance 性能
+                perf_category: event.category || '',
+                perf_value: typeof event.value === 'number' ? event.value : 0,
+                perf_is_slow: event.isSlow ? 1 : 0,
+                perf_success: event.success !== false ? 1 : 0,
+                perf_metrics: event.metrics ? JSON.stringify(event.metrics) : '',
+
+                // Deduplication 去重
+                dedup_count: event._deduplication?.count || 1,
+
+                // Sampling 采样
+                sampling_rate: event._sampling?.rate || 1.0,
+                sampling_sampled: event._sampling?.sampled !== false ? 1 : 0,
             }))
 
             await this.clickhouseClient.insert({

@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsNumber, IsObject } from 'class-validator'
+import { IsOptional, IsString, IsNumber, IsObject, IsArray, IsBoolean } from 'class-validator'
 
 /**
  * 错误指纹 DTO
@@ -288,6 +288,136 @@ export class MonitoringEventDto {
     @IsString()
     @IsOptional()
     release?: string
+
+    /**
+     * Session 会话ID
+     */
+    @IsString()
+    @IsOptional()
+    sessionId?: string
+
+    /**
+     * Session 会话元数据
+     */
+    @IsObject()
+    @IsOptional()
+    _session?: {
+        startTime: number
+        duration: number
+        eventCount: number
+        errorCount: number
+        pageViews: number
+    }
+
+    /**
+     * 用户信息
+     */
+    @IsObject()
+    @IsOptional()
+    user?: {
+        id?: string
+        email?: string
+        username?: string
+        ip_address?: string
+        [key: string]: unknown
+    }
+
+    /**
+     * 标签（用于分类和过滤）
+     */
+    @IsObject()
+    @IsOptional()
+    tags?: Record<string, string>
+
+    /**
+     * 额外数据
+     */
+    @IsObject()
+    @IsOptional()
+    extra?: Record<string, unknown>
+
+    /**
+     * 面包屑（用户操作历史）
+     */
+    @IsArray()
+    @IsOptional()
+    breadcrumbs?: Array<{
+        message: string
+        level?: string
+        category?: string
+        timestamp?: number
+        data?: Record<string, unknown>
+    }>
+
+    /**
+     * 自定义上下文
+     */
+    @IsObject()
+    @IsOptional()
+    contexts?: Record<string, Record<string, unknown> | null>
+
+    /**
+     * 事件级别
+     */
+    @IsString()
+    @IsOptional()
+    level?: string
+
+    /**
+     * 环境
+     */
+    @IsString()
+    @IsOptional()
+    environment?: string
+
+    /**
+     * 性能分类
+     */
+    @IsString()
+    @IsOptional()
+    category?: string
+
+    /**
+     * 性能指标值
+     */
+    @IsNumber()
+    @IsOptional()
+    metrics?: Record<string, number>
+
+    /**
+     * 是否为慢请求
+     */
+    @IsBoolean()
+    @IsOptional()
+    isSlow?: boolean
+
+    /**
+     * 请求是否成功
+     */
+    @IsBoolean()
+    @IsOptional()
+    success?: boolean
+
+    /**
+     * Deduplication 去重元数据
+     */
+    @IsObject()
+    @IsOptional()
+    _deduplication?: {
+        fingerprint: string
+        count: number
+    }
+
+    /**
+     * Sampling 采样元数据
+     */
+    @IsObject()
+    @IsOptional()
+    _sampling?: {
+        rate: number
+        sampled: boolean
+        timestamp: number
+    }
 }
 
 /**

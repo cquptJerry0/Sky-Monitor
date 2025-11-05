@@ -29,11 +29,8 @@ dist-ssr
 *.sw?
 
 .eslintcache
-<<<<<<< HEAD
 .coverage
-=======
 .curosr
->>>>>>> feature/sdk-core-archiecture
 script
 .turbo
 
