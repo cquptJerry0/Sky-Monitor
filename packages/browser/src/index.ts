@@ -23,8 +23,8 @@ export { ResourceErrorIntegration } from './integrations/resourceErrorIntegratio
 export type { ResourceErrorIntegrationOptions } from './integrations/resourceErrorIntegration'
 export { SessionIntegration } from './integrations/session'
 export type { SessionConfig } from './integrations/session'
-export { BreadcrumbIntegration } from './integrations/breadcrumb'
-export type { BreadcrumbOptions } from './integrations/breadcrumb'
+export { SessionReplayIntegration } from './integrations/sessionReplay'
+export type { SessionReplayConfig } from './integrations/sessionReplay'
 export { PerformanceIntegration } from './tracing/performanceIntegration'
 export type { PerformanceConfig } from './tracing/performanceIntegration'
 export { BatchedTransport } from './transport/batched'
@@ -39,6 +39,7 @@ export type {
     ResourceErrorDetails,
     BrowserErrorEvent,
 } from './types/errorTypes'
+export type { ReplayData } from '@sky-monitor/monitor-sdk-core'
 
 // 导出工具函数
 export { collectDeviceInfo, collectNetworkInfo } from './utils/deviceInfo'
@@ -80,7 +81,7 @@ export async function init(options: {
 /**
  * 使用示例：
  *
- * import { init, Errors, Metrics, SamplingIntegration, setUser, setTag, addBreadcrumb } from '@sky-monitor/monitor-sdk-browser'
+ * import { init, Errors, Metrics, SamplingIntegration, SessionReplayIntegration, setUser, setTag, addBreadcrumb } from '@sky-monitor/monitor-sdk-browser'
  * import { captureException } from '@sky-monitor/monitor-sdk-core'
  *
  * const monitoring = init({
@@ -91,7 +92,14 @@ export async function init(options: {
  *            errorSampleRate: 1.0,
  *            performanceSampleRate: 0.3
  *        }),
- *        new Metrics()
+ *        new Metrics(),
+ *        new SessionReplayIntegration({
+ *            mode: 'onError',           // 错误时录制（推荐）
+ *            maxBufferDuration: 60,     // 保留最近60秒
+ *            postErrorDuration: 10,     // 错误后继续录制10秒
+ *            maskAllInputs: true,       // 遮罩所有输入
+ *            fps: 10                    // 10fps录制
+ *        })
  *    ],
  *    enableBatching: true,  // 默认true，启用批量传输
  *    batchSize: 20,         // 默认20，批次大小

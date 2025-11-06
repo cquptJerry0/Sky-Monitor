@@ -24,10 +24,12 @@ export class HttpErrorIntegration implements Integration {
     private options: Required<HttpErrorIntegrationOptions>
     private deviceInfo?: ReturnType<typeof collectDeviceInfo>
     private networkInfo?: ReturnType<typeof collectNetworkInfo>
+    private isSetup = false
 
     private originalFetch?: typeof fetch
     private originalXHROpen?: typeof XMLHttpRequest.prototype.open
     private originalXHRSend?: typeof XMLHttpRequest.prototype.send
+    private originalXHRSetRequestHeader?: typeof XMLHttpRequest.prototype.setRequestHeader
 
     constructor(options: HttpErrorIntegrationOptions = {}) {
         this.options = {
@@ -55,6 +57,12 @@ export class HttpErrorIntegration implements Integration {
      * 全局初始化
      */
     setupOnce(): void {
+        // 防止重复初始化
+        if (this.isSetup) {
+            return
+        }
+        this.isSetup = true
+
         // 收集设备和网络信息
         this.deviceInfo = collectDeviceInfo()
         this.networkInfo = collectNetworkInfo()
@@ -151,7 +159,8 @@ export class HttpErrorIntegration implements Integration {
         }
 
         // 保存原始的 setRequestHeader
-        const originalSetRequestHeader = XMLHttpRequest.prototype.setRequestHeader
+        this.originalXHRSetRequestHeader = XMLHttpRequest.prototype.setRequestHeader
+        const originalSetRequestHeader = this.originalXHRSetRequestHeader
         const captureHeaders = this.options.captureHeaders
         XMLHttpRequest.prototype.setRequestHeader = function (name: string, value: string) {
             const xhr = this as any
@@ -321,5 +330,35 @@ export class HttpErrorIntegration implements Integration {
         }
 
         captureEvent(event)
+    }
+
+    /**
+     * 清理资源
+     * 恢复被劫持的全局方法
+     */
+    cleanup(): void {
+        // 恢复 fetch
+        if (this.originalFetch && typeof window !== 'undefined') {
+            window.fetch = this.originalFetch
+            this.originalFetch = undefined
+        }
+
+        // 恢复 XMLHttpRequest 原型方法
+        if (this.originalXHROpen) {
+            XMLHttpRequest.prototype.open = this.originalXHROpen
+            this.originalXHROpen = undefined
+        }
+
+        if (this.originalXHRSend) {
+            XMLHttpRequest.prototype.send = this.originalXHRSend
+            this.originalXHRSend = undefined
+        }
+
+        if (this.originalXHRSetRequestHeader) {
+            XMLHttpRequest.prototype.setRequestHeader = this.originalXHRSetRequestHeader
+            this.originalXHRSetRequestHeader = undefined
+        }
+
+        this.isSetup = false
     }
 }

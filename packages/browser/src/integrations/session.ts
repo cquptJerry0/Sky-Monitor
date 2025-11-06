@@ -34,6 +34,11 @@ export class SessionIntegration implements Integration {
     private session: SessionData | null = null
     private readonly sessionTimeout: number
     private readonly storageKey: string
+    private isSetup = false
+
+    // 保存事件监听器引用，用于清理
+    private visibilityChangeHandler?: () => void
+    private beforeUnloadHandler?: () => void
 
     constructor(config: SessionConfig = {}) {
         this.sessionTimeout = config.sessionTimeout ?? 30 * 60 * 1000 // 30分钟
@@ -44,6 +49,12 @@ export class SessionIntegration implements Integration {
      * 初始化
      */
     setupOnce(): void {
+        // 防止重复初始化
+        if (this.isSetup) {
+            return
+        }
+        this.isSetup = true
+
         // 恢复或创建会话
         this.session = this.loadOrCreateSession()
 
@@ -169,12 +180,14 @@ export class SessionIntegration implements Integration {
     private setupVisibilityListener(): void {
         if (typeof document === 'undefined') return
 
-        document.addEventListener('visibilitychange', () => {
+        this.visibilityChangeHandler = () => {
             if (document.hidden && this.session) {
                 // 页面隐藏时保存会话
                 this.saveSession()
             }
-        })
+        }
+
+        document.addEventListener('visibilitychange', this.visibilityChangeHandler)
     }
 
     /**
@@ -183,11 +196,36 @@ export class SessionIntegration implements Integration {
     private setupUnloadListener(): void {
         if (typeof window === 'undefined') return
 
-        window.addEventListener('beforeunload', () => {
+        this.beforeUnloadHandler = () => {
             if (this.session) {
                 this.saveSession()
                 this.endSession()
             }
-        })
+        }
+
+        window.addEventListener('beforeunload', this.beforeUnloadHandler)
+    }
+
+    /**
+     * 清理资源
+     */
+    cleanup(): void {
+        // 保存当前会话
+        if (this.session) {
+            this.saveSession()
+        }
+
+        // 移除事件监听器
+        if (this.visibilityChangeHandler) {
+            document.removeEventListener('visibilitychange', this.visibilityChangeHandler)
+            this.visibilityChangeHandler = undefined
+        }
+
+        if (this.beforeUnloadHandler) {
+            window.removeEventListener('beforeunload', this.beforeUnloadHandler)
+            this.beforeUnloadHandler = undefined
+        }
+
+        this.isSetup = false
     }
 }
