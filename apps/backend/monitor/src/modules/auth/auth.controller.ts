@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Request, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Post, Request, UseGuards } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
 
 import { AuthService } from './auth.service'
@@ -18,10 +18,36 @@ export class AuthController {
         return { data: await this.authService.login(req.user), success: true }
     }
 
+    /**
+     * 刷新 access token
+     * @param body
+     * @returns
+     */
+    @Post('/auth/refresh')
+    async refreshToken(@Body('refresh_token') refreshToken: string) {
+        return { data: await this.authService.refreshToken(refreshToken), success: true }
+    }
+
+    /**
+     * 登出当前设备
+     * @param req
+     * @returns
+     */
     @UseGuards(AuthGuard('jwt'))
     @Post('/auth/logout')
-    async logout(/* @Request() req */) {
-        return { success: await this.authService.logout(/* req.user */) }
+    async logout(@Request() req) {
+        return await this.authService.logout(req.user.id, req.user.jti)
+    }
+
+    /**
+     * 登出所有设备
+     * @param req
+     * @returns
+     */
+    @UseGuards(AuthGuard('jwt'))
+    @Post('/auth/logout-all')
+    async logoutAll(@Request() req) {
+        return await this.authService.logoutAll(req.user.id)
     }
 
     /**

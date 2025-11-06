@@ -13,24 +13,58 @@ export class HealthController {
     ) {}
 
     /**
-     * 系统完整健康检查 - 包含应用状态和数据库状态
+     * 系统完整健康检查 - 包含应用状态和所有依赖服务状态
      */
     @Get()
     @ApiOperation({ summary: '系统完整健康检查' })
     async health() {
         const appHealth = await this.healthService.getSystemHealth()
-        const clickhouseHealthy = await this.clickhouseInitService.healthCheck()
+        const dependencies = await this.healthService.getAllDependenciesHealth()
         const tableStats = await this.clickhouseInitService.getTableStats()
 
+        // 计算整体健康状态
+        const allHealthy = dependencies.postgresql.connected && dependencies.redis.connected && dependencies.clickhouse.connected
+
         return {
-            success: true,
+            success: allHealthy,
+            status: allHealthy ? 'healthy' : 'degraded',
             application: appHealth,
-            database: {
+            dependencies: {
+                postgresql: dependencies.postgresql,
+                redis: dependencies.redis,
                 clickhouse: {
-                    connected: clickhouseHealthy,
+                    ...dependencies.clickhouse,
                     tableStats,
                 },
             },
+            timestamp: new Date().toISOString(),
+        }
+    }
+
+    /**
+     * 快速健康检查 - 仅检查应用状态
+     */
+    @Get('ping')
+    @ApiOperation({ summary: '快速健康检查' })
+    async ping() {
+        return {
+            success: true,
+            message: 'pong',
+            timestamp: new Date().toISOString(),
+        }
+    }
+
+    /**
+     * 详细依赖检查 - 检查所有依赖服务
+     */
+    @Get('dependencies')
+    @ApiOperation({ summary: '检查所有依赖服务状态' })
+    async dependencies() {
+        const dependencies = await this.healthService.getAllDependenciesHealth()
+
+        return {
+            success: true,
+            dependencies,
             timestamp: new Date().toISOString(),
         }
     }

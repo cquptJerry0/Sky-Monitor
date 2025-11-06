@@ -1,0 +1,388 @@
+---
+alwaysApply: false
+---
+明白了！你需要的是一个**从测试错误出发，系统分析后端代码问题**的 debug 思路。让我给你一份更实用的：
+
+---
+
+# DSN Server 测试失败 → 后端代码分析 Debug 流程
+
+## 🎯 核心思路：从错误现象反推代码问题
+
+### 第一步：读懂测试错误
+
+```bash
+cd apps/backend/dsn-server
+pnpm test:e2e
+
+# 记录3个关键信息：
+# 1. 测试用例名称：should retrieve recent events
+# 2. HTTP 状态码：expected 200 but got 404
+# 3. 请求路径：GET /monitoring/health/recent-events
+```
+
+---
+
+## 📊 错误分类 → 定位代码
+
+### Case 1: 404 Not Found
+
+**错误信号**：`expected 200 to be 404`
+
+#### 分析步骤：
+
+```bash
+# 1. 测试期望访问哪个端点？
+cat test/api.e2e.test.ts | grep -A3 "should retrieve recent events"
+# 找到：GET /monitoring/health/recent-events
+
+# 2. 这个端点在后端是否存在？
+grep -r "recent-events" src/modules --include="*.controller.ts"
+# 如果没有输出 → 端点不存在
+
+# 3. 确认 Controller 的路由结构
+cat src/modules/monitoring/monitoring-health.controller.ts | grep -E "@Controller|@Get"
+# 输出：
+# @Controller('monitoring')      ← 基础路径
+# @Get('health')                 ← /monitoring/health
+# @Get('health/diagnostics')     ← /monitoring/health/diagnostics
+# @Get('applications')           ← /monitoring/applications
+# ❌ 缺少 @Get('health/recent-events')
+
+# 4. 检查是否有对应的 Service 方法
+grep -r "getRecentEvents" src/modules/monitoring --include="*.service.ts"
+# 如果有 → Service 方法存在，只是 Controller 没有暴露
+
+# 5. 检查 main.ts 的全局前缀
+cat src/main.ts | grep setGlobalPrefix
+# app.setGlobalPrefix('api')
+# 所以完整路径是 /api/monitoring/health/recent-events
+```
+
+#### 解决方案：
+
+```typescript
+// src/modules/monitoring/monitoring-health.controller.ts
+// 添加缺失的端点
+
+@Get('health/recent-events')
+@ApiOperation({ summary: '获取最近的监控事件' })
+async getRecentEvents(@Query('limit') limit?: string) {
+    const parsedLimit = limit ? parseInt(limit) : 10
+    return await this.monitoringHealthService.getRecentEvents(parsedLimit)
+}
+```
+
+---
+
+### Case 2: 400 Bad Request
+
+**错误信号**：`expected 200 but got 400`，错误消息：`Invalid appId`
+
+#### 分析步骤：
+
+```bash
+# 1. 找到测试使用的 appId
+cat test/api.e2e.test.ts | grep "VALID_APP_ID"
+# const VALID_APP_ID = 'vanillaV9pEeA'
+
+# 2. 找到 appId 验证逻辑
+grep -r "validateAppId" src/modules --include="*.service.ts" -A 10
+# 找到 MonitoringService.validateAppId() 方法
+
+cat src/modules/monitoring/monitoring.service.ts | grep -A 20 "validateAppId"
+```
+
+#### 查看验证逻辑：
+
+```typescript
+async validateAppId(appId: string): Promise<boolean> {
+    try {
+        const app = await this.applicationRepository.findOne({
+            where: { appId },
+        })
+
+        if (!app) {
+            throw new BadRequestException(`Invalid appId: ${appId}...`)
+        }
+        // ↑ 这里抛出400错误
+        
+        return true
+    }
+}
+```
+
+#### 问题定位：
+
+```bash
+# 检查数据库中是否有这个 appId
+docker exec -i sky-monitor-postgres psql -U postgres -d postgres -c \
+  "SELECT * FROM application WHERE app_id = 'vanillaV9pEeA';"
+
+# 如果查询结果为空 → 测试数据未初始化
+# 解决：执行测试数据初始化脚本
+```
+
+---
+
+### Case 3: 500 Internal Server Error
+
+**错误信号**：`expected 200 but got 500`
+
+#### 分析步骤：
+
+```bash
+# 1. 看测试访问的端点
+cat test/api.e2e.test.ts | grep -B2 -A3 "expected.*500"
+
+# 2. 查看后端该端点的实现
+# 假设是 GET /tracking
+cat src/modules/version/version.controller.ts | grep -A5 "tracking"
+
+# 3. 查看 Service 实现
+cat src/modules/version/version.service.ts | grep -A20 "async tracking"
+```
+
+#### 查看可能出错的代码：
+
+```typescript
+async tracking(params: { event_type: string; message: string }) {
+    const res = await this.clickhouseClient.insert({
+        table: 'base_monitor_storage',  // ← 这个表可能不存在
+        values: params,
+        columns: ['event_type', 'message'],
+        format: 'JSONEachRow',
+    })
+}
+```
+
+#### 问题定位：
+
+```bash
+# 检查 ClickHouse 表是否存在
+docker exec -i sky-monitor-clickhouse clickhouse-client --query \
+  "SHOW TABLES LIKE 'base_monitor_storage';"
+
+# 如果表不存在：
+# 选项1：创建表（如果是核心功能）
+# 选项2：删除测试（如果不是核心功能）
+```
+
+---
+
+## 🔬 深入分析：代码层面定位
+
+### 检查点1：Controller 层
+
+```bash
+# 查看所有 Controller 定义
+find src/modules -name "*.controller.ts" -exec echo "=== {} ===" \; -exec cat {} \;
+
+# 关键检查：
+# 1. @Controller() 的路径参数
+# 2. @Get/@Post 的路径
+# 3. 方法参数 @Param/@Query/@Body 是否正确
+```
+
+**示例分析**：
+
+```typescript
+// ✅ 正确
+@Controller('monitoring')  // /api/monitoring
+class MonitoringController {
+    @Post(':appId')  // /api/monitoring/:appId
+    async receiveEvent(@Param('appId') appId: string) {}
+}
+
+// ❌ 错误：测试期望 /api/monitoring/health/recent-events
+@Controller('monitoring')
+class Controller {
+    @Get('recent-events')  // ❌ 实际是 /api/monitoring/recent-events
+    // 应该是 @Get('health/recent-events')
+}
+```
+
+### 检查点2：Service 层
+
+```bash
+# 查看 Service 的依赖注入
+cat src/modules/monitoring/monitoring.service.ts | grep -E "constructor|@Inject"
+
+# 关键检查：
+# 1. ClickHouseClient 是否正确注入
+# 2. Repository 是否正确注入
+# 3. Queue 是否正确注入
+```
+
+**示例分析**：
+
+```typescript
+constructor(
+    @Inject('CLICKHOUSE_CLIENT') private clickhouseClient: ClickHouseClient,
+    @InjectRepository(ApplicationEntity) private applicationRepository: Repository<ApplicationEntity>,
+    @InjectQueue('sourcemap-parser') private parseQueue: Queue
+) {}
+
+// 检查点：
+// 1. CLICKHOUSE_CLIENT 是否在 module 中提供？
+// 2. ApplicationEntity 是否在 TypeOrmModule.forFeature 中导入？
+// 3. sourcemap-parser 队列是否在 BullModule 中注册？
+```
+
+### 检查点3：Module 配置
+
+```bash
+# 查看 Module 的 imports
+cat src/modules/monitoring/monitoring.module.ts
+```
+
+**示例分析**：
+
+```typescript
+@Module({
+    imports: [
+        TypeOrmModule.forFeature([ApplicationEntity]),  // ← Repository 依赖
+        BullModule.registerQueue({ name: 'sourcemap-parser' }),  // ← Queue 依赖
+    ],
+    controllers: [MonitoringController, MonitoringHealthController],
+    providers: [MonitoringService, MonitoringHealthService],
+})
+
+// 检查点：
+// 1. 所有使用的 Entity 是否都在 forFeature 中？
+// 2. 所有使用的 Queue 是否都注册了？
+// 3. Controller 和 Service 是否都声明了？
+```
+
+### 检查点4：数据库操作
+
+```bash
+# 查看所有数据库查询
+grep -r "findOne\|findAndCount\|insert\|query" src/modules/monitoring/*.service.ts -B2 -A5
+```
+
+**示例分析**：
+
+```typescript
+// 检查 where 条件是否正确
+const app = await this.applicationRepository.findOne({
+    where: { appId },  // ← 字段名是否正确？Entity 中是 appId 还是 app_id？
+})
+
+// 检查 ClickHouse 表名和字段
+await this.clickhouseClient.insert({
+    table: 'monitor_events',  // ← 表名是否存在？
+    values: [eventData],
+    format: 'JSONEachRow',
+})
+```
+
+---
+
+## 🎪 实战案例分析
+
+### 案例：测试报错 "should retrieve recent events" 404
+
+```bash
+# 第1步：读取测试代码
+cat test/api.e2e.test.ts | grep -A5 "should retrieve recent events"
+```
+
+输出：
+```javascript
+it('should retrieve recent events', async () => {
+    const { status, data } = await client.get('/monitoring/health/recent-events?limit=5')
+    expect(status).toBe(200)  // ← 期望 200
+})
+```
+
+```bash
+# 第2步：查找后端路由
+grep -r "recent-events" src/modules --include="*.controller.ts"
+```
+
+输出：**空** → 端点不存在
+
+```bash
+# 第3步：查找是否有对应的 Service 方法
+grep -r "getRecentEvents" src/modules --include="*.service.ts" -A5
+```
+
+输出：
+```typescript
+// monitoring-health.service.ts
+async getRecentEvents(limit: number = 10) {
+    // ... 实现存在
+}
+```
+
+**结论**：Service 方法存在，但 Controller 没有暴露该端点
+
+**解决**：在 `monitoring-health.controller.ts` 中添加：
+
+```typescript
+@Get('health/recent-events')
+async getRecentEvents(@Query('limit') limit?: string) {
+    const parsedLimit = limit ? parseInt(limit) : 10
+    return await this.monitoringHealthService.getRecentEvents(parsedLimit)
+}
+```
+
+---
+
+## 💡 快速定位命令合集
+
+```bash
+# 1. 找到测试失败的端点路径
+grep -A3 "失败的测试名称" test/api.e2e.test.ts
+
+# 2. 在 Controller 中搜索该路径
+grep -r "端点路径关键词" src/modules --include="*.controller.ts" -B2 -A5
+
+# 3. 查看完整的 Controller 路由结构
+cat src/modules/*/monitoring-*.controller.ts | grep -E "@Controller|@Get|@Post"
+
+# 4. 搜索相关的 Service 方法
+grep -r "方法名" src/modules --include="*.service.ts" -A10
+
+# 5. 检查数据库相关代码
+grep -r "validateAppId\|findOne\|insert" src/modules/*.service.ts -A5
+
+# 6. 查看 Module 的依赖配置
+cat src/modules/monitoring/monitoring.module.ts
+```
+
+---
+
+## 🧠 思维流程图
+
+```
+测试失败 (404/400/500)
+    ↓
+读取错误信息（状态码 + 端点 + 错误消息）
+    ↓
+┌─────────────────────────────────────┐
+│ 404: 端点不存在                      │
+│  → 搜索 Controller 路由              │
+│  → 检查 Service 方法是否存在          │
+│  → 添加缺失的路由或删除多余的测试      │
+└─────────────────────────────────────┘
+    ↓
+┌─────────────────────────────────────┐
+│ 400: 参数验证失败                    │
+│  → 查找验证逻辑 (validateAppId 等)   │
+│  → 检查数据库数据是否存在             │
+│  → 初始化测试数据或修正验证逻辑       │
+└─────────────────────────────────────┘
+    ↓
+┌─────────────────────────────────────┐
+│ 500: 服务器内部错误                  │
+│  → 查看 Service 实现                 │
+│  → 检查数据库表/依赖是否存在          │
+│  → 修复依赖或删除非核心功能测试       │
+└─────────────────────────────────────┘
+```
+
+---
+
+这份 debug 提示词专注于**从测试错误反推后端代码问题**，更符合你的需求！🎯

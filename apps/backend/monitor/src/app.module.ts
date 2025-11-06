@@ -27,6 +27,7 @@ import { VersionModule } from './modules/version/version.module'
             redis: {
                 host: 'localhost',
                 port: 6379,
+                password: 'skyRedis2024',
             },
         }),
         ClickhouseModule.forRoot({

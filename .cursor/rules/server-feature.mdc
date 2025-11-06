@@ -1,0 +1,399 @@
+---
+alwaysApply: false
+---
+# Sky-Monitor 后端开发需求 Prompt
+
+## 📋 项目信息
+
+- **技术栈**: NestJS + TypeScript + PostgreSQL + ClickHouse + Redis (Bull)
+- **包管理**: pnpm
+- **测试框架**: Vitest (不使用 Jest)
+- **代码规范**: 参考 `.cursor/rules/common.mdc`
+
+---
+
+## 🎯 开发需求描述模板
+
+当我给你一个后端开发需求时，请按照以下流程执行：
+
+### 第一步：理解需求并确认
+
+**输出**：
+1. 用一句话概括核心功能
+2. 列出涉及的模块（Controller/Service/Entity/DTO）
+3. 列出需要修改/新增的文件
+4. 确认是否需要数据库迁移
+5. 确认是否需要编写测试
+
+**示例**：
+```
+需求：添加事件查询接口，支持按 appId 和时间范围查询
+
+核心功能：为 DSN Server 添加查询指定应用在特定时间范围内的事件
+
+涉及模块：
+- Controller: MonitoringHealthController (新增端点)
+- Service: MonitoringHealthService (新增查询方法)
+- DTO: 新增 QueryEventsDto
+
+需要修改的文件：
+- src/modules/monitoring/monitoring-health.controller.ts (新增路由)
+- src/modules/monitoring/monitoring-health.service.ts (新增方法)
+- src/modules/monitoring/monitoring.dto.ts (新增 DTO)
+- test/api.e2e.test.ts (新增测试用例)
+
+数据库迁移：不需要（使用现有 monitor_events 表）
+
+测试：需要（e2e 测试）
+```
+
+---
+
+### 第二步：检查现有代码
+
+在开始编码前，先分析现有代码：
+
+```bash
+# 1. 查看相关 Controller 的现有路由
+cat apps/backend/dsn-server/src/modules/monitoring/monitoring-health.controller.ts | grep -E "@Controller|@Get|@Post"
+
+# 2. 查看相关 Service 的现有方法
+grep "async " apps/backend/dsn-server/src/modules/monitoring/monitoring-health.service.ts
+
+# 3. 查看现有 DTO 定义
+cat apps/backend/dsn-server/src/modules/monitoring/monitoring.dto.ts | grep "export class"
+
+# 4. 查看数据库表结构（如果需要）
+docker exec -i sky-monitor-clickhouse clickhouse-client --query "DESCRIBE TABLE monitor_events;"
+```
+
+**输出分析**：
+- 现有类似功能（避免重复实现）
+- 可复用的代码（Service 方法、DTO 类）
+- 命名规范（保持一致性）
+- 依赖注入情况
+
+---
+
+### 第三步：设计实现方案
+
+**必须包含**：
+
+1. **API 设计**
+```typescript
+// 端点：GET /api/monitoring/events
+// 查询参数：appId, startTime, endTime, limit
+// 返回格式：{ success: boolean, data: Event[], count: number }
+```
+
+2. **DTO 定义**
+```typescript
+export class QueryEventsDto {
+    @IsString()
+    appId: string
+
+    @IsOptional()
+    @IsString()
+    startTime?: string
+
+    @IsOptional()
+    @IsString()
+    endTime?: string
+
+    @IsOptional()
+    @IsNumber()
+    limit?: number
+}
+```
+
+3. **核心逻辑**
+```typescript
+async queryEvents(dto: QueryEventsDto) {
+    // 1. 构建查询条件
+    // 2. 执行 ClickHouse 查询
+    // 3. 格式化返回结果
+}
+```
+
+---
+
+### 第四步：编写代码
+
+**编码原则**（遵循项目规范）：
+
+#### ✅ DO
+
+1. **禁止提前封装**
+   - 直接写可用的代码，不要为"可能的复用"设计接口
+   - 出现 2-3 次重复后再考虑抽象
+
+2. **日志规范**
+   ```typescript
+   // ✅ 只在关键点记录
+   this.logger.log(`Retrieved ${data.length} events for app: ${appId}`)
+   this.logger.error(`Failed to query events: ${error.message}`, error.stack)
+   
+   // ❌ 不要在循环中记录
+   // ❌ 不要记录中间变量
+   // ❌ 不要使用 console.log()
+   ```
+
+3. **不使用表情符号**
+   ```typescript
+   // ❌ 错误
+   logger.log('✅ Query successful')
+   
+   // ✅ 正确
+   logger.log('Query successful')
+   ```
+
+4. **使用 Vitest 而非 Jest**
+   ```typescript
+   import { describe, it, expect, beforeEach, vi } from 'vitest'
+   
+   const mockFn = vi.fn()  // 不是 jest.fn()
+   ```
+
+#### ❌ DON'T
+
+1. 不要编写多余的注释（代码应该自解释）
+2. 不要创建未使用的抽象层
+3. 不要混用 Jest 和 Vitest
+4. 不要在编码中途生成大量文档
+
+---
+
+### 第五步：编写测试
+
+**测试优先级**：
+
+1. **e2e 测试**（必须）
+```typescript
+describe('Event Query', () => {
+    it('should query events by appId', async () => {
+        const { status, data } = await client.get('/monitoring/events?appId=vanillaV9pEeA')
+        expect(status).toBe(200)
+        expect(data.success).toBe(true)
+        expect(Array.isArray(data.data)).toBe(true)
+    })
+
+    it('should query events with time range', async () => {
+        const { status, data } = await client.get(
+            '/monitoring/events?appId=vanillaV9pEeA&startTime=2024-01-01&endTime=2024-12-31'
+        )
+        expect(status).toBe(200)
+    })
+
+    it('should handle invalid appId', async () => {
+        const { status } = await client.get('/monitoring/events?appId=invalid')
+        expect([400, 404]).toContain(status)
+    })
+})
+```
+
+2. **单元测试**（可选，复杂逻辑才写）
+```typescript
+describe('MonitoringHealthService', () => {
+    it('应该正确构建查询条件', async () => {
+        const result = await service.queryEvents({
+            appId: 'test-app',
+            startTime: '2024-01-01',
+            endTime: '2024-12-31'
+        })
+        
+        expect(mockClickhouseClient.query).toHaveBeenCalledWith({
+            query: expect.stringContaining('WHERE app_id = \'test-app\'')
+        })
+    })
+})
+```
+
+**测试原则**：
+- 只测试核心功能，不测试调试端点
+- 测试真实场景，不测试不存在的端点
+- 允许合理的错误码（如依赖不存在时的 500）
+
+---
+
+### 第六步：自我检查清单
+
+在提交代码前，检查：
+
+```bash
+# 1. 代码规范
+- [ ] 没有提前抽象
+- [ ] 没有过度的 log
+- [ ] 没有 console.log()
+- [ ] 没有表情符号
+- [ ] 使用 Vitest 而非 Jest
+
+# 2. 功能完整性
+- [ ] Controller 路由正确
+- [ ] Service 方法实现完整
+- [ ] DTO 验证规则正确
+- [ ] 错误处理完善
+
+# 3. 测试覆盖
+- [ ] e2e 测试通过
+- [ ] 测试覆盖核心场景
+- [ ] 测试数据准备就绪
+
+# 4. 文档（如果需要）
+- [ ] API 文档更新（Swagger）
+- [ ] README 更新（如果有新的依赖或配置）
+```
+
+---
+
+## 🔍 问题定位流程
+
+如果测试失败，按以下顺序检查：
+
+### 1. 读取错误信息
+```bash
+pnpm test:e2e
+# 记录：状态码 + 端点 + 错误消息
+```
+
+### 2. 定位后端代码
+```bash
+# 查找路由定义
+grep -r "端点关键词" src/modules --include="*.controller.ts" -A5
+
+# 查找方法实现
+grep -r "方法名" src/modules --include="*.service.ts" -A10
+
+# 检查依赖注入
+cat src/modules/xxx/xxx.module.ts
+```
+
+### 3. 验证依赖
+```bash
+# PostgreSQL
+docker exec -i sky-monitor-postgres psql -U postgres -d postgres -c "SELECT 1;"
+
+# ClickHouse
+docker exec -i sky-monitor-clickhouse clickhouse-client --query "SELECT 1;"
+
+# 测试数据
+docker exec -i sky-monitor-postgres psql -U postgres -d postgres -c \
+  "SELECT * FROM application WHERE app_id = 'vanillaV9pEeA';"
+```
+
+### 4. 分析并修复
+- 404 → Controller 路由缺失
+- 400 → 参数验证失败或测试数据缺失
+- 500 → Service 实现错误或依赖不存在
+
+---
+
+## 📝 完整开发示例
+
+**需求**：添加按 sessionId 查询事件的接口
+
+### 1. 确认需求
+```
+核心功能：查询指定会话的所有事件
+端点：GET /api/monitoring/sessions/:sessionId/events
+返回：该会话的所有事件列表
+```
+
+### 2. 检查现有代码
+```bash
+# 检查是否已有类似功能
+grep -r "session" src/modules/monitoring --include="*.ts"
+```
+
+### 3. 实现代码
+
+**Controller** (`monitoring-health.controller.ts`)：
+```typescript
+@Get('sessions/:sessionId/events')
+@ApiOperation({ summary: '查询会话事件' })
+async getSessionEvents(@Param('sessionId') sessionId: string) {
+    return await this.monitoringHealthService.getEventsBySession(sessionId)
+}
+```
+
+**Service** (`monitoring-health.service.ts`)：
+```typescript
+async getEventsBySession(sessionId: string) {
+    try {
+        const query = `
+            SELECT id, app_id, event_type, event_name, timestamp, session_id
+            FROM monitor_events 
+            WHERE session_id = '${sessionId}'
+            ORDER BY timestamp ASC
+        `
+        const result = await this.clickhouseClient.query({ query })
+        const data = await result.json()
+        
+        this.logger.log(`Retrieved ${data.data.length} events for session: ${sessionId}`)
+        
+        return {
+            success: true,
+            data: data.data,
+            count: data.data.length
+        }
+    } catch (error) {
+        this.logger.error(`Failed to get session events: ${error.message}`, error.stack)
+        return {
+            success: false,
+            error: error.message,
+            data: []
+        }
+    }
+}
+```
+
+### 4. 编写测试
+
+**e2e 测试** (`test/api.e2e.test.ts`)：
+```typescript
+describe('Session Events', () => {
+    it('should retrieve events by sessionId', async () => {
+        const sessionId = 'session-123'
+        const { status, data } = await client.get(`/monitoring/sessions/${sessionId}/events`)
+        
+        expect(status).toBe(200)
+        expect(data.success).toBe(true)
+        expect(Array.isArray(data.data)).toBe(true)
+    })
+})
+```
+
+### 5. 运行测试验证
+```bash
+cd apps/backend/dsn-server
+pnpm test:e2e
+```
+
+---
+
+## 🚀 使用方式
+
+**当你收到开发需求时**，这样描述：
+
+```
+需求：[功能描述]
+模块：[影响的模块]
+优先级：[高/中/低]
+
+请按照 Sky-Monitor 后端开发流程：
+1. 确认需求范围
+2. 检查现有代码
+3. 设计实现方案
+4. 编写代码（遵循项目规范）
+5. 编写测试
+6. 自我检查
+
+注意：
+- 遵守禁止提前封装、禁止随意log、禁止表情包的规范
+- 使用 Vitest 而非 Jest
+- 只测试核心功能
+- 数据库操作通过 Docker
+```
+
+---
+
+这份 prompt 完全定制化，符合你们项目的技术栈和编码规范！🎯

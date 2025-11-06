@@ -76,4 +76,14 @@ export class MonitoringHealthController {
         }
         return await this.monitoringService.getApplicationsByUserId(parsedUserId)
     }
+
+    /**
+     * 获取最近事件
+     */
+    @Get('health/recent-events')
+    @ApiOperation({ summary: '获取最近的监控事件' })
+    async getRecentEvents(@Query('limit') limit?: string) {
+        const parsedLimit = limit ? parseInt(limit) : 10
+        return await this.monitoringHealthService.getRecentEvents(parsedLimit)
+    }
 }

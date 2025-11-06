@@ -1,19 +1,22 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
+import { v4 as uuidv4 } from 'uuid'
 
 import { AdminService } from '../admin/admin.service'
+import { BlacklistService } from './blacklist.service'
+import { jwtConstants } from './constants'
 
 @Injectable()
 export class AuthService {
     constructor(
         private readonly jwtService: JwtService,
-        private readonly adminService: AdminService
+        private readonly adminService: AdminService,
+        private readonly blacklistService: BlacklistService
     ) {}
 
     async validateUser(username: string, pass: string): Promise<any> {
         const admin = await this.adminService.validateUser(username, pass)
         if (admin) {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { password, ...result } = admin
             return result
         }
@@ -21,19 +24,105 @@ export class AuthService {
     }
 
     async login(user: any): Promise<any> {
-        const payload = { username: user.username, sub: user.userId }
+        const accessJti = uuidv4()
+        const refreshJti = uuidv4()
+
+        const accessPayload = {
+            username: user.username,
+            sub: user.id,
+            jti: accessJti,
+        }
+
+        const refreshPayload = {
+            username: user.username,
+            sub: user.id,
+            jti: refreshJti,
+        }
+
+        const accessToken = this.jwtService.sign(accessPayload, {
+            secret: jwtConstants.secret,
+            expiresIn: jwtConstants.accessTokenExpiry,
+        })
+
+        const refreshToken = this.jwtService.sign(refreshPayload, {
+            secret: jwtConstants.refreshSecret,
+            expiresIn: jwtConstants.refreshTokenExpiry,
+        })
+
+        // 存储 refresh token 到 Redis (7天 = 604800秒)
+        await this.blacklistService.storeRefreshToken(user.id, refreshJti, 604800)
+
         return {
-            access_token: this.jwtService.sign(payload),
+            access_token: accessToken,
+            refresh_token: refreshToken,
+            expires_in: 900, // 15分钟 = 900秒
         }
     }
 
-    async logout(/* user: any */): Promise<any> {
-        // 请注意，jwt token是无状态的，所以不需要做任何操作，没法将其置为失效
-        // 但是可以在前端删除token，这样就达到了退出登录的目的
-        // 如果要严格来做，有以下几种方案：
-        // 1. cookie session 方案，后端存储session，前端存储session_id，退出登录时，后端删除session
-        // 2. 双 token 方案，前端存储两个token，一个是access_token，一个是refresh_token，但这个方案依然是无状态的
-        // 3. session + refresh_token 方案
+    async refreshToken(refreshToken: string): Promise<any> {
+        try {
+            const payload = this.jwtService.verify(refreshToken, {
+                secret: jwtConstants.refreshSecret,
+            })
+
+            // 检查 refresh token 是否有效
+            const isValid = await this.blacklistService.isRefreshTokenValid(payload.sub, payload.jti)
+            if (!isValid) {
+                throw new UnauthorizedException('Refresh token 已失效')
+            }
+
+            // 检查用户是否被全局登出
+            const isUserBlacklisted = await this.blacklistService.isUserBlacklisted(payload.sub)
+            if (isUserBlacklisted) {
+                throw new UnauthorizedException('用户已被全局登出')
+            }
+
+            // 生成新的 access token
+            const newAccessJti = uuidv4()
+            const newAccessPayload = {
+                username: payload.username,
+                sub: payload.sub,
+                jti: newAccessJti,
+            }
+
+            const newAccessToken = this.jwtService.sign(newAccessPayload, {
+                secret: jwtConstants.secret,
+                expiresIn: jwtConstants.accessTokenExpiry,
+            })
+
+            return {
+                access_token: newAccessToken,
+                expires_in: 900,
+            }
+        } catch (error) {
+            throw new UnauthorizedException('Refresh token 无效或已过期')
+        }
+    }
+
+    async logout(userId: number, jti: string): Promise<any> {
+        // 将 access token 加入黑名单 (15分钟 = 900秒)
+        await this.blacklistService.addTokenToBlacklist(jti, userId, 900)
+        return { success: true, message: '登出成功' }
+    }
+
+    async logoutAll(userId: number): Promise<any> {
+        // 将用户加入黑名单，使所有设备的 token 失效 (7天 = 604800秒)
+        await this.blacklistService.addUserToBlacklist(userId, 604800)
+        return { success: true, message: '所有设备已登出' }
+    }
+
+    async validateToken(jti: string, userId: number): Promise<boolean> {
+        // 检查 token 是否在黑名单中
+        const isTokenBlacklisted = await this.blacklistService.isTokenBlacklisted(jti)
+        if (isTokenBlacklisted) {
+            return false
+        }
+
+        // 检查用户是否被全局登出
+        const isUserBlacklisted = await this.blacklistService.isUserBlacklisted(userId)
+        if (isUserBlacklisted) {
+            return false
+        }
 
         return true
     }
