@@ -67,7 +67,10 @@ window.MONITOR_CONFIG = CONFIG
             integrations: [
                 // 1. Errors - 全局错误捕获
                 new Errors({
-                    captureUnhandledRejections: true, // 捕获未处理的 Promise 拒绝
+                    captureResourceErrors: true,
+                    collectDeviceInfo: true,
+                    collectNetworkInfo: true,
+                    enableDeduplication: true,
                 }),
 
                 // 2. Metrics - Core Web Vitals
@@ -75,7 +78,7 @@ window.MONITOR_CONFIG = CONFIG
 
                 // 3. SessionIntegration - 会话跟踪
                 new SessionIntegration({
-                    timeout: 30 * 60 * 1000, // 30 分钟无活动则结束会话
+                    sessionTimeout: 30 * 60 * 1000, // 30 分钟无活动则结束会话
                 }),
 
                 // P2: 性能打点 - 接口耗时监控
@@ -98,7 +101,7 @@ window.MONITOR_CONFIG = CONFIG
                 // 7. SamplingIntegration - 分层采样
                 new SamplingIntegration({
                     errorSampleRate: 1.0, // 错误 100% 采样
-                    performanceSampleRate: 0.5, // 性能 50% 采样
+                    performanceSampleRate: 1.0, // Demo 模式：性能 100% 采样
                 }),
 
                 // 8. DeduplicationIntegration - 错误去重
@@ -134,6 +137,25 @@ window.MONITOR_CONFIG = CONFIG
         // 导出monitoring实例供其他模块使用
         window.monitoring = monitoring
 
+        // 设置用户上下文（Demo 测试）
+        setUser({
+            id: 'demo_user_123',
+            username: 'demo_user',
+            email: 'demo@skymonitor.com',
+        })
+
+        // 设置标签
+        setTag('demo', 'true')
+        setTag('environment', CONFIG.environment)
+        setTag('test_suite', 'integration_tests')
+
+        // 添加初始面包屑
+        addBreadcrumb({
+            message: 'Sky Monitor SDK initialized',
+            category: 'lifecycle',
+            level: 'info',
+        })
+
         console.log('✅ Sky Monitor SDK 初始化成功')
         console.log('📊 已启用的 Integrations:')
         console.log('  ✓ Errors - 全局错误捕获')
@@ -142,13 +164,18 @@ window.MONITOR_CONFIG = CONFIG
         console.log('  ✓ HttpErrorIntegration - HTTP 错误捕获（400-599）')
         console.log('  ✓ ResourceErrorIntegration - 资源加载错误')
         console.log('  ✓ PerformanceIntegration - 请求性能监控（3s慢请求阈值）')
-        console.log('  ✓ SamplingIntegration - 分层采样（错误:100%, 性能:50%）')
+        console.log('  ✓ SamplingIntegration - 分层采样（错误:100%, 性能:100% Demo模式）')
         console.log('  ✓ DeduplicationIntegration - 错误去重（5秒窗口）')
         console.log('')
         console.log('🔧 传输配置:')
         console.log('  ✓ 批量上报: 20条/次, 5秒刷新')
         console.log('  ✓ 离线队列: 50条, 10秒重试')
         console.log('  ✓ 全局采样率: 100%')
+        console.log('')
+        console.log('👤 用户上下文:')
+        console.log('  ✓ User ID: demo_user_123')
+        console.log('  ✓ Username: demo_user')
+        console.log('  ✓ Tags: demo=true, environment=development')
 
         // 更新 UI 状态
         updateConnectionStatus(true)
