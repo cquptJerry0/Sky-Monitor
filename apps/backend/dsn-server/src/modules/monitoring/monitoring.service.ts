@@ -29,6 +29,21 @@ export class MonitoringService {
         return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
     }
 
+    /**
+     * 接收并处理监控事件
+     *
+     * @description
+     * 核心处理流程：
+     * 1. 生成唯一事件 ID
+     * 2. 提取并规范化事件数据（错误、性能、用户、设备等）
+     * 3. 写入 ClickHouse 数据库
+     * 4. 如果是错误事件且包含堆栈信息，自动触发 SourceMap 解析队列
+     *
+     * @param appId - 应用 ID，用于区分不同应用
+     * @param event - 监控事件数据
+     * @param userAgent - 用户代理字符串（可选）
+     * @returns 成功响应或抛出异常
+     */
     async receiveEvent(appId: string, event: MonitoringEventDto, userAgent?: string) {
         try {
             const eventId = this.generateEventId()
@@ -130,6 +145,21 @@ export class MonitoringService {
 
             this.logger.log(`Event received for app: ${appId}, type: ${event.type}`)
 
+            /**
+             * 自动触发 SourceMap 解析
+             *
+             * @description
+             * 当满足以下条件时，将错误堆栈加入解析队列：
+             * 1. 事件包含堆栈信息（stack）
+             * 2. 事件包含版本信息（release），用于匹配对应版本的 SourceMap
+             * 3. 事件类型为错误相关（error, exception, unhandledrejection）
+             *
+             * 解析过程：
+             * - 使用 Bull Queue 异步处理，不阻塞事件上报
+             * - SourceMapProcessor 从数据库获取对应的 SourceMap 文件
+             * - StackParserService 使用 source-map 库还原源码位置
+             * - 解析结果更新回事件记录
+             */
             if (event.stack && event.release && this.isErrorEvent(event.type)) {
                 await this.parseQueue.add('parse-stack', {
                     eventId,
@@ -151,6 +181,18 @@ export class MonitoringService {
         return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     }
 
+    /**
+     * 判断是否为错误类型事件
+     *
+     * @description
+     * 错误类型包括：
+     * - error: JavaScript 运行时错误、资源加载错误、HTTP 错误等
+     * - exception: 捕获的异常
+     * - unhandledrejection: 未处理的 Promise 拒绝
+     *
+     * @param type - 事件类型
+     * @returns 是否为错误事件
+     */
     private isErrorEvent(type: string): boolean {
         return ['error', 'exception', 'unhandledrejection'].includes(type)
     }

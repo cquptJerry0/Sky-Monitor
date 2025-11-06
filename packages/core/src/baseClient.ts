@@ -27,6 +27,8 @@ export class Monitoring {
     private setupOnceCalled = false
     private globalScope = new ScopeImpl()
     private release?: string
+    private appId?: string
+    private environment?: string
 
     /**
      * 添加集成
@@ -52,9 +54,11 @@ export class Monitoring {
      * 初始化监控系统
      * 支持异步初始化
      */
-    async init(transport: Transport, options?: { release?: string }): Promise<void> {
+    async init(transport: Transport, options?: { release?: string; appId?: string; environment?: string }): Promise<void> {
         this.transport = transport
         this.release = options?.release
+        this.appId = options?.appId
+        this.environment = options?.environment
 
         // 设置为当前客户端
         setCurrentClient(this)
@@ -85,14 +89,31 @@ export class Monitoring {
 
     /**
      * 捕获事件（通过管道处理）
+     *
+     * @description
+     * 核心事件处理流程：
+     * 1. 应用全局 Scope 上下文（用户信息、标签、面包屑等）
+     * 2. 附加 release、appId、environment 等元数据
+     * 3. 通过 Integration 管道处理（去重、采样、过滤等）
+     * 4. 发送到 Transport 层
      */
     async captureEvent(event: MonitoringEvent): Promise<void> {
         // 应用 Scope 上下文
         let enrichedEvent = this.globalScope.applyToEvent(event)
 
-        // 添加 release 信息
+        // 附加 release、appId、environment 元数据
+        // 这些信息用于后端识别应用、版本和环境，以便：
+        // - 匹配正确的 SourceMap 文件
+        // - 按版本和环境过滤事件
+        // - 进行版本间的对比分析
         if (this.release) {
             enrichedEvent = { ...enrichedEvent, release: this.release }
+        }
+        if (this.appId) {
+            enrichedEvent = { ...enrichedEvent, appId: this.appId }
+        }
+        if (this.environment) {
+            enrichedEvent = { ...enrichedEvent, environment: this.environment }
         }
 
         // 通过管道处理

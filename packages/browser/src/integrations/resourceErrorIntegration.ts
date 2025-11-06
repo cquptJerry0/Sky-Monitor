@@ -1,4 +1,4 @@
-import { captureEvent, Integration } from '@sky-monitor/monitor-sdk-core'
+import { captureEvent, getCurrentClient, Integration } from '@sky-monitor/monitor-sdk-core'
 
 import { BrowserErrorEvent } from '../types/errorTypes'
 import { collectDeviceInfo, collectNetworkInfo } from '../utils/deviceInfo'
@@ -22,8 +22,6 @@ export class ResourceErrorIntegration implements Integration {
     private options: Required<ResourceErrorIntegrationOptions>
     private deviceInfo?: ReturnType<typeof collectDeviceInfo>
     private networkInfo?: ReturnType<typeof collectNetworkInfo>
-    private isSetup = false
-    private errorHandler?: (event: ErrorEvent | Event) => void
 
     constructor(options: ResourceErrorIntegrationOptions = {}) {
         this.options = {
@@ -37,24 +35,24 @@ export class ResourceErrorIntegration implements Integration {
      * 全局初始化
      */
     setupOnce(): void {
-        if (this.isSetup) {
-            return
-        }
-        this.isSetup = true
-
         // 收集设备和网络信息
         this.deviceInfo = collectDeviceInfo()
         this.networkInfo = collectNetworkInfo()
 
-        // 保存事件监听器引用
-        this.errorHandler = this.handleResourceError.bind(this)
-
         // 注册资源加载错误监听（捕获阶段）
-        window.addEventListener('error', this.errorHandler, true)
+        window.addEventListener('error', this.handleResourceError.bind(this), true)
     }
 
     /**
      * 处理资源加载错误
+     *
+     * @description
+     * 核心功能：
+     * 1. 识别资源加载失败的类型（img、script、link 等）
+     * 2. 生成错误指纹（基于资源 URL）
+     * 3. 执行去重检查（避免短时间内重复上报）
+     * 4. 从全局客户端获取 release 和 appId（用于 SourceMap 匹配）
+     * 5. 构建完整的资源错误事件并上报
      */
     private handleResourceError(event: ErrorEvent | Event): void {
         // 只处理真正的资源加载错误
@@ -92,11 +90,24 @@ export class ResourceErrorIntegration implements Integration {
             console.error(`[Sky Monitor] Failed to load ${tagName}: ${url}`)
         }
 
+        // 获取全局客户端实例，提取 release 和 appId
+        // 这些信息对于后端非常重要：
+        // - release: 用于匹配对应版本的 SourceMap 文件
+        // - appId: 用于区分不同应用的错误
+        // - environment: 用于区分不同环境的资源加载问题
+        const client = getCurrentClient()
+        const release = (client as any)?.release
+        const appId = (client as any)?.appId
+        const environment = (client as any)?.environment
+
         const resourceEvent: BrowserErrorEvent = {
             type: 'error',
             message: `Failed to load ${tagName}: ${url}`,
             timestamp: new Date().toISOString(),
             errorFingerprint: fingerprint,
+            release,
+            appId,
+            environment,
             resourceError: {
                 url,
                 tagName,
@@ -126,18 +137,5 @@ export class ResourceErrorIntegration implements Integration {
             default:
                 return 'unknown'
         }
-    }
-
-    /**
-     * 清理资源
-     */
-    cleanup(): void {
-        if (this.errorHandler && typeof window !== 'undefined') {
-            window.removeEventListener('error', this.errorHandler, true)
-            this.errorHandler = undefined
-        }
-        this.deviceInfo = undefined
-        this.networkInfo = undefined
-        this.isSetup = false
     }
 }

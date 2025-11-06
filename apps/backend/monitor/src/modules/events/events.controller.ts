@@ -80,6 +80,38 @@ export class EventsController {
     }
 
     /**
+     * 批量查询 SourceMap 解析状态
+     * POST /api/events/sourcemap/status
+     *
+     * @description
+     * 用于前端批量查询多个事件的 SourceMap 解析状态。
+     * 常用于错误列表页显示解析进度。
+     */
+    @Get('sourcemap/status')
+    @ApiOperation({ summary: '批量查询 SourceMap 解析状态' })
+    @ApiQuery({ name: 'eventIds', required: true, description: '事件 ID 列表（逗号分隔，最多 100 个）' })
+    async getSourceMapStatuses(@Query('eventIds') eventIdsStr: string) {
+        const eventIds = eventIdsStr
+            .split(',')
+            .map(id => id.trim())
+            .filter(id => id.length > 0)
+
+        if (eventIds.length === 0) {
+            return {
+                success: true,
+                data: {},
+            }
+        }
+
+        const statuses = await this.eventsService.getSourceMapStatuses({ eventIds })
+
+        return {
+            success: true,
+            data: statuses,
+        }
+    }
+
+    /**
      * 获取统计数据
      * GET /api/events/stats
      */
@@ -271,6 +303,189 @@ export class EventsController {
         await this.validateUserOwnsApp(appId, req.user.id)
 
         const result = await this.eventsService.getSamplingStats(appId)
+
+        return {
+            success: true,
+            data: result,
+        }
+    }
+
+    /**
+     * 获取智能错误聚合
+     * GET /api/events/errors/smart-groups
+     *
+     * @description
+     * 基于错误指纹和消息相似度进行二级聚合，
+     * 将相似的错误合并为同一组，减少重复告警。
+     */
+    @Get('errors/smart-groups')
+    @ApiOperation({ summary: '获取智能错误聚合' })
+    @ApiQuery({ name: 'appId', required: true })
+    @ApiQuery({ name: 'threshold', required: false, description: '相似度阈值(0-1)，默认0.8' })
+    @ApiQuery({ name: 'limit', required: false })
+    async getSmartErrorGroups(
+        @Query('appId') appId: string,
+        @Query('threshold') threshold?: string,
+        @Query('limit') limit?: string,
+        @Request() req?: any
+    ) {
+        // 验证权限
+        await this.validateUserOwnsApp(appId, req.user.id)
+
+        const result = await this.eventsService.getSmartErrorGroups({
+            appId,
+            threshold: threshold ? parseFloat(threshold) : undefined,
+            limit: limit ? parseInt(limit, 10) : undefined,
+        })
+
+        return {
+            success: true,
+            data: result,
+        }
+    }
+
+    /**
+     * 获取错误趋势分析
+     * GET /api/events/errors/trends
+     *
+     * @description
+     * 按时间窗口统计错误发生次数，支持小时、天、周三种粒度。
+     * 用于识别错误突增时间段、评估修复效果等。
+     */
+    @Get('errors/trends')
+    @ApiOperation({ summary: '获取错误趋势分析' })
+    @ApiQuery({ name: 'appId', required: true })
+    @ApiQuery({ name: 'fingerprint', required: false, description: '错误指纹，不提供则统计所有错误' })
+    @ApiQuery({ name: 'window', required: true, enum: ['hour', 'day', 'week'], description: '时间窗口粒度' })
+    @ApiQuery({ name: 'limit', required: false })
+    async getErrorTrends(
+        @Query('appId') appId: string,
+        @Query('fingerprint') fingerprint?: string,
+        @Query('window') window?: 'hour' | 'day' | 'week',
+        @Query('limit') limit?: string,
+        @Request() req?: any
+    ) {
+        // 验证权限
+        await this.validateUserOwnsApp(appId, req.user.id)
+
+        if (!window) {
+            window = 'hour' // 默认值
+        }
+
+        const result = await this.eventsService.getErrorTrends({
+            appId,
+            fingerprint,
+            window,
+            limit: limit ? parseInt(limit, 10) : undefined,
+        })
+
+        return {
+            success: true,
+            data: result,
+        }
+    }
+
+    /**
+     * 对比多个错误的趋势
+     * GET /api/events/errors/trends/compare
+     *
+     * @description
+     * 在同一时间轴上对比多个错误指纹的趋势，
+     * 用于分析错误之间的相关性和共同触发时间段。
+     */
+    @Get('errors/trends/compare')
+    @ApiOperation({ summary: '对比多个错误的趋势' })
+    @ApiQuery({ name: 'appId', required: true })
+    @ApiQuery({ name: 'fingerprints', required: true, description: '错误指纹数组，逗号分隔，最多10个' })
+    @ApiQuery({ name: 'window', required: true, enum: ['hour', 'day', 'week'] })
+    @ApiQuery({ name: 'limit', required: false })
+    async compareErrorTrends(
+        @Query('appId') appId: string,
+        @Query('fingerprints') fingerprintsStr: string,
+        @Query('window') window?: 'hour' | 'day' | 'week',
+        @Query('limit') limit?: string,
+        @Request() req?: any
+    ) {
+        // 验证权限
+        await this.validateUserOwnsApp(appId, req.user.id)
+
+        if (!window) {
+            window = 'hour'
+        }
+
+        // 解析指纹数组
+        const fingerprints = fingerprintsStr
+            .split(',')
+            .map(f => f.trim())
+            .filter(f => f.length > 0)
+
+        if (fingerprints.length === 0) {
+            throw new ForbiddenException('At least one fingerprint is required')
+        }
+
+        const result = await this.eventsService.compareErrorTrends({
+            appId,
+            fingerprints,
+            window,
+            limit: limit ? parseInt(limit, 10) : undefined,
+        })
+
+        return {
+            success: true,
+            data: result,
+        }
+    }
+
+    /**
+     * 检测错误突增
+     * GET /api/events/errors/spike-detection
+     *
+     * @description
+     * 通过统计分析检测错误数量的异常突增。
+     * 使用平均值 + 2*标准差作为阈值。
+     */
+    @Get('errors/spike-detection')
+    @ApiOperation({ summary: '检测错误突增' })
+    @ApiQuery({ name: 'appId', required: true })
+    @ApiQuery({ name: 'window', required: false, enum: ['hour', 'day'], description: '时间窗口，默认 hour' })
+    @ApiQuery({ name: 'lookback', required: false, description: '回看窗口数量，默认 24' })
+    async detectErrorSpikes(
+        @Query('appId') appId: string,
+        @Query('window') window?: 'hour' | 'day',
+        @Query('lookback') lookback?: string,
+        @Request() req?: any
+    ) {
+        // 验证权限
+        await this.validateUserOwnsApp(appId, req.user.id)
+
+        const result = await this.eventsService.detectErrorSpikes({
+            appId,
+            window: window || 'hour',
+            lookback: lookback ? parseInt(lookback, 10) : undefined,
+        })
+
+        return {
+            success: true,
+            data: result,
+        }
+    }
+
+    /**
+     * 获取最近的错误突增告警
+     * GET /api/events/errors/recent-spikes
+     *
+     * @description
+     * 查询 Redis 中存储的最近错误突增记录，供前端轮询。
+     */
+    @Get('errors/recent-spikes')
+    @ApiOperation({ summary: '获取最近的错误突增告警' })
+    @ApiQuery({ name: 'appId', required: true })
+    @ApiQuery({ name: 'limit', required: false, description: '最大返回数量，默认 10' })
+    async getRecentSpikes(@Query('appId') appId: string, @Query('limit') limit?: string, @Request() req?: any) {
+        // 验证权限
+        await this.validateUserOwnsApp(appId, req.user.id)
+
+        const result = await this.eventsService.getRecentSpikes(appId, limit ? parseInt(limit, 10) : undefined)
 
         return {
             success: true,
