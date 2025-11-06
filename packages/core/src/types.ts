@@ -11,6 +11,29 @@ export type EventLevel = 'debug' | 'info' | 'warning' | 'error' | 'fatal'
 export type EventType = 'error' | 'message' | 'performance' | 'webVital' | 'transaction' | 'custom'
 
 /**
+ * Session Replay 数据接口
+ * 用于存储会话重放的录制数据
+ */
+export interface ReplayData {
+    /** rrweb 录制的事件数组 */
+    events: unknown[]
+    /** 录制开始时间戳 */
+    startTime: number
+    /** 录制结束时间戳 */
+    endTime: number
+    /** 录制时长（毫秒） */
+    duration: number
+    /** 事件总数 */
+    eventCount: number
+    /** 数据是否已压缩 */
+    compressed?: boolean
+    /** 压缩后的数据大小（字节） */
+    size?: number
+    /** 录制模式 */
+    mode?: 'always' | 'onError' | 'sampled'
+}
+
+/**
  * 基础事件接口
  * 所有事件的通用字段
  */
@@ -26,6 +49,8 @@ export interface BaseEvent {
     breadcrumbs?: Breadcrumb[]
     contexts?: Record<string, Record<string, unknown> | null>
     sessionId?: string
+    /** Session Replay 录制数据（仅在错误事件中附加） */
+    replay?: ReplayData
     // 集成元数据（可选）
     _deduplication?: {
         fingerprint: string

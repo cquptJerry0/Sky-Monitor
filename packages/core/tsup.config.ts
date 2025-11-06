@@ -2,7 +2,9 @@ import { defineConfig } from 'tsup'
 
 export default defineConfig([
     {
-        entry: ['src'],
+        entry: {
+            index: 'src/index.ts',
+        },
         format: ['cjs'],
         sourcemap: true,
         bundle: true,
@@ -10,9 +12,12 @@ export default defineConfig([
         clean: true,
         minify: true,
         outDir: 'build/cjs',
+        external: ['vitest'],
     },
     {
-        entry: ['src'],
+        entry: {
+            index: 'src/index.ts',
+        },
         format: ['esm'],
         sourcemap: true,
         bundle: true,
@@ -20,5 +25,6 @@ export default defineConfig([
         clean: true,
         minify: true,
         outDir: 'build/esm',
+        external: ['vitest'],
     },
 ])

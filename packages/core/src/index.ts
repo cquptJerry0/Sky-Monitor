@@ -20,6 +20,7 @@ export type {
     BaseEvent,
     EventLevel,
     EventType,
+    ReplayData,
 } from './types'
 
 export type { Transport, TransportCallbacks } from './transport'
