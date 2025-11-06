@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sky Monitor SDK Demo</title>
+  <title>Sky Monitor SDK - 完整功能演示</title>
   <style>
     * {
       margin: 0;
@@ -17,13 +17,15 @@
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
       padding: 20px;
+      line-height: 1.6;
     }
 
     .container {
-      max-width: 1200px;
+      max-width: 1400px;
       margin: 0 auto;
     }
 
+    /* Header */
     .header {
       background: white;
       padding: 30px;
@@ -35,77 +37,16 @@
     h1 {
       color: #333;
       margin-bottom: 10px;
+      font-size: 32px;
     }
 
     .subtitle {
       color: #666;
       font-size: 14px;
-    }
-
-    .section {
-      background: white;
-      padding: 25px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    h2 {
-      color: #333;
-      margin-bottom: 20px;
-      font-size: 20px;
-      border-bottom: 2px solid #667eea;
-      padding-bottom: 10px;
-    }
-
-    .button-group {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      display: flex;
+      align-items: center;
       gap: 15px;
-      margin-bottom: 20px;
-    }
-
-    button {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      padding: 12px 20px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 500;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
-    }
-
-    button:active {
-      transform: translateY(0);
-    }
-
-    .info-box {
-      background: #f0f4ff;
-      padding: 15px;
-      border-radius: 5px;
-      border-left: 4px solid #667eea;
-      margin-bottom: 15px;
-    }
-
-    .info-box p {
-      color: #555;
-      font-size: 14px;
-      line-height: 1.6;
-    }
-
-    .info-box code {
-      background: white;
-      padding: 2px 6px;
-      border-radius: 3px;
-      color: #667eea;
-      font-family: 'Courier New', monospace;
+      flex-wrap: wrap;
     }
 
     .status {
@@ -118,94 +59,728 @@
       color: white;
     }
 
-    .performance-test {
-      margin-top: 15px;
+    .info-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      background: #f0f4ff;
+      color: #667eea;
+      font-family: monospace;
     }
 
-    .slow-resource {
-      width: 100%;
-      height: 200px;
-      background: #f3f4f6;
-      border-radius: 5px;
+    /* Tabs */
+    .tabs {
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+
+    .tab-buttons {
+      display: flex;
+      background: #f9fafb;
+      border-bottom: 1px solid #e5e7eb;
+      overflow-x: auto;
+    }
+
+    .tab-button {
+      flex: 1;
+      min-width: 150px;
+      padding: 15px 20px;
+      border: none;
+      background: transparent;
+      color: #666;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative;
+    }
+
+    .tab-button:hover {
+      background: rgba(102, 126, 234, 0.1);
+      color: #667eea;
+    }
+
+    .tab-button.active {
+      color: #667eea;
+      background: white;
+    }
+
+    .tab-button.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: #667eea;
+    }
+
+    .tab-content {
+      display: none;
+      padding: 25px;
+      animation: fadeIn 0.3s;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Section */
+    .section {
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      color: #333;
+      margin-bottom: 15px;
+      font-size: 20px;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 10px;
       display: flex;
       align-items: center;
-      justify-content: center;
+      gap: 10px;
+    }
+
+    h3 {
+      color: #555;
+      margin: 20px 0 15px;
+      font-size: 16px;
+    }
+
+    /* Button Group */
+    .button-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button.secondary {
+      background: #f3f4f6;
+      color: #667eea;
+    }
+
+    button.danger {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    }
+
+    /* Info Box */
+    .info-box {
+      background: #f0f4ff;
+      padding: 15px;
+      border-radius: 5px;
+      border-left: 4px solid #667eea;
+      margin-bottom: 15px;
+    }
+
+    .info-box p {
+      color: #555;
+      font-size: 14px;
+      margin: 5px 0;
+    }
+
+    .info-box code {
+      background: white;
+      padding: 2px 6px;
+      border-radius: 3px;
+      color: #667eea;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+    }
+
+    /* Test Area */
+    #test-area {
+      margin-top: 15px;
+      padding: 15px;
+      background: #f9fafb;
+      border-radius: 5px;
+      min-height: 100px;
+    }
+
+    /* SSE Dashboard */
+    .sse-status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .sse-status-card {
+      background: #f9fafb;
+      padding: 15px;
+      border-radius: 5px;
+      border-left: 3px solid #667eea;
+    }
+
+    .sse-status-name {
+      font-size: 12px;
       color: #999;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    .sse-status-value {
+      font-size: 14px;
+      color: #333;
+      font-weight: 600;
+    }
+
+    /* Event List */
+    .event-list {
+      max-height: 400px;
+      overflow-y: auto;
+      border: 1px solid #e5e7eb;
+      border-radius: 5px;
+      padding: 10px;
+      background: #f9fafb;
+    }
+
+    .event-item, .error-item, .log-item {
+      padding: 10px;
+      margin-bottom: 8px;
+      background: white;
+      border-radius: 5px;
+      border-left: 3px solid #667eea;
+      font-size: 13px;
+    }
+
+    .event-time, .error-time, .log-time {
+      color: #999;
+      font-size: 11px;
+      margin-bottom: 5px;
+    }
+
+    .event-type {
+      display: inline-block;
+      padding: 2px 8px;
+      background: #667eea;
+      color: white;
+      border-radius: 3px;
+      font-size: 11px;
+      margin-bottom: 5px;
+    }
+
+    .event-message, .error-message {
+      color: #333;
+      font-weight: 500;
+    }
+
+    .error-stack {
+      color: #666;
+      font-size: 12px;
+      margin-top: 5px;
+      font-family: monospace;
+    }
+
+    /* Spike Alert */
+    .spike-alert {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 15px;
+      background: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+
+    .alert-icon {
+      font-size: 32px;
+    }
+
+    .alert-title {
+      font-weight: 600;
+      color: #92400e;
+      margin-bottom: 5px;
+    }
+
+    .alert-message {
+      color: #78350f;
+      font-size: 14px;
+    }
+
+    .alert-time {
+      color: #92400e;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+
+    /* API Result */
+    .api-result-card {
+      background: #f9fafb;
+      border-radius: 5px;
+      margin-bottom: 15px;
+      overflow: hidden;
+    }
+
+    .api-result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 15px;
+      background: #667eea;
+      color: white;
+    }
+
+    .api-name {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .api-time {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    .api-result-body {
+      padding: 15px;
+      background: #1f2937;
+      color: #10b981;
+      font-size: 12px;
+      overflow-x: auto;
+      max-height: 300px;
+      font-family: 'Courier New', monospace;
+    }
+
+    .api-error {
+      border: 2px solid #ef4444;
+    }
+
+    .api-error .api-result-header {
+      background: #ef4444;
+    }
+
+    .api-error-message {
+      padding: 15px;
+      color: #dc2626;
+      font-size: 14px;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-label {
+      font-size: 12px;
+      opacity: 0.9;
+      margin-bottom: 5px;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    /* Logs */
+    .log-item {
+      border-left-color: #94a3b8;
+    }
+
+    .log-item.log-warning {
+      border-left-color: #f59e0b;
+      background: #fef3c7;
+    }
+
+    .log-item.log-error {
+      border-left-color: #ef4444;
+      background: #fee2e2;
+    }
+
+    .log-source {
+      display: inline-block;
+      padding: 2px 8px;
+      background: #667eea;
+      color: white;
+      border-radius: 3px;
+      font-size: 11px;
+      margin: 0 5px;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #667eea;
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #5568d3;
     }
   </style>
 </head>
 
 <body>
   <div class="container">
+    <!-- Header -->
     <div class="header">
-      <h1>🚀 Sky Monitor SDK 测试平台</h1>
-      <p class="subtitle">测试监控SDK的各项功能 | <span class="status">已连接</span></p>
-    </div>
-
-    <div class="section">
-      <h2>📊 性能监控测试</h2>
-      <div class="info-box">
-        <p>
-          SDK会自动收集 Web Vitals 指标：<code>LCP</code>、<code>FCP</code>、<code>CLS</code>、<code>TTFB</code>
-        </p>
-        <p>刷新页面或执行操作后，这些指标会自动上报到服务器。</p>
-      </div>
-      <div class="button-group">
-        <button onclick="triggerSlowResource()">加载慢资源</button>
-        <button onclick="triggerLayoutShift()">触发布局偏移</button>
-        <button onclick="triggerLongTask()">执行长任务</button>
-      </div>
-      <div class="performance-test" id="performanceTest"></div>
-    </div>
-
-    <div class="section">
-      <h2>❌ 错误监控测试</h2>
-      <div class="info-box">
-        <p>测试SDK的错误捕获能力，包括同步错误、异步错误、Promise拒绝等。</p>
-      </div>
-      <div class="button-group">
-        <button onclick="triggerSyncError()">触发同步错误</button>
-        <button onclick="triggerAsyncError()">触发异步错误</button>
-        <button onclick="triggerPromiseError()">触发Promise错误</button>
-        <button onclick="triggerReferenceError()">触发引用错误</button>
-        <button onclick="triggerTypeError()">触发类型错误</button>
-        <button onclick="triggerCustomError()">触发自定义错误</button>
+      <h1>🚀 Sky Monitor SDK - 完整功能演示</h1>
+      <div class="subtitle">
+        <span>测试所有 Integrations 和 API 功能</span>
+        <span class="status">已连接</span>
+        <span class="info-badge">App ID: <span id="current-app-id">-</span></span>
+        <span class="info-badge">Release: <span id="current-release">-</span></span>
       </div>
     </div>
 
-    <div class="section">
-      <h2>🔍 用户行为测试</h2>
-      <div class="info-box">
-        <p>测试用户交互事件的捕获，如点击、输入、路由变化等。</p>
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tab-buttons">
+        <button class="tab-button active" onclick="switchTab('integrations')">🔌 Integrations</button>
+        <button class="tab-button" onclick="switchTab('sse')">📡 SSE 实时推送</button>
+        <button class="tab-button" onclick="switchTab('api')">🔗 REST API</button>
+        <button class="tab-button" onclick="switchTab('stats')">📊 统计面板</button>
       </div>
-      <div class="button-group">
-        <button onclick="simulateClick()">模拟点击事件</button>
-        <button onclick="simulateInput()">模拟输入事件</button>
-        <button onclick="simulateScroll()">模拟滚动事件</button>
-      </div>
-    </div>
 
-    <div class="section">
-      <h2>📡 网络请求测试</h2>
-      <div class="info-box">
-        <p>测试API请求监控，包括成功、失败、超时等情况。</p>
-      </div>
-      <div class="button-group">
-        <button onclick="triggerSuccessAPI()">成功请求</button>
-        <button onclick="triggerFailedAPI()">失败请求</button>
-        <button onclick="triggerSlowAPI()">慢请求</button>
-      </div>
-    </div>
+      <!-- Tab 1: Integrations 测试 -->
+      <div class="tab-content active" id="tab-integrations">
+        <!-- Breadcrumb Integration -->
+        <div class="section">
+          <h2>🍞 1. Breadcrumb Integration - 用户行为轨迹</h2>
+          <div class="info-box">
+            <p>自动捕获用户的操作轨迹，包括点击、输入、导航、控制台日志等。</p>
+            <p>事件类型: <code>breadcrumb</code></p>
+          </div>
+          <div class="button-group">
+            <button onclick="testBreadcrumbClick()">测试 DOM 点击</button>
+            <button onclick="testBreadcrumbConsole()">测试控制台日志</button>
+            <button onclick="testBreadcrumbHistory()">测试页面导航</button>
+            <button onclick="testBreadcrumbFetch()">测试 Fetch 请求</button>
+            <button onclick="testBreadcrumbXHR()">测试 XHR 请求</button>
+          </div>
+        </div>
 
-    <div class="section">
-      <h2>📝 控制台日志</h2>
-      <div class="info-box">
-        <p>在此处查看SDK的运行状态和上报日志。打开浏览器控制台查看更多详情。</p>
+        <!-- Session Replay Integration -->
+        <div class="section">
+          <h2>📹 2. Session Replay Integration - 会话录制</h2>
+          <div class="info-box">
+            <p>使用 rrweb 录制用户会话，可回放用户的完整操作过程。</p>
+            <p>事件类型: <code>replay</code></p>
+          </div>
+          <div class="button-group">
+            <button onclick="testSessionReplay()">开始会话录制测试</button>
+          </div>
+        </div>
+
+        <!-- Session Integration -->
+        <div class="section">
+          <h2>📊 3. Session Integration - 会话跟踪</h2>
+          <div class="info-box">
+            <p>跟踪用户会话，记录会话开始/结束时间、页面浏览量、停留时长等。</p>
+            <p>事件类型: <code>session</code></p>
+          </div>
+          <div class="button-group">
+            <button onclick="testSessionTracking()">查看会话信息</button>
+            <button onclick="testSessionActivity()">模拟用户活动</button>
+          </div>
+        </div>
+
+        <!-- HTTP Error Integration -->
+        <div class="section">
+          <h2>❌ 4. HTTP Error Integration - HTTP 错误捕获</h2>
+          <div class="info-box">
+            <p>自动捕获 Fetch 和 XHR 请求失败（4xx, 5xx 状态码）。</p>
+            <p>事件类型: <code>error</code> | 子类型: <code>http</code></p>
+          </div>
+          <div class="button-group">
+            <button onclick="testHttp404Error()">测试 404 错误</button>
+            <button onclick="testHttp500Error()">测试 500 错误</button>
+            <button onclick="testHttpTimeout()">测试请求超时</button>
+          </div>
+        </div>
+
+        <!-- Resource Error Integration -->
+        <div class="section">
+          <h2>📦 5. Resource Error Integration - 资源加载错误</h2>
+          <div class="info-box">
+            <p>捕获静态资源加载失败（JS、CSS、图片、字体等）。</p>
+            <p>事件类型: <code>error</code> | 子类型: <code>resource</code></p>
+          </div>
+          <div class="button-group">
+            <button onclick="testResourceErrorImage()">测试图片加载失败</button>
+            <button onclick="testResourceErrorScript()">测试 JS 加载失败</button>
+            <button onclick="testResourceErrorCSS()">测试 CSS 加载失败</button>
+          </div>
+        </div>
+
+        <!-- Resource Timing Integration -->
+        <div class="section">
+          <h2>⚡ 6. Resource Timing Integration - 资源性能监控</h2>
+          <div class="info-box">
+            <p>使用 Performance API 监控资源加载性能（DNS、TCP、下载时间等）。</p>
+            <p>事件类型: <code>performance</code> | 子类型: <code>resource</code></p>
+          </div>
+          <div class="button-group">
+            <button onclick="testResourceTiming()">测试单个资源</button>
+            <button onclick="testResourceTimingMultiple()">测试多个资源</button>
+          </div>
+        </div>
+
+        <!-- Performance Integration -->
+        <div class="section">
+          <h2>🚀 7. Performance Integration - 请求性能监控</h2>
+          <div class="info-box">
+            <p>监控 Fetch/XHR 请求的性能指标（延迟、吞吐量等）。</p>
+            <p>事件类型: <code>performance</code> | 子类型: <code>http</code></p>
+          </div>
+          <div class="button-group">
+            <button onclick="testPerformanceSlowAPI()">测试慢速 API</button>
+            <button onclick="testPerformanceFastAPI()">测试快速 API</button>
+            <button onclick="testPerformanceConcurrent()">测试并发请求</button>
+          </div>
+        </div>
+
+        <!-- Web Vitals Integration -->
+        <div class="section">
+          <h2>📈 8. Web Vitals Integration - 核心 Web 指标（规划中）</h2>
+          <div class="info-box">
+            <p>监控 Core Web Vitals (LCP, FID, CLS, FCP, TTFB)。</p>
+            <p>事件类型: <code>webVital</code></p>
+          </div>
+          <div class="button-group">
+            <button onclick="testWebVitals()">查看 Web Vitals</button>
+            <button onclick="testWebVitalsCLS()">触发布局偏移</button>
+          </div>
+        </div>
+
+        <!-- 综合测试 -->
+        <div class="section">
+          <h2>🎯 综合测试</h2>
+          <div class="button-group">
+            <button onclick="runAllTests()">运行所有测试</button>
+            <button class="secondary" onclick="clearTestArea()">清空测试区域</button>
+          </div>
+        </div>
+
+        <!-- 测试区域 -->
+        <div class="section">
+          <h2>🔬 测试区域</h2>
+          <div id="test-area">
+            <p style="color: #999;">测试结果将显示在这里...</p>
+          </div>
+        </div>
       </div>
-      <div class="button-group">
-        <button onclick="console.log('测试日志消息')">输出日志</button>
-        <button onclick="console.warn('测试警告消息')">输出警告</button>
-        <button onclick="console.error('测试错误消息')">输出错误</button>
+
+      <!-- Tab 2: SSE 实时推送 -->
+      <div class="tab-content" id="tab-sse">
+        <div class="section">
+          <h2>📡 SSE 实时推送控制</h2>
+          <div class="info-box">
+            <p>Sky Monitor 提供 8 个 SSE 端点，实现实时数据推送。</p>
+            <p>状态: <span id="sse-overall-status" style="color: #667eea; font-weight: 600;">未启动</span></p>
+          </div>
+          <div class="button-group">
+            <button onclick="window.sseDashboard && window.sseDashboard.startAll()">启动所有 SSE 连接</button>
+            <button class="danger" onclick="window.sseDashboard && window.sseDashboard.stopAll()">停止所有连接</button>
+          </div>
+        </div>
+
+        <!-- 连接状态 -->
+        <div class="section">
+          <h3>连接状态</h3>
+          <div class="sse-status-grid">
+            <div class="sse-status-card">
+              <div class="sse-status-name">通用事件流</div>
+              <div class="sse-status-value" id="sse-status-events">○ 未连接</div>
+            </div>
+            <div class="sse-status-card">
+              <div class="sse-status-name">错误事件流</div>
+              <div class="sse-status-value" id="sse-status-errors">○ 未连接</div>
+            </div>
+            <div class="sse-status-card">
+              <div class="sse-status-name">性能事件流</div>
+              <div class="sse-status-value" id="sse-status-performance">○ 未连接</div>
+            </div>
+            <div class="sse-status-card">
+              <div class="sse-status-name">Web Vitals</div>
+              <div class="sse-status-value" id="sse-status-web-vitals">○ 未连接</div>
+            </div>
+            <div class="sse-status-card">
+              <div class="sse-status-name">统计数据</div>
+              <div class="sse-status-value" id="sse-status-stats">○ 未连接</div>
+            </div>
+            <div class="sse-status-card">
+              <div class="sse-status-name">错误突增</div>
+              <div class="sse-status-value" id="sse-status-error-spikes">○ 未连接</div>
+            </div>
+            <div class="sse-status-card">
+              <div class="sse-status-name">错误趋势</div>
+              <div class="sse-status-value" id="sse-status-error-trends">○ 未连接</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 实时事件列表 -->
+        <div class="section">
+          <h3>📋 实时事件流</h3>
+          <div class="event-list" id="events-list">
+            <p style="color: #999; text-align: center; padding: 20px;">等待事件...</p>
+          </div>
+        </div>
+
+        <!-- 实时错误列表 -->
+        <div class="section">
+          <h3>❌ 实时错误流</h3>
+          <div class="event-list" id="errors-list">
+            <p style="color: #999; text-align: center; padding: 20px;">等待错误...</p>
+          </div>
+        </div>
+
+        <!-- 突增告警 -->
+        <div class="section">
+          <h3>🔥 错误突增告警</h3>
+          <div id="spike-alerts">
+            <p style="color: #999; text-align: center; padding: 20px;">等待告警...</p>
+          </div>
+        </div>
+
+        <!-- SSE 日志 -->
+        <div class="section">
+          <h3>📝 SSE 日志</h3>
+          <div class="event-list" id="sse-logs">
+            <p style="color: #999; text-align: center; padding: 20px;">等待日志...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: REST API -->
+      <div class="tab-content" id="tab-api">
+        <div class="section">
+          <h2>🔗 REST API 测试</h2>
+          <div class="info-box">
+            <p>测试 Sky Monitor 后端的所有 REST API 端点。</p>
+          </div>
+
+          <h3>事件查询 API</h3>
+          <div class="button-group">
+            <button onclick="testGetEvents()">获取事件列表</button>
+            <button onclick="testGetStats()">获取统计数据</button>
+          </div>
+
+          <h3>错误分析 API</h3>
+          <div class="button-group">
+            <button onclick="testSmartErrorGroups()">智能错误聚合</button>
+            <button onclick="testErrorTrends()">错误趋势分析</button>
+            <button onclick="testDetectSpikes()">错误突增检测</button>
+            <button onclick="testGetRecentSpikes()">获取最近突增</button>
+          </div>
+        </div>
+
+        <!-- API 响应 -->
+        <div class="section">
+          <h3>📊 API 响应</h3>
+          <div id="api-result">
+            <p style="color: #999; text-align: center; padding: 20px;">API 响应将显示在这里...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 4: 统计面板 -->
+      <div class="tab-content" id="tab-stats">
+        <div class="section">
+          <h2>📊 实时统计面板</h2>
+          <div class="info-box">
+            <p>实时显示监控数据统计。需要先启动 SSE 连接。</p>
+          </div>
+        </div>
+
+        <!-- 统计卡片 -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">总事件数</div>
+            <div class="stat-value" id="stat-total-events">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">总错误数</div>
+            <div class="stat-value" id="stat-total-errors">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">活跃用户</div>
+            <div class="stat-value" id="stat-active-users">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">错误率</div>
+            <div class="stat-value" id="stat-error-rate">0%</div>
+          </div>
+        </div>
+
+        <!-- Web Vitals -->
+        <div class="section">
+          <h3>⚡ Core Web Vitals</h3>
+          <div id="web-vitals-data">
+            <p style="color: #999; text-align: center; padding: 20px;">等待 Web Vitals 数据...</p>
+          </div>
+        </div>
+
+        <!-- 性能图表 -->
+        <div class="section">
+          <h3>📈 性能趋势</h3>
+          <div id="performance-chart" style="padding: 40px; text-align: center; color: #999;">
+            图表区域（需要集成图表库）
+          </div>
+        </div>
+
+        <!-- 错误趋势 -->
+        <div class="section">
+          <h3>📉 错误趋势</h3>
+          <div id="error-trends-chart" style="padding: 40px; text-align: center; color: #999;">
+            图表区域（需要集成图表库）
+          </div>
+        </div>
       </div>
     </div>
 
@@ -229,8 +804,28 @@
     </div>
   </div>
 
+  <script>
+    // Tab 切换
+    function switchTab(tabName) {
+      // 隐藏所有 tab
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active')
+      })
+      document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active')
+      })
+
+      // 显示选中的 tab
+      document.getElementById('tab-' + tabName).classList.add('active')
+      event.target.classList.add('active')
+    }
+  </script>
+
+  <!-- 加载模块 -->
   <script type="module" src="/src/main.js"></script>
   <script type="module" src="/src/test-functions.js"></script>
+  <script type="module" src="/src/sse-dashboard.js"></script>
+  <script type="module" src="/src/api-demo.js"></script>
 </body>
 
 </html>
