@@ -1,350 +1,223 @@
 /**
- * Integration 4: HttpErrorIntegration - HTTP 错误捕获测试
+ * 04-http-error.js - HttpErrorIntegration 测试
  *
- * 测试场景：
- * 1. Fetch 404 错误
- * 2. Fetch 500 错误
- * 3. Fetch 网络超时
- * 4. Fetch 请求取消
- * 5. XHR 404 错误
- * 6. XHR 500 错误
+ * 测试 HttpErrorIntegration 的 HTTP 错误捕获功能
+ *
+ * 测试场景 (9个)：
+ * 1. Fetch 404
+ * 2. Fetch 500
+ * 3. Fetch 超时
+ * 4. Fetch 取消
+ * 5. XHR 404
+ * 6. XHR 500
  * 7. XHR 网络错误
- * 8. 请求头捕获和脱敏验证
- * 9. 错误去重验证
+ * 8. 请求头脱敏
+ * 9. 错误去重
  *
- * 验证点：
- * - http_url 正确
- * - http_method 正确
- * - http_status 正确
- * - http_duration 记录
- * - error_fingerprint 生成
- * - requestHeaders 脱敏（Authorization）
+ * 验证字段：
+ * - http_url
+ * - http_method
+ * - http_status
+ * - http_duration
+ * - requestHeaders (脱敏)
  */
-
-import { addBreadcrumb } from '@sky-monitor/monitor-sdk-browser'
-
-const TEST_API_BASE = 'https://httpstat.us'
 
 export const HttpErrorTests = {
     name: 'HttpError Integration',
-    totalTests: 9,
-    tests: [
+    description: 'HTTP 错误捕获',
+    scenarios: [
         {
-            id: 'http-error-01',
-            name: 'Fetch 404 错误',
-            description: '测试 Fetch API 的 404 状态码捕获',
+            id: 'fetch-404',
+            name: 'Fetch 404',
+            description: 'Fetch请求返回404状态码',
             run: async () => {
-                addBreadcrumb({
-                    message: '开始测试：Fetch 404',
-                    category: 'test',
-                    level: 'info',
-                })
-
                 try {
-                    await fetch(`${TEST_API_BASE}/404`)
-                } catch (error) {
-                    // 可能会抛出网络错误
+                    await fetch('https://httpstat.us/404')
+                } catch (e) {
+                    // 网络错误
                 }
-
-                await new Promise(resolve => setTimeout(resolve, 500))
+                return 'Fetch 404 request sent'
             },
-            expectedFields: ['http_url', 'http_method', 'http_status', 'http_duration'],
-            timeout: 5000,
         },
         {
-            id: 'http-error-02',
-            name: 'Fetch 500 错误',
-            description: '测试 Fetch API 的 500 状态码捕获',
+            id: 'fetch-500',
+            name: 'Fetch 500',
+            description: 'Fetch请求返回500状态码',
             run: async () => {
-                addBreadcrumb({
-                    message: '开始测试：Fetch 500',
-                    category: 'test',
-                    level: 'info',
-                })
-
                 try {
-                    await fetch(`${TEST_API_BASE}/500`)
-                } catch (error) {
-                    // 可能会抛出网络错误
+                    await fetch('https://httpstat.us/500')
+                } catch (e) {
+                    // 网络错误
                 }
-
-                await new Promise(resolve => setTimeout(resolve, 500))
+                return 'Fetch 500 request sent'
             },
-            expectedFields: ['http_url', 'http_method', 'http_status', 'http_duration'],
-            timeout: 5000,
         },
         {
-            id: 'http-error-03',
-            name: 'Fetch 网络超时',
-            description: '测试 Fetch 请求超时',
+            id: 'fetch-timeout',
+            name: 'Fetch 超时',
+            description: 'Fetch请求超时',
             run: async () => {
-                addBreadcrumb({
-                    message: '开始测试：Fetch 超时',
-                    category: 'test',
-                    level: 'info',
-                })
+                const controller = new AbortController()
+                const timeoutId = setTimeout(() => controller.abort(), 100)
 
                 try {
-                    const controller = new AbortController()
-                    const timeoutId = setTimeout(() => controller.abort(), 1000)
-
-                    await fetch(`${TEST_API_BASE}/200?sleep=5000`, {
+                    await fetch('https://httpstat.us/200?sleep=5000', {
                         signal: controller.signal,
                     })
-
+                } catch (e) {
                     clearTimeout(timeoutId)
-                } catch (error) {
-                    // 预期会超时
+                    return 'Fetch timeout/abort triggered'
                 }
-
-                await new Promise(resolve => setTimeout(resolve, 500))
+                clearTimeout(timeoutId)
             },
-            expectedFields: ['http_url', 'http_method', 'error_message'],
-            timeout: 3000,
         },
         {
-            id: 'http-error-04',
-            name: 'Fetch 请求取消',
-            description: '测试 Fetch 请求中止',
+            id: 'fetch-cancel',
+            name: 'Fetch 取消',
+            description: '主动取消Fetch请求',
             run: async () => {
-                addBreadcrumb({
-                    message: '开始测试：Fetch 取消',
-                    category: 'test',
-                    level: 'info',
-                })
+                const controller = new AbortController()
 
-                try {
-                    const controller = new AbortController()
+                const fetchPromise = fetch('https://httpstat.us/200?sleep=3000', {
+                    signal: controller.signal,
+                }).catch(() => {})
 
-                    // 立即取消请求
-                    setTimeout(() => controller.abort(), 100)
+                // 立即取消
+                setTimeout(() => controller.abort(), 10)
 
-                    await fetch(`${TEST_API_BASE}/200?sleep=2000`, {
-                        signal: controller.signal,
-                    })
-                } catch (error) {
-                    // 预期会被取消
-                }
-
-                await new Promise(resolve => setTimeout(resolve, 500))
+                await fetchPromise
+                return 'Fetch request cancelled'
             },
-            expectedFields: ['http_url', 'http_method', 'error_message'],
-            timeout: 3000,
         },
         {
-            id: 'http-error-05',
-            name: 'XHR 404 错误',
-            description: '测试 XMLHttpRequest 的 404 状态码',
-            run: async () => {
-                addBreadcrumb({
-                    message: '开始测试：XHR 404',
-                    category: 'test',
-                    level: 'info',
-                })
-
+            id: 'xhr-404',
+            name: 'XHR 404',
+            description: 'XMLHttpRequest返回404',
+            run: () => {
                 return new Promise(resolve => {
                     const xhr = new XMLHttpRequest()
-                    xhr.open('GET', `${TEST_API_BASE}/404`)
-                    xhr.onloadend = () => {
-                        setTimeout(resolve, 500)
-                    }
-                    xhr.onerror = () => {
-                        setTimeout(resolve, 500)
-                    }
+                    xhr.open('GET', 'https://httpstat.us/404')
+                    xhr.onloadend = () => resolve('XHR 404 request sent')
                     xhr.send()
                 })
             },
-            expectedFields: ['http_url', 'http_method', 'http_status'],
-            timeout: 5000,
         },
         {
-            id: 'http-error-06',
-            name: 'XHR 500 错误',
-            description: '测试 XMLHttpRequest 的 500 状态码',
-            run: async () => {
-                addBreadcrumb({
-                    message: '开始测试：XHR 500',
-                    category: 'test',
-                    level: 'info',
-                })
-
+            id: 'xhr-500',
+            name: 'XHR 500',
+            description: 'XMLHttpRequest返回500',
+            run: () => {
                 return new Promise(resolve => {
                     const xhr = new XMLHttpRequest()
-                    xhr.open('POST', `${TEST_API_BASE}/500`)
-                    xhr.onloadend = () => {
-                        setTimeout(resolve, 500)
-                    }
-                    xhr.onerror = () => {
-                        setTimeout(resolve, 500)
-                    }
-                    xhr.send(JSON.stringify({ test: 'data' }))
+                    xhr.open('GET', 'https://httpstat.us/500')
+                    xhr.onloadend = () => resolve('XHR 500 request sent')
+                    xhr.send()
                 })
             },
-            expectedFields: ['http_url', 'http_method', 'http_status'],
-            timeout: 5000,
         },
         {
-            id: 'http-error-07',
+            id: 'xhr-network-error',
             name: 'XHR 网络错误',
-            description: '测试 XMLHttpRequest 网络错误',
-            run: async () => {
-                addBreadcrumb({
-                    message: '开始测试：XHR 网络错误',
-                    category: 'test',
-                    level: 'info',
-                })
-
+            description: 'XHR网络错误',
+            run: () => {
                 return new Promise(resolve => {
                     const xhr = new XMLHttpRequest()
-                    xhr.open('GET', 'https://nonexistent-domain-test-12345.com/api')
-                    xhr.timeout = 2000
-                    xhr.ontimeout = () => {
-                        setTimeout(resolve, 500)
-                    }
-                    xhr.onerror = () => {
-                        setTimeout(resolve, 500)
-                    }
-                    xhr.onloadend = () => {
-                        setTimeout(resolve, 500)
-                    }
+                    xhr.open('GET', 'https://nonexistent-domain-' + Date.now() + '.com/api')
+                    xhr.onerror = () => resolve('XHR network error triggered')
+                    xhr.ontimeout = () => resolve('XHR network error triggered')
+                    xhr.onloadend = () => resolve('XHR network error request sent')
+                    xhr.timeout = 1000
                     xhr.send()
                 })
             },
-            expectedFields: ['http_url', 'http_method', 'error_message'],
-            timeout: 5000,
         },
         {
-            id: 'http-error-08',
-            name: '请求头捕获和脱敏',
-            description: '验证敏感请求头（如 Authorization）被脱敏',
+            id: 'header-sanitization',
+            name: '请求头脱敏',
+            description: '验证敏感请求头被脱敏',
             run: async () => {
-                addBreadcrumb({
-                    message: '开始测试：请求头脱敏',
-                    category: 'test',
-                    level: 'info',
-                })
-
                 try {
-                    await fetch(`${TEST_API_BASE}/404`, {
+                    await fetch('https://httpstat.us/401', {
                         headers: {
                             Authorization: 'Bearer secret-token-12345',
-                            'X-Custom-Header': 'CustomValue',
+                            Cookie: 'session_id=secret-session',
+                            'X-API-Key': 'secret-api-key',
+                            'Content-Type': 'application/json',
                         },
                     })
-                } catch (error) {
+                } catch (e) {
                     // 忽略错误
                 }
-
-                const container = document.getElementById('test-area')
-                if (container) {
-                    container.innerHTML = `
-                        <h3>请求头脱敏测试</h3>
-                        <p>已发送包含 Authorization header 的请求</p>
-                        <p>SDK 应该脱敏敏感信息：</p>
-                        <ul>
-                            <li>Authorization: Bearer secret-token-12345 → ******</li>
-                            <li>X-Custom-Header: CustomValue → 保留</li>
-                        </ul>
-                        <p>查看后端数据验证脱敏是否生效</p>
-                    `
-                }
-
-                await new Promise(resolve => setTimeout(resolve, 500))
+                return 'Request with sensitive headers sent - should be sanitized'
             },
-            expectedFields: ['http_url', 'requestHeaders'],
-            expectedSanitization: true,
-            timeout: 5000,
         },
         {
-            id: 'http-error-09',
-            name: 'HTTP 错误去重',
-            description: '测试相同 HTTP 错误的去重',
+            id: 'http-deduplication',
+            name: 'HTTP错误去重',
+            description: '5秒内相同HTTP错误去重',
             run: async () => {
-                addBreadcrumb({
-                    message: '开始测试：HTTP 错误去重',
-                    category: 'test',
-                    level: 'info',
-                })
-
-                // 连续发送 3 个相同的失败请求
+                // 连续发送3个相同的404请求
                 for (let i = 0; i < 3; i++) {
-                    try {
-                        await fetch(`${TEST_API_BASE}/404`)
-                    } catch (error) {
-                        // 忽略错误
-                    }
-                    await new Promise(resolve => setTimeout(resolve, 200))
+                    fetch('https://httpstat.us/404').catch(() => {})
+                    await new Promise(resolve => setTimeout(resolve, 100))
                 }
-
-                const container = document.getElementById('test-area')
-                if (container) {
-                    container.innerHTML = `
-                        <h3>HTTP 错误去重测试</h3>
-                        <p>已连续发送 3 个相同的 404 请求</p>
-                        <p>去重机制应该生效（5秒窗口）</p>
-                        <p>预期: 只上报 1 次，dedup_count = 3</p>
-                        <p>查看后端数据验证去重是否生效</p>
-                    `
-                }
-
-                await new Promise(resolve => setTimeout(resolve, 500))
+                return 'HTTP error deduplication test - 3 identical 404 requests'
             },
-            expectedFields: ['http_url', 'http_status', 'error_fingerprint'],
-            expectedDedup: true,
-            timeout: 5000,
         },
     ],
-}
 
-// 导出单独的测试函数
-export function testFetch404() {
-    return HttpErrorTests.tests[0].run()
-}
-
-export function testFetch500() {
-    return HttpErrorTests.tests[1].run()
-}
-
-export function testFetchTimeout() {
-    return HttpErrorTests.tests[2].run()
-}
-
-export function testFetchAbort() {
-    return HttpErrorTests.tests[3].run()
-}
-
-export function testXHR404() {
-    return HttpErrorTests.tests[4].run()
-}
-
-export function testXHR500() {
-    return HttpErrorTests.tests[5].run()
-}
-
-export function testXHRNetworkError() {
-    return HttpErrorTests.tests[6].run()
-}
-
-export function testHeaderSanitization() {
-    return HttpErrorTests.tests[7].run()
-}
-
-export function testHttpErrorDedup() {
-    return HttpErrorTests.tests[8].run()
-}
-
-// 运行所有 HTTP 错误测试
-export async function runAllHttpErrorTests() {
-    const results = []
-
-    for (const test of HttpErrorTests.tests) {
-        try {
-            await test.run()
-            results.push({ id: test.id, name: test.name, status: 'passed' })
-        } catch (error) {
-            results.push({ id: test.id, name: test.name, status: 'failed', error: error.message })
+    async runAll() {
+        const results = []
+        for (const scenario of this.scenarios) {
+            try {
+                const message = await scenario.run()
+                results.push({
+                    id: scenario.id,
+                    name: scenario.name,
+                    status: 'success',
+                    message,
+                    timestamp: new Date().toISOString(),
+                })
+                // 小延迟避免请求过快
+                await new Promise(resolve => setTimeout(resolve, 500))
+            } catch (error) {
+                results.push({
+                    id: scenario.id,
+                    name: scenario.name,
+                    status: 'error',
+                    error: error.message,
+                    timestamp: new Date().toISOString(),
+                })
+            }
         }
-    }
+        return results
+    },
 
-    return results
+    async runScenario(scenarioId) {
+        const scenario = this.scenarios.find(s => s.id === scenarioId)
+        if (!scenario) {
+            throw new Error(`Scenario ${scenarioId} not found`)
+        }
+
+        try {
+            const message = await scenario.run()
+            return {
+                id: scenario.id,
+                name: scenario.name,
+                status: 'success',
+                message,
+                timestamp: new Date().toISOString(),
+            }
+        } catch (error) {
+            return {
+                id: scenario.id,
+                name: scenario.name,
+                status: 'error',
+                error: error.message,
+                timestamp: new Date().toISOString(),
+            }
+        }
+    },
 }
+
+export default HttpErrorTests

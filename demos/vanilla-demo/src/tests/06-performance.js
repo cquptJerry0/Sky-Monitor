@@ -1,290 +1,170 @@
 /**
- * Integration 6: PerformanceIntegration - 请求性能监控测试
+ * 06-performance.js - PerformanceIntegration 测试
  *
- * 测试场景：
- * 1. 快速请求（< 3s）- 不上报
- * 2. 慢速请求（> 3s）- 上报
- * 3. 失败请求（任何耗时）- 上报
- * 4. 并发请求性能监控
- * 5. XHR 性能监控
- * 6. Fetch 性能监控
+ * 测试 PerformanceIntegration 的请求性能监控功能
  *
- * 验证点：
+ * 测试场景 (6个)：
+ * 1. 快速请求 (< 3s) - 不上报
+ * 2. 慢速请求 (> 3s) - 上报
+ * 3. 失败请求 - 上报
+ * 4. 并发请求监控
+ * 5. XHR性能监控
+ * 6. Fetch性能监控
+ *
+ * 验证字段：
  * - perf_category: 'http'
- * - http_duration 正确
- * - perf_is_slow 标记正确
- * - perf_success 标记正确
- * - 只有慢请求和失败请求上报
+ * - http_duration
+ * - perf_is_slow
+ * - perf_success
  */
-
-import { addBreadcrumb } from '@sky-monitor/monitor-sdk-browser'
-
-const TEST_API_BASE = 'https://httpstat.us'
 
 export const PerformanceTests = {
     name: 'Performance Integration',
-    totalTests: 6,
-    tests: [
+    description: '请求性能监控',
+    scenarios: [
         {
-            id: 'performance-01',
-            name: '快速请求（不上报）',
-            description: '测试快速请求（< 3s）不会被上报',
+            id: 'fast-request',
+            name: '快速请求',
+            description: '小于3秒的请求（不上报）',
             run: async () => {
-                addBreadcrumb({
-                    message: '开始测试：快速请求',
-                    category: 'test',
-                    level: 'info',
-                })
-
+                await fetch('https://httpstat.us/200?sleep=500')
+                return 'Fast request (< 3s) - should NOT be reported'
+            },
+        },
+        {
+            id: 'slow-request',
+            name: '慢速请求',
+            description: '大于3秒的慢请求（上报）',
+            run: async () => {
                 try {
-                    await fetch(`${TEST_API_BASE}/200`)
-                } catch (error) {
+                    await fetch('https://httpstat.us/200?sleep=4000')
+                } catch (e) {
+                    // 可能超时
+                }
+                return 'Slow request (> 3s) - should be reported'
+            },
+        },
+        {
+            id: 'failed-request',
+            name: '失败请求',
+            description: '失败的请求（上报）',
+            run: async () => {
+                try {
+                    await fetch('https://httpstat.us/500')
+                } catch (e) {
                     // 忽略错误
                 }
-
-                const container = document.getElementById('test-area')
-                if (container) {
-                    container.innerHTML = `
-                        <h3>快速请求测试</h3>
-                        <p>已发送快速请求（< 3秒）</p>
-                        <p>配置: traceAllRequests = false</p>
-                        <p>预期: 该请求不会被上报到性能监控</p>
-                        <p>查看后端验证没有对应的性能事件</p>
-                    `
-                }
-
-                await new Promise(resolve => setTimeout(resolve, 500))
+                return 'Failed request - should be reported'
             },
-            expectedFields: [],
-            shouldNotReport: true,
-            timeout: 5000,
         },
         {
-            id: 'performance-02',
-            name: '慢速请求（上报）',
-            description: '测试慢速请求（> 3s）会被上报',
+            id: 'concurrent-requests',
+            name: '并发请求',
+            description: '同时发起多个请求',
             run: async () => {
-                addBreadcrumb({
-                    message: '开始测试：慢速请求',
-                    category: 'test',
-                    level: 'info',
-                })
-
-                const startTime = Date.now()
-                try {
-                    await fetch(`${TEST_API_BASE}/200?sleep=4000`)
-                } catch (error) {
-                    // 可能超时
-                }
-                const duration = Date.now() - startTime
-
-                const container = document.getElementById('test-area')
-                if (container) {
-                    container.innerHTML = `
-                        <h3>慢速请求测试</h3>
-                        <p>请求耗时: ${Math.round(duration)}ms</p>
-                        <p>慢请求阈值: 3000ms</p>
-                        <p>预期: 该请求会被上报（perf_is_slow = true）</p>
-                        <p>查看后端验证性能事件</p>
-                    `
-                }
-
-                await new Promise(resolve => setTimeout(resolve, 500))
-            },
-            expectedFields: ['perf_category', 'http_duration', 'perf_is_slow', 'perf_success'],
-            timeout: 10000,
-        },
-        {
-            id: 'performance-03',
-            name: '失败请求（上报）',
-            description: '测试失败请求（任何耗时）会被上报',
-            run: async () => {
-                addBreadcrumb({
-                    message: '开始测试：失败请求',
-                    category: 'test',
-                    level: 'info',
-                })
-
-                const startTime = Date.now()
-                try {
-                    await fetch(`${TEST_API_BASE}/500`)
-                } catch (error) {
-                    // 预期失败
-                }
-                const duration = Date.now() - startTime
-
-                const container = document.getElementById('test-area')
-                if (container) {
-                    container.innerHTML = `
-                        <h3>失败请求测试</h3>
-                        <p>请求耗时: ${Math.round(duration)}ms</p>
-                        <p>HTTP 状态: 500</p>
-                        <p>预期: 失败请求无论耗时都上报（perf_success = false）</p>
-                        <p>查看后端验证性能事件</p>
-                    `
-                }
-
-                await new Promise(resolve => setTimeout(resolve, 500))
-            },
-            expectedFields: ['perf_category', 'http_duration', 'perf_success'],
-            timeout: 5000,
-        },
-        {
-            id: 'performance-04',
-            name: '并发请求监控',
-            description: '测试并发请求的性能监控',
-            run: async () => {
-                addBreadcrumb({
-                    message: '开始测试：并发请求',
-                    category: 'test',
-                    level: 'info',
-                })
-
-                const startTime = Date.now()
-
-                // 并发发送 3 个请求
-                const promises = [
-                    fetch(`${TEST_API_BASE}/200?sleep=3500`).catch(() => {}),
-                    fetch(`${TEST_API_BASE}/200?sleep=4000`).catch(() => {}),
-                    fetch(`${TEST_API_BASE}/500`).catch(() => {}),
+                const requests = [
+                    fetch('https://httpstat.us/200?sleep=1000'),
+                    fetch('https://httpstat.us/200?sleep=1500'),
+                    fetch('https://httpstat.us/200?sleep=2000'),
                 ]
 
-                await Promise.all(promises)
-                const totalDuration = Date.now() - startTime
-
-                const container = document.getElementById('test-area')
-                if (container) {
-                    container.innerHTML = `
-                        <h3>并发请求测试</h3>
-                        <p>已发送 3 个并发请求</p>
-                        <p>总耗时: ${Math.round(totalDuration)}ms</p>
-                        <p>请求 1: 慢速（3.5s）</p>
-                        <p>请求 2: 慢速（4s）</p>
-                        <p>请求 3: 失败（500）</p>
-                        <p>预期: 上报 3 个性能事件</p>
-                    `
-                }
-
-                await new Promise(resolve => setTimeout(resolve, 500))
+                await Promise.allSettled(requests)
+                return 'Concurrent requests completed'
             },
-            expectedFields: ['perf_category', 'http_duration'],
-            timeout: 10000,
         },
         {
-            id: 'performance-05',
-            name: 'XHR 性能监控',
-            description: '测试 XMLHttpRequest 的性能监控',
-            run: async () => {
-                addBreadcrumb({
-                    message: '开始测试：XHR 性能',
-                    category: 'test',
-                    level: 'info',
-                })
-
+            id: 'xhr-performance',
+            name: 'XHR性能监控',
+            description: 'XMLHttpRequest性能监控',
+            run: () => {
                 return new Promise(resolve => {
-                    const startTime = Date.now()
                     const xhr = new XMLHttpRequest()
-
-                    xhr.open('GET', `${TEST_API_BASE}/200?sleep=3500`)
-                    xhr.onloadend = () => {
-                        const duration = Date.now() - startTime
-
-                        const container = document.getElementById('test-area')
-                        if (container) {
-                            container.innerHTML = `
-                                <h3>XHR 性能监控测试</h3>
-                                <p>XHR 请求耗时: ${Math.round(duration)}ms</p>
-                                <p>慢请求阈值: 3000ms</p>
-                                <p>预期: 该 XHR 请求会被上报</p>
-                            `
-                        }
-
-                        setTimeout(resolve, 500)
-                    }
-                    xhr.onerror = () => {
-                        setTimeout(resolve, 500)
-                    }
+                    xhr.open('GET', 'https://httpstat.us/200?sleep=3500')
+                    xhr.onloadend = () => resolve('XHR slow request (> 3s) completed')
+                    xhr.onerror = () => resolve('XHR request failed')
                     xhr.send()
+
+                    // 超时保护
+                    setTimeout(() => resolve('XHR request timeout'), 5000)
                 })
             },
-            expectedFields: ['perf_category', 'http_duration', 'perf_is_slow'],
-            timeout: 10000,
         },
         {
-            id: 'performance-06',
-            name: 'Fetch 性能监控',
-            description: '测试 Fetch API 的性能监控',
+            id: 'fetch-performance',
+            name: 'Fetch性能监控',
+            description: 'Fetch请求性能监控',
             run: async () => {
-                addBreadcrumb({
-                    message: '开始测试：Fetch 性能',
-                    category: 'test',
-                    level: 'info',
-                })
+                const requests = [
+                    { name: 'fast', url: 'https://httpstat.us/200?sleep=500' },
+                    { name: 'slow', url: 'https://httpstat.us/200?sleep=3500' },
+                ]
 
-                const startTime = Date.now()
-                try {
-                    await fetch(`${TEST_API_BASE}/200?sleep=3500`)
-                } catch (error) {
-                    // 可能超时
-                }
-                const duration = Date.now() - startTime
-
-                const container = document.getElementById('test-area')
-                if (container) {
-                    container.innerHTML = `
-                        <h3>Fetch 性能监控测试</h3>
-                        <p>Fetch 请求耗时: ${Math.round(duration)}ms</p>
-                        <p>慢请求阈值: 3000ms</p>
-                        <p>预期: 该 Fetch 请求会被上报</p>
-                        <p>查看后端验证性能事件包含正确的 http_method 和 http_url</p>
-                    `
+                for (const req of requests) {
+                    try {
+                        await fetch(req.url)
+                    } catch (e) {
+                        // 忽略错误
+                    }
+                    await new Promise(resolve => setTimeout(resolve, 500))
                 }
 
-                await new Promise(resolve => setTimeout(resolve, 500))
+                return 'Fetch performance monitoring: fast + slow requests'
             },
-            expectedFields: ['perf_category', 'http_duration', 'perf_is_slow', 'http_method', 'http_url'],
-            timeout: 10000,
         },
     ],
-}
 
-// 导出单独的测试函数
-export function testFastRequest() {
-    return PerformanceTests.tests[0].run()
-}
-
-export function testSlowRequest() {
-    return PerformanceTests.tests[1].run()
-}
-
-export function testFailedRequest() {
-    return PerformanceTests.tests[2].run()
-}
-
-export function testConcurrentRequests() {
-    return PerformanceTests.tests[3].run()
-}
-
-export function testXHRPerformance() {
-    return PerformanceTests.tests[4].run()
-}
-
-export function testFetchPerformance() {
-    return PerformanceTests.tests[5].run()
-}
-
-// 运行所有性能测试
-export async function runAllPerformanceTests() {
-    const results = []
-
-    for (const test of PerformanceTests.tests) {
-        try {
-            await test.run()
-            results.push({ id: test.id, name: test.name, status: 'passed' })
-        } catch (error) {
-            results.push({ id: test.id, name: test.name, status: 'failed', error: error.message })
+    async runAll() {
+        const results = []
+        for (const scenario of this.scenarios) {
+            try {
+                const message = await scenario.run()
+                results.push({
+                    id: scenario.id,
+                    name: scenario.name,
+                    status: 'success',
+                    message,
+                    timestamp: new Date().toISOString(),
+                })
+                // 延迟避免请求过快
+                await new Promise(resolve => setTimeout(resolve, 1000))
+            } catch (error) {
+                results.push({
+                    id: scenario.id,
+                    name: scenario.name,
+                    status: 'error',
+                    error: error.message,
+                    timestamp: new Date().toISOString(),
+                })
+            }
         }
-    }
+        return results
+    },
 
-    return results
+    async runScenario(scenarioId) {
+        const scenario = this.scenarios.find(s => s.id === scenarioId)
+        if (!scenario) {
+            throw new Error(`Scenario ${scenarioId} not found`)
+        }
+
+        try {
+            const message = await scenario.run()
+            return {
+                id: scenario.id,
+                name: scenario.name,
+                status: 'success',
+                message,
+                timestamp: new Date().toISOString(),
+            }
+        } catch (error) {
+            return {
+                id: scenario.id,
+                name: scenario.name,
+                status: 'error',
+                error: error.message,
+                timestamp: new Date().toISOString(),
+            }
+        }
+    },
 }
+
+export default PerformanceTests

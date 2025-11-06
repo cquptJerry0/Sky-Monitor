@@ -1,175 +1,183 @@
 /**
- * Integration 2: Metrics - Core Web Vitals 测试
+ * 02-metrics.js - Metrics Integration 测试
  *
- * 测试场景：
- * 1. 触发 LCP（加载大图片）
- * 2. 触发 FCP（首次内容渲染）
- * 3. 触发 CLS（布局偏移）
- * 4. 触发 TTFB（页面刷新）
+ * 测试 Metrics Integration 的 Core Web Vitals 监控功能
  *
- * 验证点：
+ * 测试场景 (4个)：
+ * 1. 触发LCP (Largest Contentful Paint) - 加载大图片
+ * 2. 触发FCP (First Contentful Paint) - 首次内容渲染
+ * 3. 触发CLS (Cumulative Layout Shift) - 布局偏移
+ * 4. 触发TTFB (Time to First Byte) - 页面刷新
+ *
+ * 验证字段：
  * - event_type: 'webVital'
- * - event_name: 'LCP'|'FCP'|'CLS'|'TTFB'
- * - perf_value 数值正确
- * - path 字段记录
+ * - event_name: 'LCP' | 'FCP' | 'CLS' | 'TTFB'
+ * - perf_value
+ * - path
  */
-
-import { addBreadcrumb } from '@sky-monitor/monitor-sdk-browser'
 
 export const MetricsTests = {
     name: 'Metrics Integration',
-    totalTests: 4,
-    tests: [
+    description: 'Core Web Vitals 监控',
+    scenarios: [
         {
-            id: 'metrics-01',
-            name: 'LCP (Largest Contentful Paint)',
-            description: '测试最大内容绘制时间',
+            id: 'trigger-lcp',
+            name: '触发LCP',
+            description: '加载大图片触发 Largest Contentful Paint',
             run: async () => {
-                addBreadcrumb({
-                    message: '开始测试：LCP',
-                    category: 'test',
-                    level: 'info',
-                })
+                // 创建一个大图片元素
+                const container = document.createElement('div')
+                container.id = 'lcp-test-container'
+                container.style.cssText = 'width: 800px; height: 600px; margin: 20px;'
 
-                // LCP 会在页面加载时自动捕获
-                // 创建一个大图片来触发 LCP
-                const img = new Image()
-                img.src = 'https://via.placeholder.com/1920x1080/667eea/ffffff?text=LCP+Test+Image'
-                img.style.cssText = 'width: 100%; max-width: 600px; height: auto;'
+                const img = document.createElement('img')
+                img.src = 'https://picsum.photos/800/600?random=' + Date.now()
+                img.style.cssText = 'width: 100%; height: 100%;'
+                img.alt = 'LCP Test Image'
 
-                const container = document.getElementById('test-area')
-                if (container) {
-                    container.innerHTML = ''
-                    container.appendChild(img)
-                }
+                container.appendChild(img)
+                document.body.appendChild(container)
 
-                // 等待图片加载完成
+                // 等待图片加载
                 await new Promise(resolve => {
                     img.onload = resolve
                     img.onerror = resolve
-                    setTimeout(resolve, 3000)
+                    setTimeout(resolve, 3000) // 超时保护
                 })
+
+                // 清理
+                setTimeout(() => container.remove(), 1000)
+
+                return 'LCP should be triggered by large image load'
             },
-            expectedFields: ['event_type', 'event_name', 'perf_value', 'path'],
-            timeout: 5000,
         },
         {
-            id: 'metrics-02',
-            name: 'FCP (First Contentful Paint)',
-            description: '测试首次内容绘制时间',
-            run: async () => {
-                addBreadcrumb({
-                    message: '开始测试：FCP',
-                    category: 'test',
-                    level: 'info',
-                })
+            id: 'trigger-fcp',
+            name: '触发FCP',
+            description: '首次内容渲染（页面初始化时自动触发）',
+            run: () => {
+                // FCP 通常在页面加载时自动触发
+                // 这里我们创建一些可见内容来确保触发
+                const div = document.createElement('div')
+                div.textContent = 'FCP Test - First Contentful Paint'
+                div.style.cssText = 'font-size: 24px; padding: 20px; color: #333;'
+                document.body.appendChild(div)
 
-                // FCP 在页面加载时自动捕获
-                // 这里我们只是记录一个标记
-                const container = document.getElementById('test-area')
-                if (container) {
-                    container.innerHTML = '<h3>FCP 会在页面首次渲染时自动捕获</h3><p>此指标反映页面首次渲染任何内容的时间</p>'
-                }
+                setTimeout(() => div.remove(), 1000)
 
-                // 等待一段时间让指标被收集
-                await new Promise(resolve => setTimeout(resolve, 1000))
+                return 'FCP should be triggered automatically on page load'
             },
-            expectedFields: ['event_type', 'event_name', 'perf_value'],
-            timeout: 3000,
         },
         {
-            id: 'metrics-03',
-            name: 'CLS (Cumulative Layout Shift)',
-            description: '测试累积布局偏移',
+            id: 'trigger-cls',
+            name: '触发CLS',
+            description: '布局偏移 - 动态插入内容导致布局变化',
             run: async () => {
-                addBreadcrumb({
-                    message: '开始测试：CLS',
-                    category: 'test',
-                    level: 'info',
-                })
+                // 创建一个容器
+                const container = document.createElement('div')
+                container.id = 'cls-test-container'
+                container.style.cssText = 'min-height: 100px; background: #f0f0f0; margin: 20px;'
 
-                const container = document.getElementById('test-area')
-                if (container) {
-                    // 创建一个会导致布局偏移的元素
-                    const div = document.createElement('div')
-                    div.style.cssText =
-                        'width: 100%; height: 100px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); margin-top: 20px; transition: margin-top 0.3s;'
-                    div.innerHTML = '<p style="color: white; padding: 20px;">观察布局变化...</p>'
+                const staticContent = document.createElement('div')
+                staticContent.textContent = 'Static content below'
+                staticContent.style.cssText = 'padding: 20px; background: #e0e0e0;'
 
-                    container.innerHTML = ''
-                    container.appendChild(div)
+                document.body.appendChild(container)
+                document.body.appendChild(staticContent)
 
-                    // 延迟后改变布局
-                    await new Promise(resolve => setTimeout(resolve, 100))
-                    div.style.marginTop = '100px'
+                // 等待一帧
+                await new Promise(resolve => requestAnimationFrame(resolve))
 
-                    await new Promise(resolve => setTimeout(resolve, 500))
-                    div.style.marginTop = '200px'
+                // 动态插入大内容，导致下方元素移动
+                const dynamicContent = document.createElement('div')
+                dynamicContent.textContent = 'Dynamic content causing layout shift'
+                dynamicContent.style.cssText = 'height: 300px; padding: 20px; background: #ffa500; margin: 20px 0;'
+                container.appendChild(dynamicContent)
 
-                    // 等待 CLS 指标被收集
-                    await new Promise(resolve => setTimeout(resolve, 1000))
-                }
+                // 等待CLS计算
+                await new Promise(resolve => setTimeout(resolve, 500))
+
+                // 清理
+                setTimeout(() => {
+                    container.remove()
+                    staticContent.remove()
+                }, 1000)
+
+                return 'CLS should be triggered by dynamic content insertion'
             },
-            expectedFields: ['event_type', 'event_name', 'perf_value'],
-            timeout: 3000,
         },
         {
-            id: 'metrics-04',
-            name: 'TTFB (Time to First Byte)',
-            description: '测试首字节时间',
-            run: async () => {
-                addBreadcrumb({
-                    message: '开始测试：TTFB',
-                    category: 'test',
-                    level: 'info',
-                })
-
-                // TTFB 在页面加载时自动捕获
-                // 显示说明信息
-                const container = document.getElementById('test-area')
-                if (container) {
-                    container.innerHTML =
-                        '<h3>TTFB 在页面加载时自动捕获</h3><p>此指标反映从请求发出到收到响应首字节的时间</p><p>刷新页面可以看到新的 TTFB 值</p>'
+            id: 'trigger-ttfb',
+            name: '触发TTFB',
+            description: 'Time to First Byte（页面初始化时自动触发）',
+            run: () => {
+                // TTFB 在页面加载时自动触发
+                // 可以通过 Navigation Timing API 获取
+                if (performance && performance.timing) {
+                    const ttfb = performance.timing.responseStart - performance.timing.requestStart
+                    return `TTFB: ${ttfb}ms (automatically captured on page load)`
                 }
-
-                // 等待一段时间
-                await new Promise(resolve => setTimeout(resolve, 1000))
+                return 'TTFB should be triggered automatically on page load'
             },
-            expectedFields: ['event_type', 'event_name', 'perf_value'],
-            timeout: 3000,
         },
     ],
-}
 
-// 导出单独的测试函数
-export function testLCP() {
-    return MetricsTests.tests[0].run()
-}
-
-export function testFCP() {
-    return MetricsTests.tests[1].run()
-}
-
-export function testCLS() {
-    return MetricsTests.tests[2].run()
-}
-
-export function testTTFB() {
-    return MetricsTests.tests[3].run()
-}
-
-// 运行所有 Web Vitals 测试
-export async function runAllMetricsTests() {
-    const results = []
-
-    for (const test of MetricsTests.tests) {
-        try {
-            await test.run()
-            results.push({ id: test.id, name: test.name, status: 'passed' })
-        } catch (error) {
-            results.push({ id: test.id, name: test.name, status: 'failed', error: error.message })
+    /**
+     * 运行所有测试场景
+     */
+    async runAll() {
+        const results = []
+        for (const scenario of this.scenarios) {
+            try {
+                const message = await scenario.run()
+                results.push({
+                    id: scenario.id,
+                    name: scenario.name,
+                    status: 'success',
+                    message,
+                    timestamp: new Date().toISOString(),
+                })
+            } catch (error) {
+                results.push({
+                    id: scenario.id,
+                    name: scenario.name,
+                    status: 'error',
+                    error: error.message,
+                    timestamp: new Date().toISOString(),
+                })
+            }
         }
-    }
+        return results
+    },
 
-    return results
+    /**
+     * 运行单个测试场景
+     */
+    async runScenario(scenarioId) {
+        const scenario = this.scenarios.find(s => s.id === scenarioId)
+        if (!scenario) {
+            throw new Error(`Scenario ${scenarioId} not found`)
+        }
+
+        try {
+            const message = await scenario.run()
+            return {
+                id: scenario.id,
+                name: scenario.name,
+                status: 'success',
+                message,
+                timestamp: new Date().toISOString(),
+            }
+        } catch (error) {
+            return {
+                id: scenario.id,
+                name: scenario.name,
+                status: 'error',
+                error: error.message,
+                timestamp: new Date().toISOString(),
+            }
+        }
+    },
 }
+
+export default MetricsTests

@@ -1,324 +1,260 @@
 /**
- * 测试辅助函数
+ * test-helpers.js - 测试辅助函数
  *
- * 提供通用的测试工具方法，简化测试编写
+ * 提供测试运行、结果展示、状态管理等通用工具方法
  */
 
-export const TestHelpers = {
-    /**
-     * 等待指定时间
-     * @param {number} ms - 等待毫秒数
-     * @returns {Promise<void>}
-     */
-    wait(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms))
-    },
+/**
+ * 测试事件总线
+ */
+class EventBus {
+    constructor() {
+        this.listeners = {}
+    }
 
-    /**
-     * 格式化时间戳为可读字符串
-     * @param {string|number|Date} timestamp - 时间戳
-     * @returns {string}
-     */
-    formatTimestamp(timestamp) {
-        const date = new Date(timestamp)
-        return date.toLocaleString('zh-CN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-        })
-    },
-
-    /**
-     * 格式化持续时间
-     * @param {number} ms - 毫秒数
-     * @returns {string}
-     */
-    formatDuration(ms) {
-        if (ms < 1000) return `${ms}ms`
-        if (ms < 60000) return `${(ms / 1000).toFixed(2)}s`
-        return `${(ms / 60000).toFixed(2)}min`
-    },
-
-    /**
-     * 显示测试结果
-     * @param {string} containerId - 容器 DOM ID
-     * @param {object} result - 测试结果
-     */
-    displayTestResult(containerId, result) {
-        const container = document.getElementById(containerId)
-        if (!container) return
-
-        const statusClass = result.status === 'passed' ? 'text-green-600' : 'text-red-600'
-        const statusIcon = result.status === 'passed' ? '✓' : '✗'
-
-        container.innerHTML = `
-            <div class="test-result ${statusClass}">
-                <span class="${statusClass}">${statusIcon}</span>
-                <span>${result.name}</span>
-                ${result.error ? `<p class="error-msg">${result.error}</p>` : ''}
-            </div>
-        `
-    },
-
-    /**
-     * 批量运行测试
-     * @param {Array} tests - 测试数组
-     * @param {Function} onProgress - 进度回调
-     * @returns {Promise<Array>}
-     */
-    async runTests(tests, onProgress) {
-        const results = []
-
-        for (let i = 0; i < tests.length; i++) {
-            const test = tests[i]
-
-            if (onProgress) {
-                onProgress({
-                    current: i + 1,
-                    total: tests.length,
-                    testName: test.name,
-                })
-            }
-
-            try {
-                const startTime = Date.now()
-                await test.run()
-                const duration = Date.now() - startTime
-
-                results.push({
-                    id: test.id,
-                    name: test.name,
-                    status: 'passed',
-                    duration,
-                })
-            } catch (error) {
-                results.push({
-                    id: test.id,
-                    name: test.name,
-                    status: 'failed',
-                    error: error.message,
-                })
-            }
+    on(event, callback) {
+        if (!this.listeners[event]) {
+            this.listeners[event] = []
         }
+        this.listeners[event].push(callback)
+    }
 
-        return results
-    },
+    off(event, callback) {
+        if (!this.listeners[event]) return
+        this.listeners[event] = this.listeners[event].filter(cb => cb !== callback)
+    }
 
-    /**
-     * 从 localStorage 读取数据
-     * @param {string} key - 键名
-     * @param {any} defaultValue - 默认值
-     * @returns {any}
-     */
-    getFromStorage(key, defaultValue = null) {
+    emit(event, data) {
+        if (!this.listeners[event]) return
+        this.listeners[event].forEach(callback => callback(data))
+    }
+}
+
+export const testEventBus = new EventBus()
+
+/**
+ * 测试状态枚举
+ */
+export const TestStatus = {
+    PENDING: 'pending',
+    RUNNING: 'running',
+    SUCCESS: 'success',
+    ERROR: 'error',
+}
+
+/**
+ * 格式化时间戳
+ */
+export function formatTimestamp(timestamp) {
+    const date = new Date(timestamp)
+    return date.toLocaleTimeString('zh-CN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+    })
+}
+
+/**
+ * 格式化持续时间
+ */
+export function formatDuration(ms) {
+    if (ms < 1000) return `${ms}ms`
+    if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`
+    return `${Math.floor(ms / 60000)}m ${Math.floor((ms % 60000) / 1000)}s`
+}
+
+/**
+ * 获取状态图标
+ */
+export function getStatusIcon(status) {
+    switch (status) {
+        case TestStatus.SUCCESS:
+            return '✅'
+        case TestStatus.ERROR:
+            return '❌'
+        case TestStatus.RUNNING:
+            return '⏳'
+        case TestStatus.PENDING:
+        default:
+            return '⏸️'
+    }
+}
+
+/**
+ * 获取事件类型图标
+ */
+export function getEventTypeIcon(eventType) {
+    switch (eventType) {
+        case 'error':
+            return '🔴'
+        case 'webVital':
+        case 'performance':
+            return '📊'
+        case 'custom':
+            return '🎬'
+        default:
+            return '📝'
+    }
+}
+
+/**
+ * 创建测试结果元素
+ */
+export function createResultElement(result) {
+    const div = document.createElement('div')
+    div.className = `test-result test-result-${result.status}`
+    div.innerHTML = `
+        <div class="result-header">
+            <span class="result-icon">${getStatusIcon(result.status)}</span>
+            <span class="result-name">${result.name}</span>
+            <span class="result-time">${formatTimestamp(result.timestamp)}</span>
+        </div>
+        ${result.message ? `<div class="result-message">${result.message}</div>` : ''}
+        ${result.error ? `<div class="result-error">${result.error}</div>` : ''}
+    `
+    return div
+}
+
+/**
+ * 本地存储工具
+ */
+export const storage = {
+    get(key) {
         try {
             const value = localStorage.getItem(key)
-            return value ? JSON.parse(value) : defaultValue
-        } catch (error) {
-            return defaultValue
+            return value ? JSON.parse(value) : null
+        } catch (e) {
+            return null
         }
     },
 
-    /**
-     * 保存数据到 localStorage
-     * @param {string} key - 键名
-     * @param {any} value - 值
-     */
-    saveToStorage(key, value) {
+    set(key, value) {
         try {
             localStorage.setItem(key, JSON.stringify(value))
-        } catch (error) {
-            console.error('Failed to save to storage:', error)
-        }
-    },
-
-    /**
-     * 生成随机字符串
-     * @param {number} length - 长度
-     * @returns {string}
-     */
-    randomString(length = 8) {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-        let result = ''
-        for (let i = 0; i < length; i++) {
-            result += chars.charAt(Math.floor(Math.random() * chars.length))
-        }
-        return result
-    },
-
-    /**
-     * 深度克隆对象
-     * @param {any} obj - 要克隆的对象
-     * @returns {any}
-     */
-    deepClone(obj) {
-        return JSON.parse(JSON.stringify(obj))
-    },
-
-    /**
-     * 安全地显示 HTML（防止 XSS）
-     * @param {string} str - 字符串
-     * @returns {string}
-     */
-    escapeHtml(str) {
-        const div = document.createElement('div')
-        div.textContent = str
-        return div.innerHTML
-    },
-
-    /**
-     * 检测测试环境
-     * @returns {object}
-     */
-    getEnvironment() {
-        return {
-            browser: navigator.userAgent,
-            language: navigator.language,
-            online: navigator.onLine,
-            screenSize: `${window.screen.width}x${window.screen.height}`,
-            viewportSize: `${window.innerWidth}x${window.innerHeight}`,
-        }
-    },
-
-    /**
-     * 生成测试报告
-     * @param {Array} results - 测试结果数组
-     * @returns {object}
-     */
-    generateReport(results) {
-        const passed = results.filter(r => r.status === 'passed').length
-        const failed = results.filter(r => r.status === 'failed').length
-        const total = results.length
-        const successRate = total > 0 ? ((passed / total) * 100).toFixed(2) : '0'
-
-        return {
-            total,
-            passed,
-            failed,
-            successRate: `${successRate}%`,
-            details: results,
-            timestamp: new Date().toISOString(),
-            environment: this.getEnvironment(),
-        }
-    },
-
-    /**
-     * 下载测试报告为 JSON 文件
-     * @param {object} report - 测试报告
-     * @param {string} filename - 文件名
-     */
-    downloadReport(report, filename = 'test-report.json') {
-        const dataStr = JSON.stringify(report, null, 2)
-        const dataBlob = new Blob([dataStr], { type: 'application/json' })
-        const url = URL.createObjectURL(dataBlob)
-
-        const link = document.createElement('a')
-        link.href = url
-        link.download = filename
-        link.click()
-
-        URL.revokeObjectURL(url)
-    },
-
-    /**
-     * 复制文本到剪贴板
-     * @param {string} text - 要复制的文本
-     * @returns {Promise<boolean>}
-     */
-    async copyToClipboard(text) {
-        try {
-            await navigator.clipboard.writeText(text)
             return true
-        } catch (error) {
+        } catch (e) {
             return false
         }
     },
 
-    /**
-     * 显示通知消息
-     * @param {string} message - 消息内容
-     * @param {string} type - 类型 (success|error|info)
-     */
-    showNotification(message, type = 'info') {
-        const colors = {
-            success: '#10b981',
-            error: '#ef4444',
-            info: '#3b82f6',
-        }
+    remove(key) {
+        localStorage.removeItem(key)
+    },
 
-        const notification = document.createElement('div')
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: ${colors[type] || colors.info};
-            color: white;
-            padding: 12px 20px;
-            border-radius: 6px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            z-index: 10000;
-            animation: slideIn 0.3s ease-out;
-        `
-        notification.textContent = message
-
-        document.body.appendChild(notification)
-
-        setTimeout(() => {
-            notification.style.animation = 'slideOut 0.3s ease-out'
-            setTimeout(() => {
-                document.body.removeChild(notification)
-            }, 300)
-        }, 3000)
+    clear() {
+        localStorage.clear()
     },
 }
 
-// 添加动画样式
-const style = document.createElement('style')
-style.textContent = `
-    @keyframes slideIn {
-        from {
-            transform: translateX(400px);
-            opacity: 0;
+/**
+ * 延迟执行
+ */
+export function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+/**
+ * 安全执行函数
+ */
+export async function safeExecute(fn, errorMessage = 'Execution failed') {
+    try {
+        return await fn()
+    } catch (error) {
+        console.error(errorMessage, error)
+        throw error
+    }
+}
+
+/**
+ * 计算测试进度
+ */
+export function calculateProgress(results) {
+    const total = results.length
+    const completed = results.filter(r => r.status === TestStatus.SUCCESS || r.status === TestStatus.ERROR).length
+    const success = results.filter(r => r.status === TestStatus.SUCCESS).length
+    const errors = results.filter(r => r.status === TestStatus.ERROR).length
+
+    return {
+        total,
+        completed,
+        success,
+        errors,
+        percentage: total > 0 ? Math.round((completed / total) * 100) : 0,
+        successRate: completed > 0 ? Math.round((success / completed) * 100) : 0,
+    }
+}
+
+/**
+ * DOM工具
+ */
+export const dom = {
+    $: selector => document.querySelector(selector),
+    $$: selector => document.querySelectorAll(selector),
+
+    create: (tag, className, content) => {
+        const el = document.createElement(tag)
+        if (className) el.className = className
+        if (content) el.textContent = content
+        return el
+    },
+
+    append: (parent, ...children) => {
+        children.forEach(child => {
+            if (typeof child === 'string') {
+                parent.appendChild(document.createTextNode(child))
+            } else {
+                parent.appendChild(child)
+            }
+        })
+        return parent
+    },
+
+    remove: el => {
+        if (el && el.parentNode) {
+            el.parentNode.removeChild(el)
         }
-        to {
-            transform: translateX(0);
-            opacity: 1;
+    },
+
+    empty: el => {
+        while (el.firstChild) {
+            el.removeChild(el.firstChild)
         }
-    }
+    },
+}
 
-    @keyframes slideOut {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(400px);
-            opacity: 0;
-        }
-    }
+/**
+ * 导出结果为JSON
+ */
+export function exportResults(results, filename = 'test-results.json') {
+    const dataStr = JSON.stringify(results, null, 2)
+    const dataBlob = new Blob([dataStr], { type: 'application/json' })
+    const url = URL.createObjectURL(dataBlob)
 
-    .test-result {
-        padding: 8px;
-        margin: 4px 0;
-        border-radius: 4px;
-        background: #f9fafb;
-    }
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    link.click()
 
-    .text-green-600 {
-        color: #10b981;
-    }
+    URL.revokeObjectURL(url)
+}
 
-    .text-red-600 {
-        color: #ef4444;
-    }
+/**
+ * 生成测试报告
+ */
+export function generateReport(testResults) {
+    const progress = calculateProgress(testResults)
+    const timestamp = new Date().toISOString()
 
-    .error-msg {
-        margin-top: 4px;
-        font-size: 0.875rem;
-        color: #6b7280;
+    return {
+        timestamp,
+        summary: {
+            total: progress.total,
+            completed: progress.completed,
+            success: progress.success,
+            errors: progress.errors,
+            percentage: progress.percentage,
+            successRate: progress.successRate,
+        },
+        results: testResults,
     }
-`
-document.head.appendChild(style)
+}
