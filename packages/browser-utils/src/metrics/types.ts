@@ -7,6 +7,7 @@ export * from './types/fid.js'
 export * from './types/inp.js'
 export * from './types/lcp.js'
 export * from './types/ttfb.js'
+export * from './types/resourceTiming.js'
 
 // --------------------------------------------------------------------------
 // Everything below is modifications to built-in modules.

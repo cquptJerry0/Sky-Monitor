@@ -42,6 +42,7 @@ export class PerformanceIntegration implements Integration {
     private originalFetch?: typeof fetch
     private originalXHROpen?: typeof XMLHttpRequest.prototype.open
     private originalXHRSend?: typeof XMLHttpRequest.prototype.send
+    private isSetup = false
 
     constructor(config: PerformanceConfig = {}) {
         this.config = {
@@ -56,6 +57,11 @@ export class PerformanceIntegration implements Integration {
      * 全局初始化
      */
     setupOnce(): void {
+        if (this.isSetup) {
+            return
+        }
+        this.isSetup = true
+
         if (this.config.traceFetch) {
             this.instrumentFetch()
         }
@@ -193,6 +199,28 @@ export class PerformanceIntegration implements Integration {
             success: false,
             timestamp: new Date().toISOString(),
         })
+    }
+
+    /**
+     * 清理资源
+     */
+    cleanup(): void {
+        if (this.originalFetch && typeof window !== 'undefined') {
+            window.fetch = this.originalFetch
+            this.originalFetch = undefined
+        }
+
+        if (this.originalXHROpen) {
+            XMLHttpRequest.prototype.open = this.originalXHROpen
+            this.originalXHROpen = undefined
+        }
+
+        if (this.originalXHRSend) {
+            XMLHttpRequest.prototype.send = this.originalXHRSend
+            this.originalXHRSend = undefined
+        }
+
+        this.isSetup = false
     }
 }
 

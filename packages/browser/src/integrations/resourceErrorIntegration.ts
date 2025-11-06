@@ -22,6 +22,8 @@ export class ResourceErrorIntegration implements Integration {
     private options: Required<ResourceErrorIntegrationOptions>
     private deviceInfo?: ReturnType<typeof collectDeviceInfo>
     private networkInfo?: ReturnType<typeof collectNetworkInfo>
+    private isSetup = false
+    private errorHandler?: (event: ErrorEvent | Event) => void
 
     constructor(options: ResourceErrorIntegrationOptions = {}) {
         this.options = {
@@ -35,12 +37,20 @@ export class ResourceErrorIntegration implements Integration {
      * 全局初始化
      */
     setupOnce(): void {
+        if (this.isSetup) {
+            return
+        }
+        this.isSetup = true
+
         // 收集设备和网络信息
         this.deviceInfo = collectDeviceInfo()
         this.networkInfo = collectNetworkInfo()
 
+        // 保存事件监听器引用
+        this.errorHandler = this.handleResourceError.bind(this)
+
         // 注册资源加载错误监听（捕获阶段）
-        window.addEventListener('error', this.handleResourceError.bind(this), true)
+        window.addEventListener('error', this.errorHandler, true)
     }
 
     /**
@@ -116,5 +126,18 @@ export class ResourceErrorIntegration implements Integration {
             default:
                 return 'unknown'
         }
+    }
+
+    /**
+     * 清理资源
+     */
+    cleanup(): void {
+        if (this.errorHandler && typeof window !== 'undefined') {
+            window.removeEventListener('error', this.errorHandler, true)
+            this.errorHandler = undefined
+        }
+        this.deviceInfo = undefined
+        this.networkInfo = undefined
+        this.isSetup = false
     }
 }
