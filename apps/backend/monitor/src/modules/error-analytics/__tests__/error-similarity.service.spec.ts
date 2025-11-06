@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 
-import { ErrorSimilarityService } from './error-similarity.service'
+import { ErrorSimilarityService } from '../services/error-similarity.service'
 
 /**
  * 错误相似度计算服务单元测试

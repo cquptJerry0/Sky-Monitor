@@ -4,10 +4,12 @@ import { ConfigModule, ConfigService } from '@nestjs/config'
 import { TypeOrmModule } from '@nestjs/typeorm'
 
 import databaseConfig from './config/database'
+import { CacheModule } from './fundamentals/cache/cache.module'
 import { ClickhouseModule } from './fundamentals/clickhouse/clickhouse.module'
 import { LoggerMiddleware } from './fundamentals/common/middleware/logger.middleware'
 import { ApplicationModule } from './modules/application/application.module'
 import { AuthModule } from './modules/auth/auth.module'
+import { ErrorAnalyticsModule } from './modules/error-analytics/error-analytics.module'
 import { EventsModule } from './modules/events/events.module'
 import { HealthModule } from './modules/health/health.module'
 import { SourceMapModule } from './modules/sourcemap/sourcemap.module'
@@ -35,9 +37,11 @@ import { VersionModule } from './modules/version/version.module'
             username: 'default',
             password: 'skyClickhouse2024',
         }),
+        CacheModule,
         AuthModule,
         VersionModule,
         EventsModule,
+        ErrorAnalyticsModule,
         HealthModule,
         ApplicationModule,
         SourceMapModule,
