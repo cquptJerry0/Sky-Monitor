@@ -6,6 +6,7 @@ import {
     DeduplicationIntegration,
     SessionIntegration,
     PerformanceIntegration,
+    BreadcrumbIntegration,
 } from '@sky-monitor/monitor-sdk-browser'
 
 // 初始化SDK
@@ -38,6 +39,15 @@ const APP_ID = 'vanillasx6GyT' // 示例appId，请替换为真实的
                 traceAllRequests: false, // 只上报慢请求和失败请求
             }),
 
+            // Breadcrumb 自动采集 - 用户行为轨迹追踪
+            new BreadcrumbIntegration({
+                console: true, // 捕获 console 日志
+                dom: true, // 捕获 DOM 点击事件
+                fetch: true, // 捕获 Fetch 请求
+                history: true, // 捕获路由变化
+                xhr: true, // 捕获 XHR 请求
+            }),
+
             // 原有集成
             new Errors(),
             new SamplingIntegration({
@@ -64,6 +74,7 @@ const APP_ID = 'vanillasx6GyT' // 示例appId，请替换为真实的
     console.log('  - DeduplicationIntegration (P0): 错误去重，5秒窗口')
     console.log('  - SessionIntegration (P2): 会话追踪，30分钟超时')
     console.log('  - PerformanceIntegration (P2): 性能打点，监控慢请求')
+    console.log('  - BreadcrumbIntegration: 用户行为轨迹追踪 (console/dom/fetch/history/xhr)')
     console.log('  - OfflineTransport (P1): LocalStorage降级，离线队列50条')
     console.log('  - Errors: 全局错误捕获')
     console.log('  - SamplingIntegration: 分层采样 (error:100%, perf:30%)')

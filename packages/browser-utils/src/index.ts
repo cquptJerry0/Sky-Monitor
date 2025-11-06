@@ -13,3 +13,4 @@ export function getBrowserInfo() {
 }
 
 export { Metrics } from './integrations/metrics'
+export { getSelector } from './metrics/lib/getSelector'

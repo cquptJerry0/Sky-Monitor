@@ -144,3 +144,74 @@ window.triggerSlowAPI = async function () {
         console.error('❌ API请求失败:', error)
     }
 }
+
+// ============ Breadcrumb 面包屑测试 ============
+
+window.testBreadcrumbClick = function () {
+    console.log('🍞 面包屑：点击事件已记录')
+    alert('点击事件已被记录到面包屑！')
+}
+
+window.testBreadcrumbConsole = function () {
+    console.log('🍞 这是一条 log 消息')
+    console.warn('🍞 这是一条 warn 消息')
+    console.error('🍞 这是一条 error 消息')
+    console.info('🍞 这是一条 info 消息')
+    alert('已输出多条不同级别的 console 日志，已记录到面包屑！')
+}
+
+window.testBreadcrumbFetch = async function () {
+    console.log('🍞 发起 Fetch 请求测试')
+    try {
+        await fetch('https://jsonplaceholder.typicode.com/posts/1')
+        console.log('🍞 Fetch 请求成功，已记录到面包屑')
+        alert('Fetch 请求已完成并记录到面包屑！')
+    } catch (error) {
+        console.error('🍞 Fetch 请求失败:', error)
+    }
+}
+
+window.testBreadcrumbHistory = function () {
+    console.log('🍞 测试路由变化')
+    const currentUrl = window.location.href
+
+    // 修改路由
+    history.pushState({ page: 1 }, '', '/test-page-1')
+    console.log('🍞 路由已变更为: /test-page-1')
+
+    setTimeout(() => {
+        history.pushState({ page: 2 }, '', '/test-page-2')
+        console.log('🍞 路由已变更为: /test-page-2')
+
+        setTimeout(() => {
+            // 恢复原始URL
+            history.pushState({}, '', currentUrl)
+            console.log('🍞 路由已恢复')
+            alert('路由变化已记录到面包屑！检查控制台查看详情。')
+        }, 500)
+    }, 500)
+}
+
+window.triggerErrorWithBreadcrumbs = function () {
+    console.log('🍞 准备触发错误，查看面包屑记录')
+
+    // 执行一系列操作，生成面包屑
+    console.log('步骤 1: 用户查看页面')
+    console.log('步骤 2: 用户点击按钮')
+    console.warn('步骤 3: 系统发出警告')
+
+    // 模拟一个 fetch 请求
+    fetch('https://jsonplaceholder.typicode.com/posts/1')
+        .then(() => {
+            console.log('步骤 4: API 请求成功')
+
+            // 触发错误
+            setTimeout(() => {
+                console.error('步骤 5: 即将触发错误')
+                throw new Error('🍞 测试错误：查看此错误的面包屑记录！')
+            }, 500)
+        })
+        .catch(err => {
+            console.error('请求失败:', err)
+        })
+}

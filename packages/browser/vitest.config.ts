@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitest/config'
+import * as path from 'path'
 
 export default defineConfig({
     test: {
@@ -13,5 +14,11 @@ export default defineConfig({
             exclude: ['src/**/*.test.ts', 'src/__tests__/**', 'src/**/index.ts', 'src/types/**'],
         },
         setupFiles: ['./vitest.setup.ts'],
+    },
+    resolve: {
+        alias: {
+            '@sky-monitor/monitor-sdk-browser-utils': path.resolve(__dirname, '../browser-utils/src/index.ts'),
+            '@sky-monitor/monitor-sdk-core': path.resolve(__dirname, '../core/src/index.ts'),
+        },
     },
 })

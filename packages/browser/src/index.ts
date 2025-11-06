@@ -23,6 +23,8 @@ export { ResourceErrorIntegration } from './integrations/resourceErrorIntegratio
 export type { ResourceErrorIntegrationOptions } from './integrations/resourceErrorIntegration'
 export { SessionIntegration } from './integrations/session'
 export type { SessionConfig } from './integrations/session'
+export { BreadcrumbIntegration } from './integrations/breadcrumb'
+export type { BreadcrumbOptions } from './integrations/breadcrumb'
 export { PerformanceIntegration } from './tracing/performanceIntegration'
 export type { PerformanceConfig } from './tracing/performanceIntegration'
 export { BatchedTransport } from './transport/batched'

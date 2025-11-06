@@ -208,6 +208,25 @@
         <button onclick="console.error('测试错误消息')">输出错误</button>
       </div>
     </div>
+
+    <div class="section">
+      <h2>🍞 面包屑追踪测试</h2>
+      <div class="info-box">
+        <p>测试 Breadcrumb 自动采集功能，记录用户行为轨迹。</p>
+        <p>每次点击按钮、输入文本、发送请求或路由变化都会自动记录面包屑。</p>
+      </div>
+      <div class="button-group">
+        <button id="breadcrumb-btn-1" onclick="testBreadcrumbClick()">点击测试1</button>
+        <button id="breadcrumb-btn-2" onclick="testBreadcrumbClick()">点击测试2</button>
+        <button onclick="testBreadcrumbConsole()">Console测试</button>
+        <button onclick="testBreadcrumbFetch()">Fetch测试</button>
+        <button onclick="testBreadcrumbHistory()">路由测试</button>
+        <button onclick="triggerErrorWithBreadcrumbs()">触发错误(查看面包屑)</button>
+      </div>
+      <div>
+        <input type="text" id="breadcrumb-input" placeholder="输入文本测试" style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; width: 100%; margin-top: 10px;">
+      </div>
+    </div>
   </div>
 
   <script type="module" src="/src/main.js"></script>
