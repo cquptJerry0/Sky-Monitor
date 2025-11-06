@@ -144,6 +144,7 @@ describe('SessionReplayIntegration', () => {
 
             integration = new SessionReplayIntegration({
                 mode: 'always',
+                // @ts-expect-error - Testing sessionStorage unavailable scenario
                 useSessionStorage: true,
             })
 

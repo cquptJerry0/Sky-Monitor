@@ -330,9 +330,9 @@ describe('EventsService', () => {
             const result = await service.getAppSummary('test-app')
 
             expect(result).toEqual(mockData.data[0])
-            expect(result.session_count).toBeDefined()
-            expect(result.user_count).toBeDefined()
-            expect(result.slow_request_count).toBeDefined()
+            expect((result as any).session_count).toBeDefined()
+            expect((result as any).user_count).toBeDefined()
+            expect((result as any).slow_request_count).toBeDefined()
         })
     })
 })
