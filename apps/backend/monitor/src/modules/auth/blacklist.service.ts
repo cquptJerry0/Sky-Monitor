@@ -1,8 +1,9 @@
-import { Injectable, OnModuleInit } from '@nestjs/common'
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common'
 import Redis from 'ioredis'
 
 @Injectable()
 export class BlacklistService implements OnModuleInit {
+    private readonly logger = new Logger(BlacklistService.name)
     private readonly redis: Redis
 
     constructor() {
@@ -26,7 +27,7 @@ export class BlacklistService implements OnModuleInit {
         try {
             await this.redis.connect()
         } catch (error) {
-            console.warn('Redis connection failed, blacklist features will be disabled:', error.message)
+            this.logger.warn('Redis connection failed, blacklist features will be disabled:', error.message)
         }
     }
 
@@ -50,7 +51,7 @@ export class BlacklistService implements OnModuleInit {
             return result === 1
         } catch (error) {
             // Redis 连接失败时，不阻止验证（降级策略）
-            console.error('Redis blacklist check failed:', error.message)
+            this.logger.error('Redis blacklist check failed:', error.message)
             return false
         }
     }
@@ -65,7 +66,7 @@ export class BlacklistService implements OnModuleInit {
             return result === 1
         } catch (error) {
             // Redis 连接失败时，不阻止验证（降级策略）
-            console.error('Redis user blacklist check failed:', error.message)
+            this.logger.error('Redis user blacklist check failed:', error.message)
             return false
         }
     }
@@ -75,7 +76,7 @@ export class BlacklistService implements OnModuleInit {
             const key = `blacklist:user:${userId}`
             await this.redis.del(key)
         } catch (error) {
-            console.error('Failed to remove user blacklist:', error.message)
+            this.logger.error('Failed to remove user blacklist:', error.message)
         }
     }
 
@@ -89,7 +90,7 @@ export class BlacklistService implements OnModuleInit {
                 await this.redis.del(...keys)
             }
         } catch (error) {
-            console.error('Failed to clear blacklists:', error.message)
+            this.logger.error('Failed to clear blacklists:', error.message)
         }
     }
 
@@ -104,7 +105,7 @@ export class BlacklistService implements OnModuleInit {
             const result = await this.redis.exists(key)
             return result === 1
         } catch (error) {
-            console.error('Redis refresh token check failed:', error.message)
+            this.logger.error('Redis refresh token check failed:', error.message)
             return false
         }
     }

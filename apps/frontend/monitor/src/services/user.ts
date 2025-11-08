@@ -32,5 +32,17 @@ export const register = async (data: { username: string; password: string }) => 
  * @returns
  */
 export const logout = async () => {
-    return await request.post('/auth/logout')
+    const result = await request.post('/auth/logout')
+    localStorage.removeItem('accessToken')
+    localStorage.removeItem('refreshToken')
+    return result
+}
+
+/**
+ * 刷新access token
+ * @param refreshToken
+ * @returns
+ */
+export const refreshToken = async (refreshToken: string) => {
+    return await request.post('/auth/refresh', { refresh_token: refreshToken })
 }

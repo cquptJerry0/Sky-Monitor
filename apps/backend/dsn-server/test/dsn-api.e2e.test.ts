@@ -437,7 +437,7 @@ describe('DSN Server - Complete API Test Suite', () => {
                     format: 'JSONEachRow',
                 })
 
-                const rows = await result.json()
+                const rows = (await result.json()) as any
                 if (rows.data) {
                     expect(rows.data.length).toBeGreaterThan(0)
                 }

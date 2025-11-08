@@ -17,7 +17,7 @@ export class ErrorAnalyticsStreamController {
     @Sse('stream/spikes')
     @ApiOperation({ summary: '错误突增告警实时推送（SSE）' })
     @ApiQuery({ name: 'appId', required: true })
-    streamErrorSpikes(@Query('appId') appId: string): Observable<MessageEvent> {
+    streamErrorSpikes(@Query('appId') appId: string): Observable<any> {
         return interval(5000).pipe(
             map(async () => {
                 const spikes = await this.errorTrendsService.getRecentSpikes(appId, 1)
@@ -49,7 +49,7 @@ export class ErrorAnalyticsStreamController {
     @ApiOperation({ summary: '错误趋势实时更新（SSE）' })
     @ApiQuery({ name: 'appId', required: true })
     @ApiQuery({ name: 'fingerprint', required: false })
-    streamErrorTrends(@Query('appId') appId: string, @Query('fingerprint') fingerprint?: string): Observable<MessageEvent> {
+    streamErrorTrends(@Query('appId') appId: string, @Query('fingerprint') fingerprint?: string): Observable<any> {
         return interval(10000).pipe(
             map(async () => {
                 const trends = await this.errorTrendsService.getErrorTrends({

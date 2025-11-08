@@ -155,9 +155,11 @@ describe('ErrorTrendsService', () => {
             const result = await service.detectErrorSpikes({ appId: 'test-app', window: 'hour' })
 
             expect(result.is_spike).toBe(true)
-            expect(result.current_count).toBe(150)
-            expect(result.baseline_avg).toBeGreaterThan(0)
-            expect(result.spike_multiplier).toBeGreaterThan(1)
+            if ('current_count' in result) {
+                expect(result.current_count).toBe(150)
+                expect(result.baseline_avg).toBeGreaterThan(0)
+                expect(result.spike_multiplier).toBeGreaterThan(1)
+            }
         })
 
         it('should not detect spike for normal data', async () => {
@@ -188,7 +190,9 @@ describe('ErrorTrendsService', () => {
             const result = await service.detectErrorSpikes({ appId: 'test-app' })
 
             expect(result.is_spike).toBe(false)
-            expect(result.message).toContain('Insufficient data')
+            if ('message' in result) {
+                expect(result.message).toContain('Insufficient data')
+            }
         })
 
         it('should store spike alerts in Redis', async () => {

@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common'
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common'
 import { PassportStrategy } from '@nestjs/passport'
 import { ExtractJwt, Strategy } from 'passport-jwt'
 
@@ -8,6 +8,8 @@ import { jwtConstants } from './constants'
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
+    private readonly logger = new Logger(JwtStrategy.name)
+
     constructor(
         private readonly adminService: AdminService,
         private readonly blacklistService: BlacklistService
@@ -42,7 +44,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
                 if (error instanceof UnauthorizedException) {
                     throw error
                 }
-                console.error('Blacklist check failed, allowing token:', error.message)
+                this.logger.error('Blacklist check failed, allowing token:', error.message)
             }
         }
         // 如果没有 jti，说明是旧版本 token，仍然允许通过（向后兼容）

@@ -47,7 +47,8 @@ export function Login() {
                     title: '登录成功',
                 })
 
-                localStorage.setItem('token', res.data.access_token)
+                localStorage.setItem('accessToken', res.data.access_token)
+                localStorage.setItem('refreshToken', res.data.refresh_token)
 
                 const redirectUrl = new URLSearchParams(window.location.search).get('redirect') || '/projects'
                 navigate(redirectUrl)

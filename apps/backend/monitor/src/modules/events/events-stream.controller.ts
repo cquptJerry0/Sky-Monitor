@@ -21,7 +21,7 @@ export class EventsStreamController {
     streamEvents(
         @Query('appId') appId: string,
         @Query('type') type?: 'error' | 'performance' | 'webVital' | 'message' | 'transaction' | 'custom'
-    ): Observable<MessageEvent> {
+    ): Observable<any> {
         return interval(2000).pipe(
             map(async () => {
                 const events = await this.eventsService.getEvents({
@@ -47,7 +47,7 @@ export class EventsStreamController {
     @Sse('stream/errors')
     @ApiOperation({ summary: '错误事件流（SSE）' })
     @ApiQuery({ name: 'appId', required: true })
-    streamErrors(@Query('appId') appId: string): Observable<MessageEvent> {
+    streamErrors(@Query('appId') appId: string): Observable<any> {
         return interval(2000).pipe(
             map(async () => {
                 const events = await this.eventsService.getEvents({
@@ -73,7 +73,7 @@ export class EventsStreamController {
     @Sse('stream/performance')
     @ApiOperation({ summary: '性能事件流（SSE）' })
     @ApiQuery({ name: 'appId', required: true })
-    streamPerformance(@Query('appId') appId: string): Observable<MessageEvent> {
+    streamPerformance(@Query('appId') appId: string): Observable<any> {
         return interval(5000).pipe(
             map(async () => {
                 const events = await this.eventsService.getEvents({
@@ -99,7 +99,7 @@ export class EventsStreamController {
     @Sse('stream/web-vitals')
     @ApiOperation({ summary: 'Web Vitals 实时指标（SSE）' })
     @ApiQuery({ name: 'appId', required: true })
-    streamWebVitals(@Query('appId') appId: string): Observable<MessageEvent> {
+    streamWebVitals(@Query('appId') appId: string): Observable<any> {
         return interval(10000).pipe(
             map(async () => {
                 const events = await this.eventsService.getEvents({
@@ -125,10 +125,10 @@ export class EventsStreamController {
     @Sse('stream/stats')
     @ApiOperation({ summary: '实时统计数据（SSE）' })
     @ApiQuery({ name: 'appId', required: true })
-    streamStats(@Query('appId') appId: string): Observable<MessageEvent> {
+    streamStats(@Query('appId') appId: string): Observable<any> {
         return interval(5000).pipe(
             map(async () => {
-                const stats = await this.eventsService.getStats(appId)
+                const stats = await this.eventsService.getStats({ appId })
 
                 return {
                     data: JSON.stringify(stats),
@@ -147,7 +147,7 @@ export class EventsStreamController {
     @Sse('stream/sourcemap-progress')
     @ApiOperation({ summary: 'SourceMap 解析进度（SSE）' })
     @ApiQuery({ name: 'eventId', required: true })
-    streamSourceMapProgress(@Query('eventId') eventId: string): Observable<MessageEvent> {
+    streamSourceMapProgress(@Query('eventId') eventId: string): Observable<any> {
         return interval(1000).pipe(
             map(async () => {
                 const event = await this.eventsService.getEventById(eventId)

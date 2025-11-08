@@ -25,7 +25,7 @@ export class BrowserTransport extends BaseTransport {
         } catch (err) {
             const error = err instanceof Error ? err : new Error(String(err))
             this.triggerError(error)
-            console.error('Failed to send data', error)
+            // Error already reported via triggerError callback
         }
     }
 }
