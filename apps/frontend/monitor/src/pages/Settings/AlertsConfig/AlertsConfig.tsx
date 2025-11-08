@@ -14,28 +14,29 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { useToast } from '@/hooks/use-toast'
-import { createAlertRule, deleteAlertRule, fetchAlertRules, updateAlertRule, type AlertRule } from '@/services/alerts'
+import { createAlert, deleteAlert, fetchAlerts, updateAlert, type Alert } from '@/services/alerts'
 
 export function AlertsConfig() {
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-    const [editingRule, setEditingRule] = useState<AlertRule | null>(null)
+    const [editingRule, setEditingRule] = useState<Alert | null>(null)
     const [formData, setFormData] = useState({
         name: '',
-        type: 'error_rate' as 'error_rate' | 'slow_request' | 'session_anomaly',
+        type: 'error' as 'error' | 'performance' | 'custom',
+        metric: 'error_rate',
+        operator: 'gt' as 'gt' | 'lt' | 'eq' | 'gte' | 'lte',
         threshold: 10,
-        window: '5m',
-        enabled: true,
+        timeWindow: 300,
     })
     const { toast } = useToast()
     const queryClient = useQueryClient()
 
     const { data: rulesData, isLoading } = useQuery({
         queryKey: ['alertRules'],
-        queryFn: () => fetchAlertRules(),
+        queryFn: () => fetchAlerts({ status: 'active' }),
     })
 
     const createMutation = useMutation({
-        mutationFn: createAlertRule,
+        mutationFn: createAlert,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['alertRules'] })
             setIsCreateDialogOpen(false)
@@ -55,7 +56,7 @@ export function AlertsConfig() {
     })
 
     const updateMutation = useMutation({
-        mutationFn: ({ id, data }: { id: string; data: any }) => updateAlertRule(id, data),
+        mutationFn: ({ id, data }: { id: string; data: any }) => updateAlert(id, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['alertRules'] })
             setEditingRule(null)
@@ -67,7 +68,7 @@ export function AlertsConfig() {
     })
 
     const deleteMutation = useMutation({
-        mutationFn: deleteAlertRule,
+        mutationFn: deleteAlert,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['alertRules'] })
             toast({
@@ -77,29 +78,44 @@ export function AlertsConfig() {
         },
     })
 
-    const rules = rulesData?.data || []
+    const rules = rulesData?.data?.data || []
 
     const resetForm = () => {
         setFormData({
             name: '',
-            type: 'error_rate',
+            type: 'error',
+            metric: 'error_rate',
+            operator: 'gt',
             threshold: 10,
-            window: '5m',
-            enabled: true,
+            timeWindow: 300,
         })
     }
 
     const handleCreate = () => {
         createMutation.mutate({
-            app_id: 'default-app',
-            ...formData,
+            name: formData.name,
+            type: formData.type,
+            appId: 'default-app',
+            conditions: {
+                metric: formData.metric,
+                operator: formData.operator,
+                threshold: formData.threshold,
+                timeWindow: formData.timeWindow,
+            },
+            actions: [
+                {
+                    type: 'email',
+                    config: {},
+                },
+            ],
         })
     }
 
-    const handleToggleEnabled = (rule: AlertRule) => {
+    const handleToggleEnabled = (rule: Alert) => {
+        const newStatus = rule.status === 'active' ? 'draft' : 'active'
         updateMutation.mutate({
             id: rule.id,
-            data: { enabled: !rule.enabled },
+            data: { status: newStatus },
         })
     }
 
@@ -111,9 +127,9 @@ export function AlertsConfig() {
 
     const getTypeLabel = (type: string) => {
         const labels = {
-            error_rate: '错误率',
-            slow_request: '慢请求',
-            session_anomaly: '会话异常',
+            error: '错误',
+            performance: '性能',
+            custom: '自定义',
         }
         return labels[type as keyof typeof labels] || type
     }
@@ -142,8 +158,8 @@ export function AlertsConfig() {
                             <TableRow>
                                 <TableHead>规则名称</TableHead>
                                 <TableHead>类型</TableHead>
-                                <TableHead>阈值</TableHead>
-                                <TableHead>时间窗口</TableHead>
+                                <TableHead>指标</TableHead>
+                                <TableHead>条件</TableHead>
                                 <TableHead>状态</TableHead>
                                 <TableHead>创建时间</TableHead>
                                 <TableHead>操作</TableHead>
@@ -163,19 +179,21 @@ export function AlertsConfig() {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                rules.map((rule: AlertRule) => (
+                                rules.map((rule: Alert) => (
                                     <TableRow key={rule.id}>
                                         <TableCell className="font-medium">{rule.name}</TableCell>
                                         <TableCell>
                                             <Badge variant="outline">{getTypeLabel(rule.type)}</Badge>
                                         </TableCell>
-                                        <TableCell>{rule.threshold}</TableCell>
-                                        <TableCell>{rule.window}</TableCell>
+                                        <TableCell>{rule.conditions.metric}</TableCell>
                                         <TableCell>
-                                            <Switch checked={rule.enabled} onCheckedChange={() => handleToggleEnabled(rule)} />
+                                            {rule.conditions.operator} {rule.conditions.threshold}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Switch checked={rule.status === 'active'} onCheckedChange={() => handleToggleEnabled(rule)} />
                                         </TableCell>
                                         <TableCell className="text-xs text-muted-foreground">
-                                            {formatDate(new Date(rule.created_at), 'yyyy-MM-dd HH:mm')}
+                                            {formatDate(new Date(rule.createdAt), 'yyyy-MM-dd HH:mm')}
                                         </TableCell>
                                         <TableCell>
                                             <DropdownMenu>
@@ -220,9 +238,37 @@ export function AlertsConfig() {
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
+                                    <SelectItem value="error">错误</SelectItem>
+                                    <SelectItem value="performance">性能</SelectItem>
+                                    <SelectItem value="custom">自定义</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="metric">监控指标</Label>
+                            <Select value={formData.metric} onValueChange={value => setFormData({ ...formData, metric: value })}>
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
                                     <SelectItem value="error_rate">错误率</SelectItem>
-                                    <SelectItem value="slow_request">慢请求</SelectItem>
-                                    <SelectItem value="session_anomaly">会话异常</SelectItem>
+                                    <SelectItem value="response_time">响应时间</SelectItem>
+                                    <SelectItem value="request_count">请求数</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="operator">运算符</Label>
+                            <Select value={formData.operator} onValueChange={(value: any) => setFormData({ ...formData, operator: value })}>
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="gt">大于</SelectItem>
+                                    <SelectItem value="lt">小于</SelectItem>
+                                    <SelectItem value="gte">大于等于</SelectItem>
+                                    <SelectItem value="lte">小于等于</SelectItem>
+                                    <SelectItem value="eq">等于</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -236,18 +282,14 @@ export function AlertsConfig() {
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="window">时间窗口</Label>
-                            <Select value={formData.window} onValueChange={value => setFormData({ ...formData, window: value })}>
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="1m">1分钟</SelectItem>
-                                    <SelectItem value="5m">5分钟</SelectItem>
-                                    <SelectItem value="15m">15分钟</SelectItem>
-                                    <SelectItem value="1h">1小时</SelectItem>
-                                </SelectContent>
-                            </Select>
+                            <Label htmlFor="timeWindow">时间窗口（秒）</Label>
+                            <Input
+                                id="timeWindow"
+                                type="number"
+                                value={formData.timeWindow}
+                                onChange={e => setFormData({ ...formData, timeWindow: Number(e.target.value) })}
+                                placeholder="例如：300（5分钟）"
+                            />
                         </div>
                     </div>
                     <DialogFooter>

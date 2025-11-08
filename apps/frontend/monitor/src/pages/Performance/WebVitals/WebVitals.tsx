@@ -126,7 +126,7 @@ export function WebVitals() {
                                     {name}
                                     <Badge variant={getScoreVariant(name, value)}>{getScoreLabel(name, value)}</Badge>
                                 </CardTitle>
-                                <CardDescription>{metricDescriptions[name].desc}</CardDescription>
+                                <CardDescription>{metricDescriptions[name]?.desc}</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold">
@@ -146,7 +146,7 @@ export function WebVitals() {
                 {metrics.slice(0, 2).map(name => (
                     <Card key={name}>
                         <CardHeader>
-                            <CardTitle>{metricDescriptions[name].title} - 分布</CardTitle>
+                            <CardTitle>{metricDescriptions[name]?.title} - 分布</CardTitle>
                             <CardDescription>性能指标分布直方图</CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -207,24 +207,24 @@ export function WebVitals() {
                                     <TableRow key={data.name}>
                                         <TableCell className="font-medium">{data.name}</TableCell>
                                         <TableCell>
-                                            {Math.round(data.avg)}
-                                            {data.name === 'CLS' ? '' : 'ms'}
+                                            {data.avg != null ? Math.round(data.avg) : '-'}
+                                            {data.avg != null && data.name !== 'CLS' ? 'ms' : ''}
                                         </TableCell>
                                         <TableCell>
-                                            {Math.round(data.p50)}
-                                            {data.name === 'CLS' ? '' : 'ms'}
+                                            {data.p50 != null ? Math.round(data.p50) : '-'}
+                                            {data.p50 != null && data.name !== 'CLS' ? 'ms' : ''}
                                         </TableCell>
                                         <TableCell>
-                                            {Math.round(data.p75)}
-                                            {data.name === 'CLS' ? '' : 'ms'}
+                                            {data.p75 != null ? Math.round(data.p75) : '-'}
+                                            {data.p75 != null && data.name !== 'CLS' ? 'ms' : ''}
                                         </TableCell>
                                         <TableCell>
-                                            {Math.round(data.p95)}
-                                            {data.name === 'CLS' ? '' : 'ms'}
+                                            {data.p95 != null ? Math.round(data.p95) : '-'}
+                                            {data.p95 != null && data.name !== 'CLS' ? 'ms' : ''}
                                         </TableCell>
                                         <TableCell>
-                                            {Math.round(data.p99)}
-                                            {data.name === 'CLS' ? '' : 'ms'}
+                                            {data.p99 != null ? Math.round(data.p99) : '-'}
+                                            {data.p99 != null && data.name !== 'CLS' ? 'ms' : ''}
                                         </TableCell>
                                         <TableCell>{data.count}</TableCell>
                                     </TableRow>
