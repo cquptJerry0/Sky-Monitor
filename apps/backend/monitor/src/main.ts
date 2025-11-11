@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
+import * as cookieParser from 'cookie-parser'
 
 import { AppModule } from './app.module'
 import { HttpExceptionFilter } from './fundamentals/common/filters/http-exception.filter'
@@ -9,6 +10,16 @@ import { HttpExceptionFilter } from './fundamentals/common/filters/http-exceptio
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule)
+
+    // 使用 cookie-parser 中间件
+    app.use(cookieParser())
+
+    // 启用 CORS，允许发送 Cookie
+    app.enableCors({
+        origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+        credentials: true, // 允许发送 Cookie
+        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    })
 
     // 全局使用中间件
     // app.use(logger)

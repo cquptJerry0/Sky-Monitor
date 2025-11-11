@@ -21,16 +21,46 @@
  */
 
 import axios, { CreateAxiosDefaults, AxiosError, InternalAxiosRequestConfig } from 'axios'
+import axiosRetry from 'axios-retry'
 
 import { toast } from '@/hooks/use-toast'
+import { tokenManager } from '@/utils/token-manager'
 
 // ==================== Axios 实例配置 ====================
 const config: CreateAxiosDefaults = {
     baseURL: '/api', // API 基础路径
-    timeout: 5000, // 请求超时时间（5秒）
+    timeout: 10000, // 请求超时时间（10秒）
+    withCredentials: true, // 允许发送和接收 Cookie
 }
 
 export const request = axios.create(config)
+
+// ==================== 请求重试配置 ====================
+/**
+ * 配置自动重试机制
+ *
+ * 重试策略：
+ * - 仅重试网络错误和 5xx 服务器错误
+ * - 不重试 4xx 客户端错误（如 401、403、404）
+ * - 使用指数退避策略（1秒、2秒、4秒）
+ * - 最多重试 3 次
+ */
+axiosRetry(request, {
+    retries: 3, // 重试次数
+    retryDelay: axiosRetry.exponentialDelay, // 指数退避延迟
+    retryCondition: error => {
+        // 网络错误或服务器错误（5xx）时重试
+        // 不重试 4xx 错误，特别是 401（未授权）
+        return axiosRetry.isNetworkOrIdempotentRequestError(error) || (error.response?.status ? error.response.status >= 500 : false)
+    },
+    onRetry: (retryCount, error, requestConfig) => {
+        console.log(`[Request Retry] 第 ${retryCount} 次重试`, {
+            url: requestConfig.url,
+            method: requestConfig.method,
+            error: error.message,
+        })
+    },
+})
 
 // ==================== 全局 Loading 管理 ====================
 /**
@@ -63,71 +93,45 @@ const setGlobalLoading = (loading: boolean) => {
 }
 
 // ==================== Token 刷新状态管理 ====================
-//  为什么需要这些变量？
-//
-// 场景：用户同时发起 3 个请求，access token 已过期
-// 问题：如果不控制，会触发 3 次 token 刷新请求（浪费、可能失败）
-//
-// 解决方案：
-// 1. isRefreshing: 标记是否正在刷新 token
-// 2. failedQueue: 存储等待 token 刷新完成的请求
-// 3. 第一个 401 触发刷新，其他请求进入队列等待
-// 4. 刷新完成后，一起处理队列中的请求
-
-let isRefreshing = false // 是否正在刷新 token
-let failedQueue: Array<{
-    resolve: (value?: unknown) => void
-    reject: (reason?: any) => void
-}> = [] // 等待队列
+// Token 刷新逻辑已经移到 TokenManager 中统一管理
+// 包括：
+// - 防止并发刷新
+// - 多标签页同步
+// - 过期前主动刷新
+// - 等待队列处理
 
 /**
- * 处理等待队列中的所有请求
- * @param error 如果有错误，所有请求都失败；否则重新发起请求
- */
-const processQueue = (error: Error | null = null) => {
-    failedQueue.forEach(prom => {
-        if (error) {
-            prom.reject(error)
-        } else {
-            prom.resolve() // 解决 Promise，请求会自动重试
-        }
-    })
-    failedQueue = [] // 清空队列
-}
-
-/**
- * 清除本地存储的所有 token
+ * 清除本地存储的 access token
+ *
+ * 注意：refresh token 在 HttpOnly Cookie 中，无法通过 JS 清除
+ * 需要调用后端的 logout 接口来清除
  */
 const clearTokens = () => {
     localStorage.removeItem('accessToken')
-    localStorage.removeItem('refreshToken')
+    // refreshToken 在 HttpOnly Cookie 中，无法直接清除
 }
 
 /**
  * 刷新 access token
  *
  * 流程：
- * 1. 从 localStorage 获取 refresh token
- * 2. 调用后端 /auth/refresh 接口
- * 3. 获取新的 access token
- * 4. 保存到 localStorage
- * 5. 返回新 token
+ * 1. 调用后端 /auth/refresh 接口（refresh token 在 Cookie 中自动发送）
+ * 2. 获取新的 access token
+ * 3. 保存到 localStorage
+ * 4. 返回新 token
  *
  * 注意：
- * - 使用原生 axios 而不是 request 实例
- * - 避免触发拦截器导致死循环
+ * - 使用原生 axios 而不是 request 实例，避免触发拦截器导致死循环
+ * - refresh token 通过 HttpOnly Cookie 自动发送，无需手动传递
+ * - 需要 withCredentials: true 以发送 Cookie
  */
 const refreshAccessToken = async (): Promise<string> => {
-    const refreshToken = localStorage.getItem('refreshToken')
-    if (!refreshToken) {
-        throw new Error('No refresh token available')
-    }
-
     try {
         // 使用原生 axios.post，不使用 request
         // 原因：request 有拦截器，会导致死循环
-        const response = await axios.post('/api/auth/refresh', {
-            refresh_token: refreshToken,
+        // refresh token 会通过 Cookie 自动发送
+        const response = await axios.post('/api/auth/refresh', null, {
+            withCredentials: true, // 允许发送 Cookie
         })
 
         const { access_token } = response.data.data
@@ -269,42 +273,20 @@ request.interceptors.response.use(
                 return Promise.reject(error)
             }
 
-            // 情况1：已经有请求在刷新 token
-            if (isRefreshing) {
-                // Promise 队列模式：
-                // 1. 创建一个新的 Promise
-                // 2. 将 resolve/reject 存入队列
-                // 3. 等待 token 刷新完成
-                // 4. processQueue() 会调用所有的 resolve
-                // 5. Promise 解决后，重新发起原始请求
-                return new Promise((resolve, reject) => {
-                    failedQueue.push({ resolve, reject })
-                })
-                    .then(() => {
-                        // Token 刷新成功，重新发起请求
-                        return request(originalRequest)
-                    })
-                    .catch(err => {
-                        // Token 刷新失败，返回错误
-                        return Promise.reject(err)
-                    })
-            }
+            // 情况1：Token Manager 会处理并发刷新的情况
+            // 如果有其他请求正在刷新，tokenManager.refreshToken() 会自动等待
 
             // 情况2：第一个遇到 401 的请求，负责刷新 token
             originalRequest._retry = true // 标记已重试，防止无限循环
-            isRefreshing = true // 标记正在刷新
 
             try {
-                // 刷新 access token
-                const newAccessToken = await refreshAccessToken()
+                // 使用 Token Manager 刷新 token
+                const newAccessToken = await tokenManager.refreshToken()
 
                 // 更新原始请求的 token
                 if (originalRequest.headers) {
                     originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
                 }
-
-                // 刷新成功，处理等待队列中的所有请求
-                processQueue(null)
 
                 // 重新发起原始请求
                 return request(originalRequest)
@@ -317,9 +299,6 @@ request.interceptors.response.use(
                     error: refreshError,
                 })
 
-                // 通知所有等待的请求失败
-                processQueue(refreshError as Error)
-
                 // 清除所有 token
                 clearTokens()
 
@@ -327,9 +306,6 @@ request.interceptors.response.use(
                 window.location.href = '/account/login'
 
                 return Promise.reject(refreshError)
-            } finally {
-                // 无论成功失败，都重置刷新标记
-                isRefreshing = false
             }
         }
 

@@ -56,7 +56,7 @@ const CONFIG = {
     release: '1.0.0-demo',
     environment: 'development',
     dsn: `http://localhost:8080/api/monitoring/${APP_ID}`,
-    apiBaseUrl: 'http://localhost:3000/api',
+    apiBaseUrl: 'http://localhost:8081/api',
 }
 
 // 导出配置供其他模块使用

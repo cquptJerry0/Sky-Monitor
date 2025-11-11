@@ -11,10 +11,15 @@ export class BrowserTransport extends BaseTransport {
 
     async send(data: Record<string, unknown>): Promise<void> {
         try {
-            const response = await fetch(this.dsn, {
+            // 检查是否为批量数据
+            const isBatch = data.type === 'batch' && Array.isArray(data.events)
+            const url = isBatch ? `${this.dsn}/batch` : this.dsn
+            const body = isBatch ? JSON.stringify(data.events) : JSON.stringify(data)
+
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data),
+                body,
             })
 
             if (!response.ok) {

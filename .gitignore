@@ -39,6 +39,8 @@ coverage
 *.lcov
 .nyc_output
 
+.cursor/ 
+.windsurf/
 docs
 .devcontainer/data
 .devcontainer/postgresql_data

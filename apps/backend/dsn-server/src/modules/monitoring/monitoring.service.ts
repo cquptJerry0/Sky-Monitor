@@ -201,6 +201,7 @@ export class MonitoringService {
         try {
             const now = new Date()
             const eventDataList = events.map(event => ({
+                id: this.generateEventId(),
                 app_id: appId,
                 event_type: event.type,
                 event_name: event.name || '',
@@ -317,9 +318,18 @@ export class MonitoringService {
 
     async validateAppId(appId: string): Promise<boolean> {
         try {
-            const app = await this.applicationRepository.findOne({
+            let app = await this.applicationRepository.findOne({
                 where: { appId },
             })
+
+            if (!app && appId.startsWith('demo_')) {
+                app = await this.applicationRepository.save({
+                    appId: appId,
+                    appName: `Auto-created: ${appId}`,
+                    userId: 1,
+                })
+                this.logger.log(`Auto-created demo application: ${appId}`)
+            }
 
             if (!app) {
                 throw new BadRequestException(`Invalid appId: ${appId}. Application not found in database.`)

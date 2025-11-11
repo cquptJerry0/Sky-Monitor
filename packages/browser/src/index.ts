@@ -55,9 +55,14 @@ export async function init(options: {
     dsn: string
     integrations: Integration[]
     release?: string // 版本号
+    appId?: string // 应用ID
+    environment?: string // 环境标识
     enableBatching?: boolean // 是否启用批量传输，默认true
     batchSize?: number // 批次大小，默认20
     flushInterval?: number // 刷新间隔，默认5000ms
+    enableOffline?: boolean // 是否启用离线队列
+    offlineQueueSize?: number // 离线队列大小
+    retryInterval?: number // 重试间隔
 }) {
     const monitoring = new Monitoring()
 
@@ -76,7 +81,11 @@ export async function init(options: {
               })
             : browserTransport
 
-    await monitoring.init(transport, { release: options.release })
+    await monitoring.init(transport, {
+        release: options.release,
+        appId: options.appId,
+        environment: options.environment,
+    })
 
     return monitoring
 }

@@ -38,13 +38,13 @@
     "description": "",
     "dependencies": {
         "@sky-monitor/monitor-sdk-browser-utils": "workspace:*",
-        "@sky-monitor/monitor-sdk-core": "workspace:*"
+        "@sky-monitor/monitor-sdk-core": "workspace:*",
+        "rrweb": "2.0.0-alpha.4"
     },
     "devDependencies": {
         "@vitest/coverage-v8": "^1.0.0",
         "@vitest/ui": "^1.0.0",
         "jsdom": "^24.0.0",
-        "rrweb": "2.0.0-alpha.4",
         "vitest": "^1.0.0"
     }
 }
