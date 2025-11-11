@@ -6,6 +6,7 @@ import { zhCN } from 'date-fns/locale'
 import { RouterProvider } from 'react-router-dom'
 
 import { Toaster } from './components/ui/toaster'
+import { AppProvider } from './contexts/AppContext'
 import { router } from './router'
 import { queryClient } from './utils/query-client'
 
@@ -16,8 +17,10 @@ setDefaultOptions({
 function App() {
     return (
         <QueryClientProvider client={queryClient}>
-            <Toaster />
-            <RouterProvider router={router} />
+            <AppProvider>
+                <Toaster />
+                <RouterProvider router={router} />
+            </AppProvider>
         </QueryClientProvider>
     )
 }

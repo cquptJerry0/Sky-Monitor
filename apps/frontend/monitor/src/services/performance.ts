@@ -6,6 +6,9 @@ import {
     PerformanceSummaryRes,
     SlowRequest,
     SlowRequestsRes,
+    PerformanceData,
+    WebVital,
+    ResourceTimingData,
 } from '@/types/api'
 import { request } from '@/utils/request'
 
@@ -20,6 +23,38 @@ export const fetchPerformanceEvents = async (params?: FetchPerformanceParams): P
 
 export const fetchPerformanceDetail = async (eventId: string): Promise<{ success: boolean; data: PerformanceEvent }> => {
     return await request.get(`/events/${eventId}`)
+}
+
+export const fetchPerformance = async (appId: string): Promise<{ data: PerformanceData[] }> => {
+    return await request.get('/performance', {
+        params: { appId },
+    })
+}
+
+export const fetchWebVitals = async (appId: string): Promise<{ data: WebVital[] }> => {
+    return await request.get('/performance/web-vitals', {
+        params: { appId },
+    })
+}
+
+export const fetchResourceTiming = async (appId: string): Promise<{ data: ResourceTimingData[] }> => {
+    return await request.get('/performance/resource-timing', {
+        params: { appId },
+    })
+}
+
+export const fetchPerformanceMetrics = async (params: {
+    appId: string | null
+}): Promise<{
+    data: {
+        fcp: number
+        lcp: number
+        fid: number
+        cls: number
+        ttfb?: number
+    }
+}> => {
+    return await request.get('/events/stats/performance', { params })
 }
 
 export const fetchPerformanceSummary = async (params: {

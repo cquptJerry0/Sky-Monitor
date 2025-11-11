@@ -9,48 +9,17 @@ import { cn } from '@/lib/utils'
 import * as srv from '@/services'
 import { miaoConfetti } from '@/utils/miao-confetti'
 import { queryClient } from '@/utils/query-client'
+import { useAppContext } from '@/contexts/AppContext'
 
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 
-const menus = [
-    {
-        name: 'projects',
-        icon: Package,
-        title: '项目总览',
-        gap: true,
-    },
-    {
-        name: 'issues',
-        icon: Bug,
-        title: '缺陷',
-        badge: 6,
-    },
-    {
-        name: 'performance',
-        icon: Zap,
-        title: '性能',
-        gap: true,
-    },
-    {
-        name: 'dashboard',
-        icon: Lightbulb,
-        title: '监控',
-    },
-    {
-        name: 'crons',
-        icon: CalendarCheck,
-        title: '定时任务',
-    },
-    {
-        name: 'alerts',
-        icon: Siren,
-        title: '告警',
-    },
-]
+// 菜单配置移到组件内，以便使用动态badge
 
 export function Aside() {
     const navigate = useNavigate()
     const { toast } = useToast()
+    const { currentAppId } = useAppContext()
+
     const { data: currentUser } = useQuery({
         queryKey: ['currentUser'],
         queryFn: async () => {
@@ -58,6 +27,62 @@ export function Aside() {
             return res.data
         },
     })
+
+    // 获取动态badge数据
+    const { data: statsData } = useQuery({
+        queryKey: ['asideBadges', currentAppId],
+        queryFn: async () => {
+            if (!currentAppId) return { errors: 0, alerts: 0 }
+            const [errors, alerts] = await Promise.all([
+                srv.fetchEvents({ appId: currentAppId, eventType: 'error', limit: 1 }),
+                srv.fetchAlerts({ appId: currentAppId }),
+            ])
+            return {
+                errors: errors?.data?.total || 0,
+                alerts: alerts?.data?.data?.length || 0,
+            }
+        },
+        enabled: !!currentAppId,
+        refetchInterval: 60000, // 60秒刷新
+    })
+
+    // 动态菜单配置
+    const menus = [
+        {
+            name: 'projects',
+            icon: Package,
+            title: '项目总览',
+            gap: true,
+        },
+        {
+            name: 'issues',
+            icon: Bug,
+            title: '缺陷',
+            badge: statsData?.errors || 0,
+        },
+        {
+            name: 'performance',
+            icon: Zap,
+            title: '性能',
+            gap: true,
+        },
+        {
+            name: 'dashboard',
+            icon: Lightbulb,
+            title: '监控',
+        },
+        {
+            name: 'crons',
+            icon: CalendarCheck,
+            title: '定时任务',
+        },
+        {
+            name: 'alerts',
+            icon: Siren,
+            title: '告警',
+            badge: statsData?.alerts || 0,
+        },
+    ]
 
     const handleConfetti = () => {
         miaoConfetti.firework()
@@ -95,7 +120,7 @@ export function Aside() {
                                 >
                                     <menu.icon className="h-4 w-4" />
                                     {menu.title}
-                                    {menu.badge && (
+                                    {menu.badge && menu.badge > 0 && (
                                         <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
                                             {menu.badge}
                                         </Badge>

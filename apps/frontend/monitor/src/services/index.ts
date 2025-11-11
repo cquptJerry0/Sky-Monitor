@@ -1,4 +1,7 @@
 export * from './alerts'
 export * from './application'
+export * from './errors'
 export * from './events'
+export * from './performance'
+export * from './sessions'
 export * from './user'

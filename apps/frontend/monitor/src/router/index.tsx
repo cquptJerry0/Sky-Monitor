@@ -1,6 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 
-import { Layout } from '@/layout'
+import { Layout } from '@/components/Layout'
 import { Alerts } from '@/views/Alerts'
 import { AlertsConfig } from '@/views/AlertsConfig'
 import { Crons } from '@/views/Corns'
