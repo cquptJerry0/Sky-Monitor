@@ -59,31 +59,39 @@ export class AuthController {
      */
     @Post('/auth/refresh')
     async refreshToken(@Req() req: ExpressRequest, @Res() res: Response) {
-        // 从 Cookie 中读取 refresh token
         const refreshToken = req.cookies?.refreshToken
 
         if (!refreshToken) {
-            res.status(401).json({
+            return res.status(401).json({
                 success: false,
-                message: 'Refresh token not found',
+                message: 'Refresh token 不存在',
             })
-            return
         }
 
         try {
             const result = await this.authService.refreshToken(refreshToken)
 
-            // 返回新的 access token
+            // 设置新的 refresh token Cookie（Token 轮换）
+            res.cookie('refreshToken', result.refresh_token, {
+                httpOnly: cookieConstants.httpOnly,
+                secure: cookieConstants.secure,
+                sameSite: cookieConstants.sameSite,
+                maxAge: cookieConstants.maxAge,
+                path: '/api/auth',
+            })
+
+            // 只返回 access token，新的 refresh token 已通过 Cookie 设置
             res.json({
                 success: true,
-                data: result,
+                data: {
+                    access_token: result.access_token,
+                    expires_in: result.expires_in,
+                },
             })
         } catch (error) {
-            // 如果 refresh token 无效或过期，清除 Cookie
-            res.clearCookie('refreshToken', { path: '/api/auth' })
             res.status(401).json({
                 success: false,
-                message: error.message || 'Invalid refresh token',
+                message: error.message || 'Token 刷新失败',
             })
         }
     }

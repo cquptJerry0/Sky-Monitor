@@ -5,7 +5,7 @@ alwaysApply: true
 # Sky Monitor 编码行为规范
 
 ## 1. 禁止提前封装
-
+common
 **规则**: 必须出现 2-3 次以上，才能考虑抽象和封装
 
 **原则**:

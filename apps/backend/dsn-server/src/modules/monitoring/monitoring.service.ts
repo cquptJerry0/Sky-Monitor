@@ -4,8 +4,10 @@ import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Queue } from 'bull'
 import { Repository } from 'typeorm'
+import { v4 as uuidv4 } from 'uuid'
 
 import { ApplicationEntity } from '../../entities/application.entity'
+import { EventFieldMapper } from './event-mapper'
 import { MonitoringEventDto } from './monitoring.dto'
 
 @Injectable()
@@ -178,7 +180,7 @@ export class MonitoringService {
     }
 
     private generateEventId(): string {
-        return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        return uuidv4()
     }
 
     /**
@@ -199,94 +201,11 @@ export class MonitoringService {
 
     async receiveBatchEvents(appId: string, events: MonitoringEventDto[], userAgent?: string) {
         try {
-            const now = new Date()
-            const eventDataList = events.map(event => ({
-                id: this.generateEventId(),
-                app_id: appId,
-                event_type: event.type,
-                event_name: event.name || '',
-                event_data: JSON.stringify({
-                    value: event.value,
-                    message: event.message,
-                    event: event.event,
-                    ...event,
-                }),
-                path: event.path || '',
-                user_agent: userAgent || event.userAgent || '',
-                timestamp: this.formatTimestamp(now),
-
-                // 错误相关字段
-                error_message: event.message || '',
-                error_stack: event.stack || '',
-                error_lineno: event.lineno || 0,
-                error_colno: event.colno || 0,
-                error_fingerprint: event.errorFingerprint?.hash || '',
-
-                // 设备信息
-                device_browser: event.device?.browser || '',
-                device_browser_version: event.device?.browserVersion || '',
-                device_os: event.device?.os || '',
-                device_os_version: event.device?.osVersion || '',
-                device_type: event.device?.deviceType || '',
-                device_screen: event.device?.screenResolution || '',
-
-                // 网络信息
-                network_type: event.network?.effectiveType || '',
-                network_rtt: event.network?.rtt || 0,
-
-                // 框架信息
-                framework: event.framework || '',
-                component_name: event.vueError?.componentName || event.reactError?.componentName || '',
-                component_stack: event.vueError?.componentHierarchy?.join(' > ') || event.reactError?.componentStack || '',
-
-                // HTTP 错误
-                http_url: event.httpError?.url || '',
-                http_method: event.httpError?.method || '',
-                http_status: event.httpError?.status || 0,
-                http_duration: event.httpError?.duration || 0,
-
-                // 资源错误
-                resource_url: event.resourceError?.url || '',
-                resource_type: event.resourceError?.resourceType || '',
-
-                // Session 会话追踪
-                session_id: event.sessionId || '',
-                session_start_time: event._session?.startTime || 0,
-                session_duration: event._session?.duration || 0,
-                session_event_count: event._session?.eventCount || 0,
-                session_error_count: event._session?.errorCount || 0,
-                session_page_views: event._session?.pageViews || 0,
-
-                // User 用户信息
-                user_id: event.user?.id || '',
-                user_email: event.user?.email || '',
-                user_username: event.user?.username || '',
-                user_ip: event.user?.ip_address || '',
-
-                // Scope 上下文（JSON 序列化）
-                tags: event.tags ? JSON.stringify(event.tags) : '',
-                extra: event.extra ? JSON.stringify(event.extra) : '',
-                breadcrumbs: event.breadcrumbs ? JSON.stringify(event.breadcrumbs) : '',
-                contexts: event.contexts ? JSON.stringify(event.contexts) : '',
-
-                // Event Level & Environment
-                event_level: event.level || '',
-                environment: event.environment || '',
-
-                // Performance 性能
-                perf_category: event.category || '',
-                perf_value: typeof event.value === 'number' ? event.value : 0,
-                perf_is_slow: event.isSlow ? 1 : 0,
-                perf_success: event.success !== false ? 1 : 0,
-                perf_metrics: event.metrics ? JSON.stringify(event.metrics) : '',
-
-                // Deduplication 去重
-                dedup_count: event._deduplication?.count || 1,
-
-                // Sampling 采样
-                sampling_rate: event._sampling?.rate || 1.0,
-                sampling_sampled: event._sampling?.sampled !== false ? 1 : 0,
-            }))
+            // 使用优化的映射器，提取公共字段
+            const timestamp = this.formatTimestamp(new Date())
+            const eventDataList = EventFieldMapper.mapBatchToClickhouse(events, appId, userAgent || '', timestamp, () =>
+                this.generateEventId()
+            )
 
             await this.clickhouseClient.insert({
                 table: 'monitor_events',
@@ -343,6 +262,142 @@ export class MonitoringService {
             }
             this.logger.error(`Failed to validate appId ${appId}: ${error.message}`, error.stack)
             throw new BadRequestException(`Failed to validate appId: ${appId}`)
+        }
+    }
+
+    /**
+     * 接收关键事件（单个）- 立即处理
+     */
+    async receiveCriticalEvent(appId: string, event: MonitoringEventDto, userAgent?: string) {
+        this.logger.warn(`Critical event received for app: ${appId}, type: ${event.type}`)
+
+        // 关键事件立即处理，不走批量
+        return await this.receiveEvent(appId, event, userAgent)
+    }
+
+    /**
+     * 接收关键事件（批量）- 立即处理
+     */
+    async receiveCriticalEvents(appId: string, events: MonitoringEventDto[], userAgent?: string) {
+        this.logger.warn(`Critical events batch received for app: ${appId}, count: ${events.length}`)
+
+        // 关键事件批量也要立即处理
+        return await this.receiveBatchEvents(appId, events, userAgent)
+    }
+
+    /**
+     * 接收 Session Replay 数据
+     * 特殊处理：存储到对象存储，数据库只存元数据
+     */
+    async receiveSessionReplay(appId: string, replayData: any, userAgent?: string) {
+        try {
+            const sessionId = replayData.sessionId || this.generateEventId()
+
+            // TODO: 实际项目应该存储到 S3/OSS
+            // const s3Url = await this.uploadToS3(replayData)
+
+            // 存储元数据到 ClickHouse
+            const metadata = {
+                id: this.generateEventId(),
+                app_id: appId,
+                event_type: 'sessionReplay',
+                event_name: 'Session Replay',
+                event_data: JSON.stringify({
+                    sessionId,
+                    eventCount: replayData.events?.length || 0,
+                    duration: replayData.metadata?.duration || 0,
+                    trigger: replayData.trigger || 'manual',
+                    // s3Url, // 实际的存储地址
+                }),
+                path: replayData.path || '',
+                user_agent: userAgent || '',
+                timestamp: this.formatTimestamp(new Date()),
+
+                // Session 相关字段
+                session_id: sessionId,
+                session_event_count: replayData.events?.length || 0,
+
+                // 其他字段使用默认值
+                error_message: '',
+                error_stack: '',
+                error_lineno: 0,
+                error_colno: 0,
+                error_fingerprint: '',
+                device_browser: '',
+                device_browser_version: '',
+                device_os: '',
+                device_os_version: '',
+                device_type: '',
+                device_screen: '',
+                network_type: '',
+                network_rtt: 0,
+                framework: '',
+                component_name: '',
+                component_stack: '',
+                http_url: '',
+                http_method: '',
+                http_status: 0,
+                http_duration: 0,
+                resource_url: '',
+                resource_type: '',
+                session_start_time: 0,
+                session_duration: replayData.metadata?.duration || 0,
+                session_error_count: 0,
+                session_page_views: 0,
+                user_id: '',
+                user_email: '',
+                user_username: '',
+                user_ip: '',
+                tags: '',
+                extra: JSON.stringify(replayData.metadata || {}),
+                breadcrumbs: '',
+                contexts: '',
+                event_level: 'info',
+                environment: '',
+                perf_category: 'sessionReplay',
+                perf_value: 0,
+                perf_is_slow: 0,
+                perf_success: 1,
+                perf_metrics: '',
+                dedup_count: 1,
+                sampling_rate: 1.0,
+                sampling_sampled: 1,
+            }
+
+            await this.clickhouseClient.insert({
+                table: 'monitor_events',
+                values: [metadata],
+                format: 'JSONEachRow',
+            })
+
+            this.logger.log(`Session Replay metadata stored for app: ${appId}, session: ${sessionId}`)
+            return { success: true, message: 'Session Replay received', sessionId }
+        } catch (error) {
+            this.logger.error(`Failed to process Session Replay: ${error.message}`, error.stack)
+            throw error
+        }
+    }
+
+    /**
+     * 接收辅助数据（延迟处理）
+     */
+    async receiveAuxiliaryEvents(appId: string, events: MonitoringEventDto[], userAgent?: string) {
+        try {
+            // 辅助数据可以放入队列延迟处理
+            // TODO: 实现队列处理机制
+            // await this.auxiliaryQueue.add('process-auxiliary', {
+            //     appId,
+            //     events,
+            //     userAgent,
+            //     timestamp: Date.now()
+            // })
+
+            // 临时：直接处理
+            this.logger.log(`Auxiliary events received for app: ${appId}, count: ${events.length}`)
+            return await this.receiveBatchEvents(appId, events, userAgent)
+        } catch (error) {
+            this.logger.error(`Failed to queue auxiliary events: ${error.message}`, error.stack)
+            throw error
         }
     }
 }

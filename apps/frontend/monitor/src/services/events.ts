@@ -156,8 +156,8 @@ export const fetchResourceTiming = async (params: FetchResourceTimingParams): Pr
 }
 
 /**
- * 获取告警规则列表
+ * 获取错误峰值分析数据（用于错误分析页面）
  */
-export const fetchAlerts = async (params: FetchAlertsParams): Promise<AlertsListRes> => {
+export const fetchErrorSpikes = async (params: FetchAlertsParams): Promise<AlertsListRes> => {
     return await request.get('/error-analytics/recent-spikes', { params })
 }

@@ -77,6 +77,25 @@ export class AuthService {
                 throw new UnauthorizedException('用户已被全局登出')
             }
 
+            // Refresh Token 轮换：删除旧的 refresh token
+            await this.blacklistService.removeRefreshToken(payload.sub, payload.jti)
+
+            // 生成新的 refresh token
+            const newRefreshJti = uuidv4()
+            const newRefreshPayload = {
+                username: payload.username,
+                sub: payload.sub,
+                jti: newRefreshJti,
+            }
+
+            const newRefreshToken = this.jwtService.sign(newRefreshPayload, {
+                secret: jwtConstants.refreshSecret,
+                expiresIn: jwtConstants.refreshTokenExpiry,
+            })
+
+            // 存储新的 refresh token 到 Redis (7天 = 604800秒)
+            await this.blacklistService.storeRefreshToken(payload.sub, newRefreshJti, 604800)
+
             // 生成新的 access token
             const newAccessJti = uuidv4()
             const newAccessPayload = {
@@ -92,6 +111,7 @@ export class AuthService {
 
             return {
                 access_token: newAccessToken,
+                refresh_token: newRefreshToken, // 返回新的 refresh token
                 expires_in: 900,
             }
         } catch (error) {
@@ -102,12 +122,20 @@ export class AuthService {
     async logout(userId: number, jti: string): Promise<any> {
         // 将 access token 加入黑名单 (15分钟 = 900秒)
         await this.blacklistService.addTokenToBlacklist(jti, userId, 900)
+
+        // 清理该用户的所有 refresh tokens（登出所有设备）
+        await this.blacklistService.clearUserRefreshTokens(userId)
+
         return { success: true, message: '登出成功' }
     }
 
     async logoutAll(userId: number): Promise<any> {
         // 将用户加入黑名单，使所有设备的 token 失效 (7天 = 604800秒)
         await this.blacklistService.addUserToBlacklist(userId, 604800)
+
+        // 清理该用户的所有 refresh tokens
+        await this.blacklistService.clearUserRefreshTokens(userId)
+
         return { success: true, message: '所有设备已登出' }
     }
 

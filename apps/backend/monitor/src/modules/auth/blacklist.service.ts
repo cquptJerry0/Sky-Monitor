@@ -61,4 +61,17 @@ export class BlacklistService {
         const key = `refresh:${userId}:${jti}`
         await this.redis.del(key)
     }
+
+    /**
+     * 清理用户的所有 refresh token
+     * 用于：全局登出时清理所有设备的 refresh token
+     */
+    async clearUserRefreshTokens(userId: number): Promise<void> {
+        const pattern = `refresh:${userId}:*`
+        const keys = await this.redis.keys(pattern)
+        if (keys.length > 0) {
+            await this.redis.del(...keys)
+            this.logger.log(`已清理用户 ${userId} 的 ${keys.length} 个 refresh token`)
+        }
+    }
 }

@@ -14,16 +14,6 @@ setDefaultOptions({
 })
 
 function App() {
-    // if (import.meta.env.MODE === 'development') {
-    //     return
-    // }
-
-    // 演示 eslint 错误
-    // useCallback(() => {
-    //   console.log('Hello from the frontend/monitor app');
-    // }, []);
-    // const a = 1
-
     return (
         <QueryClientProvider client={queryClient}>
             <Toaster />

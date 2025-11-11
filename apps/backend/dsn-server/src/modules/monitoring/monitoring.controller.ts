@@ -42,4 +42,58 @@ export class MonitoringController {
         // 批量记录事件
         return await this.monitoringService.receiveBatchEvents(appId, events, userAgent)
     }
+
+    /**
+     * 接收关键事件（错误、异常等）- 立即处理
+     * POST /api/monitoring/:appId/critical
+     */
+    @Post(':appId/critical')
+    @ApiOperation({ summary: '接收关键事件（错误、异常等）' })
+    @ApiParam({ name: 'appId', description: '应用ID' })
+    async receiveCriticalEvent(
+        @Param('appId') appId: string,
+        @Body() event: MonitoringEventDto | { type: string; events: MonitoringEventDto[] },
+        @Headers('user-agent') userAgent?: string
+    ) {
+        await this.monitoringService.validateAppId(appId)
+
+        // 判断是单个事件还是批量（来自批量传输的最小批量）
+        if ('events' in event && Array.isArray(event.events)) {
+            return await this.monitoringService.receiveCriticalEvents(appId, event.events, userAgent)
+        } else {
+            return await this.monitoringService.receiveCriticalEvent(appId, event as MonitoringEventDto, userAgent)
+        }
+    }
+
+    /**
+     * 接收 Session Replay 数据 - 特殊处理大数据
+     * POST /api/monitoring/:appId/session-replay
+     */
+    @Post(':appId/session-replay')
+    @ApiOperation({ summary: '接收 Session Replay 录制数据' })
+    @ApiParam({ name: 'appId', description: '应用ID' })
+    async receiveSessionReplay(@Param('appId') appId: string, @Body() replayData: any, @Headers('user-agent') userAgent?: string) {
+        await this.monitoringService.validateAppId(appId)
+
+        // Session Replay 需要特殊处理（压缩、存储到 S3 等）
+        return await this.monitoringService.receiveSessionReplay(appId, replayData, userAgent)
+    }
+
+    /**
+     * 接收辅助数据（面包屑、用户上下文等）- 延迟处理
+     * POST /api/monitoring/:appId/auxiliary
+     */
+    @Post(':appId/auxiliary')
+    @ApiOperation({ summary: '接收辅助数据（面包屑、用户上下文等）' })
+    @ApiParam({ name: 'appId', description: '应用ID' })
+    async receiveAuxiliaryEvents(
+        @Param('appId') appId: string,
+        @Body() events: MonitoringEventDto[],
+        @Headers('user-agent') userAgent?: string
+    ) {
+        await this.monitoringService.validateAppId(appId)
+
+        // 辅助数据可以延迟处理，放入队列
+        return await this.monitoringService.receiveAuxiliaryEvents(appId, events, userAgent)
+    }
 }

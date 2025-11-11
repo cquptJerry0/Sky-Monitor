@@ -51,12 +51,17 @@
         "zod": "^3.23.8"
     },
     "devDependencies": {
+        "@testing-library/jest-dom": "^6.1.5",
+        "@testing-library/react": "^14.1.2",
         "@types/bcryptjs": "2.4.6",
         "@types/canvas-confetti": "1.6.4",
         "@types/jest": "^30.0.0",
         "@types/react": "18.3.11",
         "@types/react-dom": "18.3.1",
         "@vitejs/plugin-react": "4.3.2",
-        "vite": "5.4.9"
+        "@vitest/ui": "^1.0.0",
+        "jsdom": "^24.0.0",
+        "vite": "5.4.9",
+        "vitest": "^1.0.0"
     }
 }

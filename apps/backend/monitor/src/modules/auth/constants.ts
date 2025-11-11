@@ -14,7 +14,7 @@ export const jwtConstants = {
             if (process.env.NODE_ENV === 'production') {
                 throw new Error('JWT_SECRET 环境变量未设置！生产环境必须设置强密钥。')
             }
-            console.warn('⚠️  警告: JWT_SECRET 未设置，使用默认值（仅限开发环境）')
+            console.warn('警告: JWT_SECRET 未设置，使用默认值（仅限开发环境）')
             return 'dev-secret-key-do-not-use-in-production'
         })(),
 
@@ -24,7 +24,7 @@ export const jwtConstants = {
             if (process.env.NODE_ENV === 'production') {
                 throw new Error('JWT_REFRESH_SECRET 环境变量未设置！生产环境必须设置强密钥。')
             }
-            console.warn('⚠️  警告: JWT_REFRESH_SECRET 未设置，使用默认值（仅限开发环境）')
+            console.warn(' 警告: JWT_REFRESH_SECRET 未设置，使用默认值（仅限开发环境）')
             return 'dev-refresh-secret-key-do-not-use-in-production'
         })(),
 

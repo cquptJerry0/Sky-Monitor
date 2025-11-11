@@ -3,7 +3,7 @@
  *
  * 本 Demo 展示了 Sky Monitor 已实现的所有 11 个 Integrations：
  *
- * ✅ 核心监控 Integrations (8个)：
+ * 核心监控 Integrations (8个)：
  * 1. Errors - 全局错误捕获（同步/异步/Promise/资源错误）
  * 2. Metrics - Core Web Vitals (LCP, FCP, CLS, TTFB)
  * 3. SessionIntegration - 会话跟踪（30分钟超时，持久化）
@@ -13,14 +13,14 @@
  * 7. BreadcrumbIntegration - 用户行为轨迹（自动捕获 console/DOM/fetch/XHR/history）
  * 8. SessionReplayIntegration - 会话录制（rrweb，错误时录制）
  *
- * ✅ 增强功能 Integrations (2个)：
+ * 增强功能 Integrations (2个)：
  * 9. SamplingIntegration - 分层采样（错误100%，性能100% Demo模式）
  * 10. DeduplicationIntegration - 错误去重（5秒窗口）
  *
- * ✅ 性能监控 Integrations (1个)：
+ * 性能监控 Integrations (1个)：
  * 11. ResourceTimingIntegration - 资源性能详细监控（DNS/TCP/TTFB/Download）
  *
- * 🎯 手动功能：
+ * 手动功能：
  * - addBreadcrumb() - 手动添加面包屑
  * - setUser() - 设置用户信息
  * - setTag() - 设置标签
@@ -47,7 +47,7 @@ import {
 } from '@sky-monitor/monitor-sdk-browser'
 
 // 从 localStorage 获取或生成 appId
-const APP_ID = localStorage.getItem('sky_monitor_app_id') || 'demo_app_001'
+const APP_ID = 'vanillamy7Z4k'
 localStorage.setItem('sky_monitor_app_id', APP_ID)
 
 // 配置
@@ -62,8 +62,8 @@ const CONFIG = {
 // 导出配置供其他模块使用
 window.MONITOR_CONFIG = CONFIG
 ;(async () => {
-    console.log('🚀 初始化 Sky Monitor SDK...')
-    console.log('📝 配置信息:', CONFIG)
+    console.log('初始化 Sky Monitor SDK...')
+    console.log('配置信息:', CONFIG)
 
     try {
         const monitoring = await init({
@@ -134,7 +134,7 @@ window.MONITOR_CONFIG = CONFIG
                 // 8. SamplingIntegration - 分层采样
                 new SamplingIntegration({
                     errorSampleRate: 1.0, // 错误 100% 采样
-                    performanceSampleRate: 1.0, // Demo 模式：性能 100% 采样
+                    performanceSampleRate: 0.3, // 性能 30% 采样（生产环境推荐值）
                 }),
 
                 // 9. DeduplicationIntegration - 错误去重
@@ -157,10 +157,28 @@ window.MONITOR_CONFIG = CONFIG
             offlineQueueSize: 50,
             retryInterval: 10000,
 
-            // 批量传输
-            enableBatching: true,
-            batchSize: 20,
-            flushInterval: 5000,
+            // 启用分层传输（新架构）
+            enableLayeredTransport: true,
+            layeredTransportConfig: {
+                // 自定义层级配置（可选，默认配置已经很好）
+                layers: {
+                    // critical: { batchSize: 1, flushInterval: 0 },
+                    // large: { batchSize: 1, flushInterval: 10000, compress: true },
+                    // normal: { batchSize: 20, flushInterval: 5000 },
+                    // auxiliary: { batchSize: 50, flushInterval: 30000 }
+                },
+                // 自定义事件类型映射（可选）
+                eventTypeMapping: {
+                    // 可以自定义哪些事件类型走哪个层级
+                    // 'customError': 'critical',
+                    // 'userAction': 'normal',
+                },
+            },
+
+            // 传统批量传输配置（如果不启用分层，则使用这些）
+            enableBatching: false, // 使用分层传输时关闭传统批量
+            // batchSize: 20,
+            // flushInterval: 5000,
         })
 
         console.log('Sky Monitor SDK 初始化成功')
@@ -171,6 +189,7 @@ window.MONITOR_CONFIG = CONFIG
         console.log('  - PerformanceIntegration (P2): 性能打点，监控慢请求')
         console.log('  - BreadcrumbIntegration: 用户行为轨迹追踪 (console/dom/fetch/history/xhr)')
         console.log('  - OfflineTransport (P1): LocalStorage降级，离线队列50条')
+        console.log('  - LayeredTransport: 分层传输架构 (critical立即/large单独/normal批量/auxiliary延迟)')
         console.log('  - Errors: 全局错误捕获')
         console.log('  - SamplingIntegration: 分层采样 (error:100%, perf:30%)')
         console.log('  - Metrics: Web Vitals 性能指标')

@@ -47,17 +47,24 @@ export class SamplingIntegration implements Integration {
     beforeSend(event: MonitoringEvent): MonitoringEvent | null {
         const rate = this.getSampleRate(event)
 
-        // 采样决策
-        if (Math.random() >= rate) {
-            return null // 丢弃事件
-        }
-
-        // 记录采样元数据（供后端统计补偿）
-        event._sampling = {
+        // 总是记录采样元数据，即使是 100% 采样
+        const samplingMetadata: SamplingMetadata = {
             rate,
             sampled: true,
             timestamp: Date.now(),
         }
+
+        // 采样决策
+        const random = Math.random()
+        if (random >= rate) {
+            // 如果被丢弃，也记录元数据（便于统计分析）
+            // 但由于事件被丢弃，这个元数据不会到达后端
+            samplingMetadata.sampled = false
+            return null // 丢弃事件
+        }
+
+        // 为保留的事件添加采样元数据
+        event._sampling = samplingMetadata
 
         return event
     }

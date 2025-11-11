@@ -132,7 +132,7 @@ export class DeduplicationIntegration implements Integration {
         // 超过容量，删除最旧的
         if (this.cache.size >= this.maxCacheSize) {
             const oldestKey = this.cache.keys().next().value
-            this.cache.delete(oldestKey)
+            this.cache.delete(oldestKey as string)
         }
 
         this.cache.set(fingerprint, {

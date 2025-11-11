@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
+import * as express from 'express'
 
 import { AppModule } from './app.module'
 import { HttpExceptionFilter } from './fundamentals/common/filters/http-exception.filter'
@@ -8,7 +9,13 @@ import { HttpExceptionFilter } from './fundamentals/common/filters/http-exceptio
 // import { ValidationPipe } from './common/pipes/validation.pipe'
 
 async function bootstrap() {
-    const app = await NestFactory.create(AppModule)
+    const app = await NestFactory.create(AppModule, {
+        bodyParser: true,
+    })
+
+    // 增加请求体大小限制（用于 Session Replay 等大数据）
+    app.use(express.json({ limit: '10mb' }))
+    app.use(express.urlencoded({ limit: '10mb', extended: true }))
 
     // 启用 CORS
     app.enableCors({
