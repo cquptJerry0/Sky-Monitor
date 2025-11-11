@@ -99,11 +99,14 @@ export class EventFieldMapper {
     }
 
     private static mapHttpFields(event: MonitoringEventDto) {
+        // 支持两种格式:
+        // 1. HttpErrorIntegration: event.httpError.{ url, method, status, duration }
+        // 2. PerformanceIntegration: event.{ url, method, status, duration } (顶层)
         return {
-            http_url: event.httpError?.url || '',
-            http_method: event.httpError?.method || '',
-            http_status: event.httpError?.status || 0,
-            http_duration: event.httpError?.duration || 0,
+            http_url: event.httpError?.url || event.url || '',
+            http_method: event.httpError?.method || event.method || '',
+            http_status: event.httpError?.status || event.status || 0,
+            http_duration: event.httpError?.duration || event.duration || 0,
         }
     }
 

@@ -90,11 +90,11 @@ export class MonitoringService {
                 component_name: event.vueError?.componentName || event.reactError?.componentName || '',
                 component_stack: event.vueError?.componentHierarchy?.join(' > ') || event.reactError?.componentStack || '',
 
-                // HTTP 错误
-                http_url: event.httpError?.url || '',
-                http_method: event.httpError?.method || '',
-                http_status: event.httpError?.status || 0,
-                http_duration: event.httpError?.duration || 0,
+                // HTTP 错误 (支持 HttpErrorIntegration 和 PerformanceIntegration)
+                http_url: event.httpError?.url || event.url || '',
+                http_method: event.httpError?.method || event.method || '',
+                http_status: event.httpError?.status || event.status || 0,
+                http_duration: event.httpError?.duration || event.duration || 0,
 
                 // 资源错误
                 resource_url: event.resourceError?.url || '',

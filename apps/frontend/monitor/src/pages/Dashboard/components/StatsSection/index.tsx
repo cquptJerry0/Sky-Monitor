@@ -1,5 +1,5 @@
 import { Activity, AlertTriangle, AlertCircle, Users } from 'lucide-react'
-import { StatCard } from './StatCard'
+import { StatCard } from './StatCard.tsx'
 
 interface StatsSectionProps {
     totalEvents: number

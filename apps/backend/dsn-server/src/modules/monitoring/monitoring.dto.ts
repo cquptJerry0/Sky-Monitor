@@ -399,6 +399,38 @@ export class MonitoringEventDto {
     success?: boolean
 
     /**
+     * PerformanceIntegration 顶层字段: HTTP URL
+     * (与 httpError.url 互补)
+     */
+    @IsString()
+    @IsOptional()
+    url?: string
+
+    /**
+     * PerformanceIntegration 顶层字段: HTTP Method
+     * (与 httpError.method 互补)
+     */
+    @IsString()
+    @IsOptional()
+    method?: string
+
+    /**
+     * PerformanceIntegration 顶层字段: HTTP Status
+     * (与 httpError.status 互补)
+     */
+    @IsNumber()
+    @IsOptional()
+    status?: number
+
+    /**
+     * PerformanceIntegration 顶层字段: Duration
+     * (与 httpError.duration 互补)
+     */
+    @IsNumber()
+    @IsOptional()
+    duration?: number
+
+    /**
      * Deduplication 去重元数据
      */
     @IsObject()
