@@ -7,6 +7,7 @@ import databaseConfig from './config/database'
 import { CacheModule } from './fundamentals/cache/cache.module'
 import { ClickhouseModule } from './fundamentals/clickhouse/clickhouse.module'
 import { LoggerMiddleware } from './fundamentals/common/middleware/logger.middleware'
+import { RedisModule } from './fundamentals/redis'
 import { AlertsModule } from './modules/alerts/alerts.module'
 import { ApplicationModule } from './modules/application/application.module'
 import { AuthModule } from './modules/auth/auth.module'
@@ -38,6 +39,7 @@ import { VersionModule } from './modules/version/version.module'
             username: 'default',
             password: 'skyClickhouse2024',
         }),
+        RedisModule,
         CacheModule,
         AuthModule,
         VersionModule,

@@ -4,6 +4,7 @@ import { Connection } from 'typeorm'
 import Redis from 'ioredis'
 
 import { ClickhouseInitService } from '../../fundamentals/clickhouse/clickhouse-init.service'
+import { RedisService } from '../../fundamentals/redis'
 
 @Injectable()
 export class HealthService {
@@ -12,17 +13,10 @@ export class HealthService {
 
     constructor(
         @InjectConnection() private readonly connection: Connection,
-        private readonly clickhouseInitService: ClickhouseInitService
+        private readonly clickhouseInitService: ClickhouseInitService,
+        private readonly redisService: RedisService
     ) {
-        // 创建 Redis 客户端用于健康检查
-        this.redis = new Redis({
-            host: 'localhost',
-            port: 6379,
-            password: 'skyRedis2024',
-            maxRetriesPerRequest: 1,
-            retryStrategy: () => null,
-            lazyConnect: true,
-        })
+        this.redis = this.redisService.getClient()
     }
 
     /**

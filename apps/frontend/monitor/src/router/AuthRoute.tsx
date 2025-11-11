@@ -10,7 +10,7 @@ const AuthRoute: React.FC<AuthRouteProps> = ({ children }) => {
     const refreshToken = localStorage.getItem('refreshToken')
 
     if (!accessToken && !refreshToken) {
-        return <Navigate to={`account/login?redirect=${window.location.pathname}`} />
+        return <Navigate to={`/account/login?redirect=${window.location.pathname}`} />
     }
 
     return children

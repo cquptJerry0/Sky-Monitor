@@ -1,6 +1,8 @@
 import { ClickHouseClient } from '@clickhouse/client'
-import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common'
+import { Inject, Injectable, Logger } from '@nestjs/common'
 import Redis from 'ioredis'
+
+import { RedisService } from '../../../fundamentals/redis'
 
 /**
  * 错误趋势分析服务
@@ -9,25 +11,15 @@ import Redis from 'ioredis'
  * 负责错误趋势分析、对比和突增检测。
  */
 @Injectable()
-export class ErrorTrendsService implements OnModuleInit {
+export class ErrorTrendsService {
     private readonly logger = new Logger(ErrorTrendsService.name)
     private readonly redis: Redis
 
-    constructor(@Inject('CLICKHOUSE_CLIENT') private clickhouseClient: ClickHouseClient) {
-        this.redis = new Redis({
-            host: 'localhost',
-            port: 6379,
-            password: 'skyRedis2024',
-        })
-    }
-
-    async onModuleInit() {
-        try {
-            await this.redis.connect()
-            this.logger.log('Redis connected for error trends')
-        } catch (error: any) {
-            this.logger.warn('Redis connection failed, spike alerts will be disabled')
-        }
+    constructor(
+        @Inject('CLICKHOUSE_CLIENT') private clickhouseClient: ClickHouseClient,
+        private readonly redisService: RedisService
+    ) {
+        this.redis = this.redisService.getClient()
     }
 
     /**

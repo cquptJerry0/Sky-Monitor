@@ -22,6 +22,8 @@
 
 import axios, { CreateAxiosDefaults, AxiosError, InternalAxiosRequestConfig } from 'axios'
 
+import { toast } from '@/hooks/use-toast'
+
 // ==================== Axios 实例配置 ====================
 const config: CreateAxiosDefaults = {
     baseURL: '/api', // API 基础路径
@@ -29,6 +31,36 @@ const config: CreateAxiosDefaults = {
 }
 
 export const request = axios.create(config)
+
+// ==================== 全局 Loading 管理 ====================
+/**
+ * 全局 loading 计数器
+ *
+ * 为什么用计数器而不是布尔值？
+ * - 支持多个并发请求
+ * - 只有当所有请求都完成时，loading 才关闭
+ *
+ * 示例：
+ * 请求1开始 → loadingCount: 0 → 1 → loading 显示
+ * 请求2开始 → loadingCount: 1 → 2 → loading 继续显示
+ * 请求1完成 → loadingCount: 2 → 1 → loading 继续显示
+ * 请求2完成 → loadingCount: 1 → 0 → loading 关闭
+ */
+let loadingCount = 0
+
+const setGlobalLoading = (loading: boolean) => {
+    if (loading) {
+        loadingCount++
+    } else {
+        loadingCount = Math.max(0, loadingCount - 1)
+    }
+    // 通过自定义事件通知 GlobalLoading 组件
+    window.dispatchEvent(
+        new CustomEvent('globalLoading', {
+            detail: { loading: loadingCount > 0 },
+        })
+    )
+}
 
 // ==================== Token 刷新状态管理 ====================
 //  为什么需要这些变量？
@@ -110,7 +142,11 @@ const refreshAccessToken = async (): Promise<string> => {
 
 // ==================== 请求拦截器 ====================
 /**
- * 在每个请求发送前自动附加 access token
+ * 在每个请求发送前自动附加 access token 和处理 loading
+ *
+ * 功能：
+ * 1. 附加 access token 到请求头
+ * 2. 显示全局 loading（可配置）
  *
  * 认证流程：
  * 1. 从 localStorage 读取 access token
@@ -127,6 +163,13 @@ request.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     if (accessToken && config.headers) {
         config.headers.Authorization = `Bearer ${accessToken}`
     }
+
+    // 默认显示 loading，除非明确禁用
+    const showLoading = config.headers?.['X-Show-Loading'] !== 'false'
+    if (showLoading) {
+        setGlobalLoading(true)
+    }
+
     return config
 })
 
@@ -159,6 +202,22 @@ request.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 request.interceptors.response.use(
     // 成功响应处理
     response => {
+        // 关闭 loading
+        const showLoading = response.config.headers?.['X-Show-Loading'] !== 'false'
+        if (showLoading) {
+            setGlobalLoading(false)
+        }
+
+        // 自动显示成功 toast（如果配置了）
+        const successMessage = response.config.headers?.['X-Success-Message']
+        if (successMessage) {
+            // 解码中文消息（header 中使用了 encodeURIComponent 编码）
+            const decodedMessage = decodeURIComponent(successMessage as string)
+            toast({
+                title: decodedMessage,
+            })
+        }
+
         // 统一返回 response.data
         // 原因：后端返回格式统一为 { success, data, message }
         // 这样 service 层直接拿到 data，不需要再 .data.data
@@ -168,9 +227,48 @@ request.interceptors.response.use(
     async (error: AxiosError) => {
         const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
 
+        // 关闭 loading
+        setGlobalLoading(false)
+
+        // 自动提取错误消息并显示 toast
+        const showErrorToast = originalRequest?.headers?.['X-Show-Error-Toast'] !== 'false'
+        if (showErrorToast && error.response?.status !== 401) {
+            // 401 错误有专门处理，不在这里显示 toast
+            const errorMessage =
+                (error.response?.data as any)?.message || (error.response?.data as any)?.error || error.message || '请求失败，请稍后重试'
+
+            // 在控制台输出详细错误信息，方便调试
+            console.error('[API Error]', {
+                url: originalRequest?.url,
+                method: originalRequest?.method,
+                status: error.response?.status,
+                statusText: error.response?.statusText,
+                data: error.response?.data,
+                message: errorMessage,
+                fullError: error,
+            })
+
+            toast({
+                variant: 'destructive',
+                title: '操作失败',
+                description: errorMessage,
+            })
+        }
+
         // ========== 处理 401 错误（Token 过期） ==========
         // _retry 标记防止无限重试（如果刷新 token 后仍然 401）
         if (error.response?.status === 401 && !originalRequest._retry) {
+            // 排除认证相关接口，这些接口不应该触发自动刷新
+            // 原因：
+            // 1. /auth/login 返回 401 表示登录失败，不应该尝试刷新 token
+            // 2. /auth/refresh 返回 401 表示 refresh token 失效，不应该再次尝试刷新（避免死循环）
+            const isAuthEndpoint = originalRequest?.url?.includes('/auth/login') || originalRequest?.url?.includes('/auth/refresh')
+
+            // 如果是认证接口返回 401，直接返回错误，不触发刷新
+            if (isAuthEndpoint) {
+                return Promise.reject(error)
+            }
+
             // 情况1：已经有请求在刷新 token
             if (isRefreshing) {
                 // Promise 队列模式：
@@ -212,6 +310,12 @@ request.interceptors.response.use(
                 return request(originalRequest)
             } catch (refreshError) {
                 // 刷新失败（refresh token 也过期了）
+
+                // 在控制台输出详细错误信息
+                console.error('[Token Refresh Failed]', {
+                    message: '刷新 token 失败，即将跳转到登录页',
+                    error: refreshError,
+                })
 
                 // 通知所有等待的请求失败
                 processQueue(refreshError as Error)

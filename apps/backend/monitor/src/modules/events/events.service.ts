@@ -1,27 +1,19 @@
 import { ClickHouseClient } from '@clickhouse/client'
-import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common'
+import { Inject, Injectable, Logger } from '@nestjs/common'
 import Redis from 'ioredis'
 
+import { RedisService } from '../../fundamentals/redis'
+
 @Injectable()
-export class EventsService implements OnModuleInit {
+export class EventsService {
     private readonly logger = new Logger(EventsService.name)
     private readonly redis: Redis
 
-    constructor(@Inject('CLICKHOUSE_CLIENT') private clickhouseClient: ClickHouseClient) {
-        this.redis = new Redis({
-            host: 'localhost',
-            port: 6379,
-            password: 'skyRedis2024',
-        })
-    }
-
-    async onModuleInit() {
-        try {
-            await this.redis.connect()
-            this.logger.log('Redis connected for events caching')
-        } catch (error) {
-            this.logger.warn('Redis connection failed, caching will be disabled')
-        }
+    constructor(
+        @Inject('CLICKHOUSE_CLIENT') private clickhouseClient: ClickHouseClient,
+        private readonly redisService: RedisService
+    ) {
+        this.redis = this.redisService.getClient()
     }
 
     /**

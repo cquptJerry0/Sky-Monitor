@@ -1,6 +1,9 @@
 import { ClickHouseClient } from '@clickhouse/client'
-import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common'
+import { Inject, Injectable, Logger } from '@nestjs/common'
 import Redis from 'ioredis'
+
+import { RedisService } from '../../../fundamentals/redis'
+
 import { ErrorSimilarityService } from './error-similarity.service'
 
 /**
@@ -11,28 +14,16 @@ import { ErrorSimilarityService } from './error-similarity.service'
  * 使用二级聚合算法（指纹 + 相似度）减少重复告警。
  */
 @Injectable()
-export class ErrorAggregationService implements OnModuleInit {
+export class ErrorAggregationService {
     private readonly logger = new Logger(ErrorAggregationService.name)
     private readonly redis: Redis
 
     constructor(
         @Inject('CLICKHOUSE_CLIENT') private clickhouseClient: ClickHouseClient,
-        private readonly errorSimilarityService: ErrorSimilarityService
+        private readonly errorSimilarityService: ErrorSimilarityService,
+        private readonly redisService: RedisService
     ) {
-        this.redis = new Redis({
-            host: 'localhost',
-            port: 6379,
-            password: 'skyRedis2024',
-        })
-    }
-
-    async onModuleInit() {
-        try {
-            await this.redis.connect()
-            this.logger.log('Redis connected for error aggregation')
-        } catch (error) {
-            this.logger.warn('Redis connection failed, caching will be disabled')
-        }
+        this.redis = this.redisService.getClient()
     }
 
     /**
