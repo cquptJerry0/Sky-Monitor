@@ -12,7 +12,7 @@ import { createSSEConnection } from './client'
  * @param enabled - 是否启用连接
  * @returns { data, isConnected, error }
  */
-export function useSSE<T = any>(endpoint: string, enabled: boolean = true) {
+export function useSSE<T>(endpoint: string, enabled: boolean = true) {
     const [data, setData] = useState<T | null>(null)
     const [isConnected, setIsConnected] = useState(false)
     const [error, setError] = useState<Error | null>(null)
@@ -32,7 +32,7 @@ export function useSSE<T = any>(endpoint: string, enabled: boolean = true) {
         // 创建 SSE 连接
         const cleanup = createSSEConnection(endpoint, {
             onMessage: newData => {
-                setData(newData)
+                setData(newData as T)
                 setError(null)
             },
             onError: err => {
@@ -68,7 +68,7 @@ export function useSSE<T = any>(endpoint: string, enabled: boolean = true) {
  * @param maxItems - 最大保留数据条数
  * @returns { items, isConnected, error, clear }
  */
-export function useSSEStream<T = any>(endpoint: string, enabled: boolean = true, maxItems: number = 100) {
+export function useSSEStream<T>(endpoint: string, enabled: boolean = true, maxItems: number = 100) {
     const [items, setItems] = useState<T[]>([])
     const [isConnected, setIsConnected] = useState(false)
     const [error, setError] = useState<Error | null>(null)
@@ -87,7 +87,7 @@ export function useSSEStream<T = any>(endpoint: string, enabled: boolean = true,
         const cleanup = createSSEConnection(endpoint, {
             onMessage: newData => {
                 setItems(prev => {
-                    const updated = [newData, ...prev]
+                    const updated = [newData as T, ...prev]
                     return updated.slice(0, maxItems)
                 })
                 setError(null)

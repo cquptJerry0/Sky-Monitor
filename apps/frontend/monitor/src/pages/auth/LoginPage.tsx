@@ -34,41 +34,41 @@ export default function LoginPage() {
         }
 
         setIsLoading(true)
-        console.log('🔐 [登录] 步骤 1: 发送登录请求', { username })
+        console.log('[登录] 步骤 1: 发送登录请求', { username })
 
         try {
             // 调用登录 API
             const response = await authAPI.login(username, password)
-            console.log('🔐 [登录] 步骤 2: 收到响应', response)
+            console.log('[登录] 步骤 2: 收到响应', response)
 
             // 检查响应格式
             if (!response?.data?.access_token) {
-                console.error('🔐 [登录] 错误: 响应格式不正确', response)
+                console.error('[登录] 错误: 响应格式不正确', response)
                 throw new Error('登录响应格式错误')
             }
 
             const { access_token } = response.data
-            console.log('🔐 [登录] 步骤 3: 获取到 Access Token', access_token.substring(0, 20) + '...')
+            console.log('[登录] 步骤 3: 获取到 Access Token', access_token.substring(0, 20) + '...')
 
             // 存储 Token 到 store
             setAccessToken(access_token)
-            console.log('🔐 [登录] 步骤 4: Token 已存储到 Zustand store')
+            console.log('[登录] 步骤 4: Token 已存储到 Zustand store')
 
             // 验证 store 状态
             const storeState = useAuthStore.getState()
-            console.log('🔐 [登录] 步骤 5: 验证 store 状态', {
+            console.log('[登录] 步骤 5: 验证 store 状态', {
                 hasToken: !!storeState.accessToken,
                 isAuthenticated: storeState.isAuthenticated,
             })
 
             // 获取用户信息
-            console.log('🔐 [登录] 步骤 6: 获取用户信息')
+            console.log('[登录] 步骤 6: 获取用户信息')
             const userResponse = await authAPI.getCurrentUser()
-            console.log('🔐 [登录] 步骤 7: 用户信息', userResponse)
+            console.log('[登录] 步骤 7: 用户信息', userResponse)
 
             if (userResponse?.data) {
                 setUser(userResponse.data)
-                console.log('🔐 [登录] 步骤 8: 用户信息已存储')
+                console.log('[登录] 步骤 8: 用户信息已存储')
             }
 
             toast({
@@ -76,13 +76,14 @@ export default function LoginPage() {
                 description: `欢迎回来，${userResponse?.data?.username || username}！`,
             })
 
-            console.log('🔐 [登录] 步骤 9: 跳转到应用列表页')
+            console.log('[登录] 步骤 9: 跳转到应用列表页')
             navigate(ROUTES.PROJECTS)
-        } catch (error: any) {
-            console.error('🔐 [登录] 错误:', error)
+        } catch (error) {
+            console.error('[登录] 错误:', error)
+            const errorMessage = error instanceof Error ? error.message : '用户名或密码错误'
             toast({
                 title: '登录失败',
-                description: error.response?.data?.message || error.message || '用户名或密码错误',
+                description: errorMessage,
                 variant: 'destructive',
             })
         } finally {

@@ -4,6 +4,8 @@
  * 用于安全地解析可能包含控制字符的 JSON 字符串
  */
 
+import type { Event } from '@/api/types'
+
 /**
  * 安全的 JSON 解析，处理控制字符
  *
@@ -13,11 +15,11 @@
  *
  * @example
  * ```typescript
- * const data = safeJsonParse('{"name":"test"}', {})
- * const data2 = safeJsonParse(existingObject, {})
+ * const data = safeJsonParse<User>('{"name":"test"}', null)
+ * const data2 = safeJsonParse<Config>(existingObject, {})
  * ```
  */
-export const safeJsonParse = <T = any>(data: string | object, fallback: T | null = null): T | null => {
+export function safeJsonParse<T>(data: string | object, fallback: T | null = null): T | null {
     // 如果已经是对象，直接返回
     if (typeof data !== 'string') {
         return data as T
@@ -44,7 +46,7 @@ export const safeJsonParse = <T = any>(data: string | object, fallback: T | null
 }
 
 /**
- * 批量解析事件数据
+ * 解析事件数据
  *
  * @param event - 包含 event_data 字段的事件对象
  * @returns 解析后的事件对象
@@ -56,10 +58,10 @@ export const safeJsonParse = <T = any>(data: string | object, fallback: T | null
  * // parsed.event_data 现在是对象 { message: "error" }
  * ```
  */
-export const parseEventData = (event: any) => {
+export const parseEventData = (event: Event): Event => {
     return {
         ...event,
-        event_data: safeJsonParse(event.event_data, {}),
+        event_data: safeJsonParse<Record<string, unknown>>(event.event_data, {}) || {},
     }
 }
 
@@ -69,7 +71,7 @@ export const parseEventData = (event: any) => {
  * @param events - 事件数组
  * @returns 解析后的事件数组
  */
-export const parseEventDataArray = (events: any[]): any[] => {
+export const parseEventDataArray = (events: Event[]): Event[] => {
     if (!Array.isArray(events)) {
         return []
     }

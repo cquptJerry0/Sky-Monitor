@@ -5,6 +5,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/auth.store'
 import { authAPI } from '@/api'
+import type { User } from '@/api/types'
 
 /**
  * 使用认证状态
@@ -33,11 +34,11 @@ export function useLogin() {
             const response = await authAPI.login(username, password)
             return response
         },
-        onSuccess: (data: any) => {
+        onSuccess: (data: { access_token: string; expires_in: number } | { data: { access_token: string; expires_in: number } }) => {
             // 保存 Token
-            if (data?.data?.access_token) {
+            if ('data' in data && data.data?.access_token) {
                 setAccessToken(data.data.access_token)
-            } else if (data?.access_token) {
+            } else if ('access_token' in data) {
                 setAccessToken(data.access_token)
             }
 
@@ -74,8 +75,11 @@ export function useCurrentUser() {
         queryKey: ['currentUser'],
         queryFn: async () => {
             const response = await authAPI.getCurrentUser()
-            // 后端返回格式: { data: { id, username, ... } }
-            const user = (response as any)?.data || response
+            // 后端返回格式可能是 User 或 { data: User }
+            const user =
+                typeof response === 'object' && response !== null && 'data' in response
+                    ? (response as { data: User }).data
+                    : (response as User)
             setUser(user)
             return user
         },

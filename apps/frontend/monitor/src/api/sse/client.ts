@@ -9,8 +9,8 @@ import { useAuthStore } from '@/stores/auth.store'
 import { API_BASE_URL, SSE_CONFIG } from '@/utils/constants'
 
 interface SSEOptions {
-    onMessage: (data: any) => void
-    onError?: (error: any) => void
+    onMessage: (data: unknown) => void
+    onError?: (error: Error) => void
     onOpen?: () => void
     onClose?: () => void
 }
@@ -63,7 +63,7 @@ export function createSSEConnection(endpoint: string, options: SSEOptions) {
         },
 
         // 连接打开
-        onopen(response) {
+        async onopen(response) {
             if (response.ok) {
                 console.log('SSE connected:', endpoint)
                 options.onOpen?.()

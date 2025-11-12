@@ -1,27 +1,79 @@
 /**
  * API 类型定义
  *
- * 1. 重新导出自动生成的 OpenAPI 类型
- * 2. 补充业务领域类型（后端未在 OpenAPI 中定义的）
+ * 说明：
+ * - 所有类型手动维护，与后端 Entity 保持一致
+ * - 后端使用 Zod 验证，未使用 @ApiProperty 装饰器
+ * - 不使用自动生成的 OpenAPI 类型
  */
 
-// 重新导出生成的类型
-export type * from './generated-types'
+// ==================== 核心实体类型（对应后端 Entity） ====================
 
-// ==================== 业务领域类型 ====================
+/**
+ * 应用类型枚举
+ * 对应后端: ApplicationEntity.type
+ * 数据库: ENUM('vanilla', 'react', 'vue')
+ */
+export type ApplicationType = 'vanilla' | 'react' | 'vue'
+
+/**
+ * 应用实体
+ * 对应后端: ApplicationEntity
+ * 数据库表: application
+ */
+export interface Application {
+    /** 主键 */
+    id: number
+    /** 应用 ID (例如: react123456) */
+    appId: string
+    /** 应用类型 */
+    type: ApplicationType
+    /** 应用名称 */
+    name: string
+    /** 应用描述 */
+    description: string | null
+    /** 创建时间 */
+    createdAt: string
+    /** 更新时间 */
+    updatedA5t: string | null
+    /** 用户 ID */
+    userId: number
+}
+
+/**
+ * 管理员实体
+ * 对应后端: AdminEntity
+ * 数据库表: admin
+ */
+export interface Admin {
+    /** 主键 */
+    id: number
+    /** 用户名 */
+    username: string
+    /** 邮箱 */
+    email: string | null
+    /** 创建时间 */
+    createdAt: string
+    /** 更新时间 */
+    updatedAt: string | null
+}
+
+// ==================== 枚举类型 ====================
 
 /**
  * 事件类型枚举
+ * 对应后端: MonitoringEventDto.type
  */
 export type EventType =
     | 'error'
-    | 'performance'
-    | 'webVital'
-    | 'session'
+    | 'unhandledrejection'
     | 'httpError'
     | 'resourceError'
+    | 'webVital'
+    | 'performance'
+    | 'session'
     | 'message'
-    | 'transaction'
+    | 'event'
     | 'custom'
 
 /**
@@ -39,11 +91,6 @@ export type AlertRuleType = 'error_rate' | 'slow_request' | 'session_anomaly'
  */
 export type TimeWindow = 'hour' | 'day' | 'week'
 
-/**
- * 应用类型
- */
-export type ApplicationType = 'vanilla' | 'react' | 'vue' | 'angular' | 'svelte'
-
 // ==================== 事件相关类型 ====================
 
 /**
@@ -53,7 +100,7 @@ export interface Event {
     id: string
     app_id: string
     event_type: EventType
-    event_data: string | Record<string, any>
+    event_data: string | Record<string, unknown>
     timestamp: string
 
     // 错误相关字段
@@ -199,7 +246,7 @@ export interface SessionStats {
  * 会话回放数据
  */
 export interface SessionReplayData {
-    events: any[] // rrweb 事件数组
+    events: Record<string, unknown>[] // rrweb 事件数组
     metadata: {
         sessionId: string
         eventCount: number
@@ -210,19 +257,6 @@ export interface SessionReplayData {
 }
 
 // ==================== 应用相关类型 ====================
-
-/**
- * 应用信息
- */
-export interface Application {
-    id: number
-    appId: string
-    type: ApplicationType
-    name: string
-    description?: string
-    createdAt: string
-    updatedAt?: string
-}
 
 /**
  * 应用摘要
@@ -349,31 +383,34 @@ export interface User {
 // ==================== API 响应包装类型 ====================
 
 /**
- * 标准 API 响应
+ * 应用列表响应
  */
-export interface ApiResponse<T = any> {
+export interface ApplicationListResponse {
     success: boolean
-    data: T
+    data: {
+        applications: Application[]
+        count: number
+    }
     message?: string
     error?: string
 }
 
 /**
- * 分页响应
+ * 单个应用响应
  */
-export interface PaginatedResponse<T = any> {
-    data: T[]
-    total: number
-    limit: number
-    offset: number
+export interface ApplicationResponse {
+    success: boolean
+    data: Application
+    message?: string
+    error?: string
 }
 
 /**
- * SSE 事件数据
+ * 删除响应
  */
-export interface SSEEvent<T = any> {
-    data: T
-    id?: string
-    type?: string
-    retry?: number
+export interface DeleteResponse {
+    success: boolean
+    data: null
+    message?: string
+    error?: string
 }

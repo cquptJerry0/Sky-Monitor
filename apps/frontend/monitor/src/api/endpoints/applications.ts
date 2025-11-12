@@ -3,26 +3,55 @@
  */
 
 import { client } from '../client'
-import type { Application, ApplicationType } from '../types'
+import type { ApplicationType, ApplicationListResponse, ApplicationResponse, DeleteResponse } from '../types'
+
+/**
+ * 创建应用请求参数
+ */
+export interface CreateApplicationRequest {
+    name: string
+    type: ApplicationType
+    description?: string
+}
+
+/**
+ * 更新应用请求参数
+ */
+export interface UpdateApplicationRequest {
+    appId: string
+    name?: string
+    description?: string
+}
+
+/**
+ * 删除应用请求参数
+ */
+export interface DeleteApplicationRequest {
+    appId: string
+}
 
 export const applicationsAPI = {
     /**
      * 获取应用列表
+     * 响应格式: { success: true, data: { applications: [...], count: 2 } }
      */
-    list: () => client.get<{ applications: Application[] }>('/application'),
+    list: () => client.get<ApplicationListResponse>('/application'),
 
     /**
      * 创建应用
+     * 响应格式: { success: true, data: Application }
      */
-    create: (data: { name: string; type: ApplicationType; description?: string }) => client.post<Application>('/application', data),
+    create: (data: CreateApplicationRequest) => client.post<ApplicationResponse>('/application', data),
 
     /**
      * 更新应用
+     * 响应格式: { success: true, data: Application }
      */
-    update: (data: { appId: string; name?: string; description?: string }) => client.put<Application>('/application', data),
+    update: (data: UpdateApplicationRequest) => client.put<ApplicationResponse>('/application', data),
 
     /**
      * 删除应用
+     * 响应格式: { success: true, data: null }
      */
-    delete: (appId: string) => client.delete('/application', { data: { appId } }),
+    delete: (data: DeleteApplicationRequest) => client.delete<DeleteResponse>('/application', { data }),
 }
