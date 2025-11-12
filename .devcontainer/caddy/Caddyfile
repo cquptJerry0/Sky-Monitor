@@ -40,7 +40,7 @@
 # {
 #         acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
 # }
-
+# termis
 # 线上监控示例
 monitoring.miaomaedu.com {
 

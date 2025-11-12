@@ -32,6 +32,9 @@ const SessionReplayPage = lazy(() => import('@/pages/sessions/SessionReplayPage'
 const AlertsPage = lazy(() => import('@/pages/alerts/AlertsPage'))
 const AlertHistoryPage = lazy(() => import('@/pages/alerts/AlertHistoryPage'))
 const AlertConfigPage = lazy(() => import('@/pages/alerts/AlertConfigPage'))
+const UserTimelinePage = lazy(() => import('@/pages/users/UserTimelinePage'))
+const TransactionsPage = lazy(() => import('@/pages/transactions/TransactionsPage'))
+const TransactionDetailPage = lazy(() => import('@/pages/transactions/TransactionDetailPage'))
 
 /**
  * 懒加载包装组件
@@ -251,6 +254,34 @@ export const router: ReturnType<typeof createBrowserRouter> = createBrowserRoute
                 element: (
                     <LazyPage>
                         <AlertConfigPage />
+                    </LazyPage>
+                ),
+            },
+
+            // 用户
+            {
+                path: '/users/:userId/timeline',
+                element: (
+                    <LazyPage>
+                        <UserTimelinePage />
+                    </LazyPage>
+                ),
+            },
+
+            // Transactions
+            {
+                path: '/transactions',
+                element: (
+                    <LazyPage>
+                        <TransactionsPage />
+                    </LazyPage>
+                ),
+            },
+            {
+                path: '/transactions/:id',
+                element: (
+                    <LazyPage>
+                        <TransactionDetailPage />
                     </LazyPage>
                 ),
             },

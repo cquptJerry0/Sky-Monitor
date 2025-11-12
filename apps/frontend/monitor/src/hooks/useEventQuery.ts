@@ -128,3 +128,45 @@ export function useSourceMapStatuses(eventIds: string[]) {
         staleTime: 10_000, // 10 秒
     })
 }
+
+/**
+ * 查询采样率统计
+ * 后端返回: { success: true, data: { sampled: number, total: number, rate: number } }
+ * 响应拦截器解包后: { sampled: number, total: number, rate: number }
+ */
+export function useSamplingStats(appId: string | null) {
+    return useQuery({
+        queryKey: ['samplingStats', appId],
+        queryFn: () => eventsAPI.getSamplingStats(appId!),
+        enabled: !!appId,
+        staleTime: QUERY_CONFIG.STALE_TIME,
+    })
+}
+
+/**
+ * 查询用户事件时间线
+ * 后端返回: { success: true, data: { data: Event[] } }
+ * 响应拦截器解包后: { data: Event[] }
+ */
+export function useUserEvents(userId: string | null, appId: string | null) {
+    return useQuery({
+        queryKey: ['userEvents', userId, appId],
+        queryFn: () => eventsAPI.getUserEvents(userId!, { appId: appId! }),
+        enabled: !!userId && !!appId,
+        staleTime: QUERY_CONFIG.STALE_TIME,
+    })
+}
+
+/**
+ * 查询 Transaction 事件列表
+ * 后端返回: { success: true, data: { data: Event[], total: number } }
+ * 响应拦截器解包后: { data: Event[], total: number }
+ */
+export function useTransactions(appId: string | null) {
+    return useQuery({
+        queryKey: ['transactions', appId],
+        queryFn: () => eventsAPI.list({ appId: appId!, eventType: 'transaction', limit: 100 }),
+        enabled: !!appId,
+        staleTime: QUERY_CONFIG.STALE_TIME,
+    })
+}

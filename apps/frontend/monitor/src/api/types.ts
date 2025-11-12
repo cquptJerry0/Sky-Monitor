@@ -101,7 +101,9 @@ export interface Event {
     app_id: string
     event_type: EventType
     event_data: string | Record<string, unknown>
+    event_name?: string
     timestamp: string
+    path?: string
 
     // 错误相关字段
     error_message?: string
