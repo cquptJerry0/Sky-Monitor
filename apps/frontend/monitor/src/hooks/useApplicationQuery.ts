@@ -17,7 +17,8 @@ export function useApplications() {
         queryFn: async (): Promise<Application[]> => {
             const response = await applicationsAPI.list()
             console.log('[useApplications] API 响应:', response)
-            return response.data.applications
+            // 响应拦截器已经解包了 response.data.data，所以 response 就是 { applications: [...], count: 2 }
+            return response.applications
         },
         staleTime: 60_000, // 1 分钟
     })
@@ -33,7 +34,8 @@ export function useCreateApplication() {
         mutationFn: async (data: CreateApplicationRequest): Promise<Application> => {
             const response = await applicationsAPI.create(data)
             console.log('[useCreateApplication] API 响应:', response)
-            return response.data
+            // 响应拦截器已经解包，response 就是 Application 对象
+            return response
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['applications'] })
@@ -51,7 +53,8 @@ export function useUpdateApplication() {
         mutationFn: async (data: UpdateApplicationRequest): Promise<Application> => {
             const response = await applicationsAPI.update(data)
             console.log('[useUpdateApplication] API 响应:', response)
-            return response.data
+            // 响应拦截器已经解包，response 就是 Application 对象
+            return response
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['applications'] })

@@ -41,13 +41,13 @@ export default function LoginPage() {
             const response = await authAPI.login(username, password)
             console.log('[登录] 步骤 2: 收到响应', response)
 
-            // 检查响应格式 - 后端返回 { success: true, data: { access_token, expires_in } }
-            if (!response?.data?.access_token) {
+            // 检查响应格式
+            if (!response?.access_token) {
                 console.error('[登录] 错误: 响应格式不正确', response)
                 throw new Error('登录响应格式错误')
             }
 
-            const { access_token } = response.data
+            const { access_token } = response
             console.log('[登录] 步骤 3: 获取到 Access Token', access_token.substring(0, 20) + '...')
 
             // 存储 Token 到 store

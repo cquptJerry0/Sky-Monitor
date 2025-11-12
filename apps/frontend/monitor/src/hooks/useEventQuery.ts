@@ -91,14 +91,13 @@ export function useSessionEvents(sessionId: string | null, appId: string | null)
 
 /**
  * 查询慢请求
+ * 后端返回: { success: true, data: Event[] }
+ * 响应拦截器解包后: Event[]
  */
 export function useSlowRequests(params: Parameters<typeof eventsAPI.getSlowRequests>[0]) {
     return useQuery({
         queryKey: ['slowRequests', params],
-        queryFn: async () => {
-            const response = await eventsAPI.getSlowRequests(params)
-            return Array.isArray(response) ? response : []
-        },
+        queryFn: () => eventsAPI.getSlowRequests(params),
         enabled: !!params.appId,
         staleTime: QUERY_CONFIG.STALE_TIME,
     })
@@ -106,14 +105,13 @@ export function useSlowRequests(params: Parameters<typeof eventsAPI.getSlowReque
 
 /**
  * 查询错误分组
+ * 后端返回: { success: true, data: Event[] }
+ * 响应拦截器解包后: Event[]
  */
 export function useErrorGroups(params: Parameters<typeof eventsAPI.getErrorGroups>[0]) {
     return useQuery({
         queryKey: ['errorGroups', params],
-        queryFn: async () => {
-            const response = await eventsAPI.getErrorGroups(params)
-            return Array.isArray(response) ? response : []
-        },
+        queryFn: () => eventsAPI.getErrorGroups(params),
         enabled: !!params.appId,
         staleTime: QUERY_CONFIG.STALE_TIME,
     })
