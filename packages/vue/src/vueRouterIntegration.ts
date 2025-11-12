@@ -75,11 +75,6 @@ export class VueRouterIntegration implements Integration {
         }
 
         captureEvent(event)
-
-        // 在控制台打印错误
-        if (this.options.logErrors) {
-            console.error('[Sky Monitor Vue Router Error]', error)
-        }
     }
 
     /**
@@ -109,10 +104,5 @@ export class VueRouterIntegration implements Integration {
         }
 
         captureEvent(event)
-
-        // 在控制台打印错误
-        if (this.options.logErrors) {
-            console.error('[Sky Monitor Vue Router Navigation Error]', error, { to, from })
-        }
     }
 }

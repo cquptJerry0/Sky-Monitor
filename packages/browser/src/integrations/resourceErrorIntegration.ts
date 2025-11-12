@@ -85,11 +85,6 @@ export class ResourceErrorIntegration implements Integration {
             return
         }
 
-        // 在控制台输出
-        if (this.options.captureConsole) {
-            console.error(`[Sky Monitor] Failed to load ${tagName}: ${url}`)
-        }
-
         // 获取全局客户端实例，提取 release 和 appId
         // 这些信息对于后端非常重要：
         // - release: 用于匹配对应版本的 SourceMap 文件

@@ -68,7 +68,11 @@ export class ClickhouseInitService implements OnModuleInit {
                 
                 -- 资源错误相关
                 resource_url String DEFAULT '',
-                resource_type String DEFAULT ''
+                resource_type String DEFAULT '',
+
+                -- Session Replay 相关字段
+                session_replay_events String DEFAULT '',
+                session_replay_size UInt32 DEFAULT 0
             ) ENGINE = MergeTree ()
             PARTITION BY toYYYYMM (timestamp)
             ORDER BY (app_id, timestamp, event_type, error_fingerprint)
@@ -80,9 +84,32 @@ export class ClickhouseInitService implements OnModuleInit {
 
             // 创建索引
             await this.createIndexes()
+
+            // 添加 Session Replay 字段（如果表已存在）
+            await this.addSessionReplayColumns()
         } catch (error) {
             this.logger.error(`Failed to create monitor_events table: ${error.message}`)
             throw error
+        }
+    }
+
+    /**
+     * 添加 Session Replay 相关字段（用于已存在的表）
+     */
+    private async addSessionReplayColumns() {
+        const columns = [
+            "ALTER TABLE monitor_events ADD COLUMN IF NOT EXISTS session_replay_events String DEFAULT ''",
+            'ALTER TABLE monitor_events ADD COLUMN IF NOT EXISTS session_replay_size UInt32 DEFAULT 0',
+        ]
+
+        for (const columnQuery of columns) {
+            try {
+                await this.clickhouseClient.query({ query: columnQuery })
+                this.logger.log(`Added column: ${columnQuery}`)
+            } catch (error) {
+                // 列可能已存在，忽略错误
+                this.logger.warn(`Column addition warning: ${error.message}`)
+            }
         }
     }
 

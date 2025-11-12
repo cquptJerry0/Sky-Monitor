@@ -1,26 +1,37 @@
-import './App.css'
+/**
+ * App 根组件
+ */
 
-import { QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider, QueryClient } from '@tanstack/react-query'
 import { setDefaultOptions } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { RouterProvider } from 'react-router-dom'
 
 import { Toaster } from './components/ui/toaster'
-import { AppProvider } from './contexts/AppContext'
 import { router } from './router'
-import { queryClient } from './utils/query-client'
 
+// 配置 date-fns 中文本地化
 setDefaultOptions({
     locale: zhCN,
+})
+
+// 创建 QueryClient 实例
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            staleTime: 30_000, // 30 秒
+            gcTime: 5 * 60_000, // 5 分钟
+            retry: 1,
+            refetchOnWindowFocus: false,
+        },
+    },
 })
 
 function App() {
     return (
         <QueryClientProvider client={queryClient}>
-            <AppProvider>
-                <Toaster />
-                <RouterProvider router={router} />
-            </AppProvider>
+            <Toaster />
+            <RouterProvider router={router} />
         </QueryClientProvider>
     )
 }

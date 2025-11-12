@@ -10,7 +10,7 @@
  * 测试 DOM 点击事件捕获
  */
 window.testBreadcrumbClick = function () {
-    console.log('👆 测试 Breadcrumb: DOM 点击事件')
+    console.log('测试 Breadcrumb: DOM 点击事件')
     const button = document.createElement('button')
     button.textContent = '测试按钮'
     button.id = 'test-breadcrumb-btn'
@@ -28,7 +28,7 @@ window.testBreadcrumbClick = function () {
  * 测试控制台日志捕获
  */
 window.testBreadcrumbConsole = function () {
-    console.log('📝 测试 Breadcrumb: 控制台日志')
+    console.log('测试 Breadcrumb: 控制台日志')
     console.log('这是一条测试日志')
     console.warn('这是一条警告日志')
     console.error('这是一条错误日志')
@@ -40,7 +40,7 @@ window.testBreadcrumbConsole = function () {
  * 测试页面导航捕获
  */
 window.testBreadcrumbHistory = function () {
-    console.log('🔄 测试 Breadcrumb: 页面导航')
+    console.log('测试 Breadcrumb: 页面导航')
     // 模拟 SPA 路由变化
     history.pushState({}, '', '/test-page-1')
     setTimeout(() => {
@@ -56,13 +56,13 @@ window.testBreadcrumbHistory = function () {
  * 测试 Fetch 请求捕获
  */
 window.testBreadcrumbFetch = async function () {
-    console.log('🌐 测试 Breadcrumb: Fetch 请求')
+    console.log('测试 Breadcrumb: Fetch 请求')
     try {
         await fetch('https://jsonplaceholder.typicode.com/posts/1')
-        console.log('✅ Fetch 请求成功')
+        console.log('Fetch 请求成功')
         alert('Breadcrumb 会记录这次 Fetch 请求！')
     } catch (error) {
-        console.error('❌ Fetch 请求失败:', error)
+        console.error('Fetch 请求失败:', error)
     }
 }
 
@@ -70,15 +70,15 @@ window.testBreadcrumbFetch = async function () {
  * 测试 XHR 请求捕获
  */
 window.testBreadcrumbXHR = function () {
-    console.log('🌐 测试 Breadcrumb: XHR 请求')
+    console.log('测试 Breadcrumb: XHR 请求')
     const xhr = new XMLHttpRequest()
     xhr.open('GET', 'https://jsonplaceholder.typicode.com/users/1')
     xhr.onload = () => {
-        console.log('✅ XHR 请求成功')
+        console.log('XHR 请求成功')
         alert('Breadcrumb 会记录这次 XHR 请求！')
     }
     xhr.onerror = () => {
-        console.error('❌ XHR 请求失败')
+        console.error('XHR 请求失败')
     }
     xhr.send()
 }
@@ -89,7 +89,7 @@ window.testBreadcrumbXHR = function () {
  * 测试会话录制
  */
 window.testSessionReplay = function () {
-    console.log('📹 测试 Session Replay: 会话录制')
+    console.log('测试 Session Replay: 会话录制')
     alert('Session Replay 正在录制你的所有操作！\n包括鼠标移动、点击、滚动等。')
 
     // 创建一些交互元素
@@ -115,7 +115,7 @@ window.testSessionReplay = function () {
  * 测试会话跟踪
  */
 window.testSessionTracking = function () {
-    console.log('📊 测试 Session: 会话跟踪')
+    console.log('测试 Session: 会话跟踪')
 
     const sessionId = window.monitoring?.getSessionId?.() || 'N/A'
     const userId = window.monitoring?.getUserId?.() || 'N/A'
@@ -127,7 +127,7 @@ window.testSessionTracking = function () {
  * 模拟用户会话活动
  */
 window.testSessionActivity = function () {
-    console.log('🏃 测试 Session: 模拟用户活动')
+    console.log('测试 Session: 模拟用户活动')
 
     let count = 0
     const interval = setInterval(() => {
@@ -152,7 +152,7 @@ window.testSessionActivity = function () {
  * 测试 HTTP 404 错误
  */
 window.testHttp404Error = async function () {
-    console.log('❌ 测试 HTTP Error: 404')
+    console.log('测试 HTTP Error: 404')
     try {
         const response = await fetch('https://jsonplaceholder.typicode.com/nonexistent-endpoint')
         if (!response.ok) {
@@ -168,7 +168,7 @@ window.testHttp404Error = async function () {
  * 测试 HTTP 500 错误
  */
 window.testHttp500Error = async function () {
-    console.log('❌ 测试 HTTP Error: 500')
+    console.log('测试 HTTP Error: 500')
     try {
         // 模拟 500 错误（大部分公开 API 不会返回 500）
         await fetch('https://httpstat.us/500')
@@ -182,7 +182,7 @@ window.testHttp500Error = async function () {
  * 测试网络超时
  */
 window.testHttpTimeout = async function () {
-    console.log('⏱️ 测试 HTTP Error: 超时')
+    console.log('测试 HTTP Error: 超时')
     try {
         const controller = new AbortController()
         const timeoutId = setTimeout(() => controller.abort(), 100) // 100ms 超时
@@ -204,7 +204,7 @@ window.testHttpTimeout = async function () {
  * 测试图片加载失败
  */
 window.testResourceErrorImage = function () {
-    console.log('🖼️ 测试 Resource Error: 图片加载失败')
+    console.log('测试 Resource Error: 图片加载失败')
     const img = new Image()
     img.src = 'https://nonexistent-domain-123456.com/image.png'
     img.onerror = () => {
@@ -219,7 +219,7 @@ window.testResourceErrorImage = function () {
  * 测试 JS 文件加载失败
  */
 window.testResourceErrorScript = function () {
-    console.log('📜 测试 Resource Error: JS 加载失败')
+    console.log('测试 Resource Error: JS 加载失败')
     const script = document.createElement('script')
     script.src = 'https://nonexistent-domain-123456.com/script.js'
     script.onerror = () => {
@@ -233,7 +233,7 @@ window.testResourceErrorScript = function () {
  * 测试 CSS 文件加载失败
  */
 window.testResourceErrorCSS = function () {
-    console.log('🎨 测试 Resource Error: CSS 加载失败')
+    console.log('测试 Resource Error: CSS 加载失败')
     const link = document.createElement('link')
     link.rel = 'stylesheet'
     link.href = 'https://nonexistent-domain-123456.com/style.css'
@@ -250,13 +250,13 @@ window.testResourceErrorCSS = function () {
  * 测试资源加载性能监控
  */
 window.testResourceTiming = function () {
-    console.log('⚡ 测试 Resource Timing: 资源性能监控')
+    console.log('测试 Resource Timing: 资源性能监控')
 
     // 加载一个较大的图片
     const img = new Image()
     img.src = 'https://via.placeholder.com/1500?text=Large+Image+for+Testing'
     img.onload = () => {
-        console.log('✅ 图片加载完成')
+        console.log('图片加载完成')
         alert('Resource Timing Integration 会记录这个资源的加载性能（DNS、TCP、下载时间等）！')
     }
 
@@ -268,7 +268,7 @@ window.testResourceTiming = function () {
  * 测试多个资源加载
  */
 window.testResourceTimingMultiple = function () {
-    console.log('⚡ 测试 Resource Timing: 多个资源')
+    console.log('测试 Resource Timing: 多个资源')
 
     const testArea = document.getElementById('test-area')
     testArea.innerHTML = '<h3>加载多个资源...</h3>'
@@ -290,16 +290,16 @@ window.testResourceTimingMultiple = function () {
  * 测试慢速 API 请求
  */
 window.testPerformanceSlowAPI = async function () {
-    console.log('🐌 测试 Performance: 慢速 API')
+    console.log('测试 Performance: 慢速 API')
     const startTime = Date.now()
 
     try {
         await fetch('https://httpbin.org/delay/3') // 3 秒延迟
         const duration = Date.now() - startTime
-        console.log(`✅ 请求完成，耗时: ${duration}ms`)
+        console.log(`请求完成，耗时: ${duration}ms`)
         alert(`Performance Integration 会记录这个慢速请求（${duration}ms）！`)
     } catch (error) {
-        console.error('❌ 请求失败:', error)
+        console.error('请求失败:', error)
     }
 }
 
@@ -307,16 +307,16 @@ window.testPerformanceSlowAPI = async function () {
  * 测试快速 API 请求
  */
 window.testPerformanceFastAPI = async function () {
-    console.log('⚡ 测试 Performance: 快速 API')
+    console.log('测试 Performance: 快速 API')
     const startTime = Date.now()
 
     try {
         await fetch('https://jsonplaceholder.typicode.com/posts/1')
         const duration = Date.now() - startTime
-        console.log(`✅ 请求完成，耗时: ${duration}ms`)
+        console.log(`请求完成，耗时: ${duration}ms`)
         alert(`Performance Integration 会记录这个快速请求（${duration}ms）！`)
     } catch (error) {
-        console.error('❌ 请求失败:', error)
+        console.error('请求失败:', error)
     }
 }
 
@@ -324,7 +324,7 @@ window.testPerformanceFastAPI = async function () {
  * 测试多个并发请求
  */
 window.testPerformanceConcurrent = async function () {
-    console.log('🔀 测试 Performance: 并发请求')
+    console.log('测试 Performance: 并发请求')
     const startTime = Date.now()
 
     try {
@@ -335,62 +335,62 @@ window.testPerformanceConcurrent = async function () {
         ])
 
         const duration = Date.now() - startTime
-        console.log(`✅ 所有请求完成，总耗时: ${duration}ms`)
+        console.log(`所有请求完成，总耗时: ${duration}ms`)
         alert(`Performance Integration 会记录所有这 3 个并发请求的性能数据！`)
     } catch (error) {
-        console.error('❌ 请求失败:', error)
+        console.error('请求失败:', error)
     }
 }
 
 // ============ Breadcrumb 面包屑测试 ============
 
 window.testBreadcrumbClick = function () {
-    console.log('🍞 面包屑：点击事件已记录')
+    console.log('面包屑：点击事件已记录')
     alert('点击事件已被记录到面包屑！')
 }
 
 window.testBreadcrumbConsole = function () {
-    console.log('🍞 这是一条 log 消息')
-    console.warn('🍞 这是一条 warn 消息')
-    console.error('🍞 这是一条 error 消息')
-    console.info('🍞 这是一条 info 消息')
+    console.log('这是一条 log 消息')
+    console.warn('这是一条 warn 消息')
+    console.error('这是一条 error 消息')
+    console.info('这是一条 info 消息')
     alert('已输出多条不同级别的 console 日志，已记录到面包屑！')
 }
 
 window.testBreadcrumbFetch = async function () {
-    console.log('🍞 发起 Fetch 请求测试')
+    console.log('发起 Fetch 请求测试')
     try {
         await fetch('https://jsonplaceholder.typicode.com/posts/1')
-        console.log('🍞 Fetch 请求成功，已记录到面包屑')
+        console.log('Fetch 请求成功，已记录到面包屑')
         alert('Fetch 请求已完成并记录到面包屑！')
     } catch (error) {
-        console.error('🍞 Fetch 请求失败:', error)
+        console.error('Fetch 请求失败:', error)
     }
 }
 
 window.testBreadcrumbHistory = function () {
-    console.log('🍞 测试路由变化')
+    console.log('测试路由变化')
     const currentUrl = window.location.href
 
     // 修改路由
     history.pushState({ page: 1 }, '', '/test-page-1')
-    console.log('🍞 路由已变更为: /test-page-1')
+    console.log('路由已变更为: /test-page-1')
 
     setTimeout(() => {
         history.pushState({ page: 2 }, '', '/test-page-2')
-        console.log('🍞 路由已变更为: /test-page-2')
+        console.log('路由已变更为: /test-page-2')
 
         setTimeout(() => {
             // 恢复原始URL
             history.pushState({}, '', currentUrl)
-            console.log('🍞 路由已恢复')
+            console.log('路由已恢复')
             alert('路由变化已记录到面包屑！检查控制台查看详情。')
         }, 500)
     }, 500)
 }
 
 window.triggerErrorWithBreadcrumbs = function () {
-    console.log('🍞 准备触发错误，查看面包屑记录')
+    console.log('准备触发错误，查看面包屑记录')
 
     // 执行一系列操作，生成面包屑
     console.log('步骤 1: 用户查看页面')
@@ -405,7 +405,7 @@ window.triggerErrorWithBreadcrumbs = function () {
             // 触发错误
             setTimeout(() => {
                 console.error('步骤 5: 即将触发错误')
-                throw new Error('🍞 测试错误：查看此错误的面包屑记录！')
+                throw new Error('测试错误：查看此错误的面包屑记录！')
             }, 500)
         })
         .catch(err => {

@@ -1,12 +1,11 @@
 import { BullModule } from '@nestjs/bull'
-import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common'
+import { Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { TypeOrmModule } from '@nestjs/typeorm'
 
 import databaseConfig from './config/database'
 import { CacheModule } from './fundamentals/cache/cache.module'
 import { ClickhouseModule } from './fundamentals/clickhouse/clickhouse.module'
-import { LoggerMiddleware } from './fundamentals/common/middleware/logger.middleware'
 import { RedisModule } from './fundamentals/redis'
 import { AlertsModule } from './modules/alerts/alerts.module'
 import { ApplicationModule } from './modules/application/application.module'
@@ -19,7 +18,11 @@ import { VersionModule } from './modules/version/version.module'
 
 @Module({
     imports: [
-        ConfigModule.forRoot({ load: [databaseConfig] }),
+        ConfigModule.forRoot({
+            isGlobal: true,
+            envFilePath: '.env',
+            load: [databaseConfig],
+        }),
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],
             useFactory: (config: ConfigService) => {
@@ -29,15 +32,15 @@ import { VersionModule } from './modules/version/version.module'
         }),
         BullModule.forRoot({
             redis: {
-                host: 'localhost',
-                port: 6379,
-                password: 'skyRedis2024',
+                host: process.env.REDIS_HOST || 'localhost',
+                port: parseInt(process.env.REDIS_PORT || '6379'),
+                password: process.env.REDIS_PASSWORD,
             },
         }),
         ClickhouseModule.forRoot({
-            url: 'http://localhost:8123',
-            username: 'default',
-            password: 'skyClickhouse2024',
+            url: process.env.CLICKHOUSE_URL || 'http://localhost:8123',
+            username: process.env.CLICKHOUSE_USERNAME || 'default',
+            password: process.env.CLICKHOUSE_PASSWORD,
         }),
         RedisModule,
         CacheModule,
@@ -52,9 +55,4 @@ import { VersionModule } from './modules/version/version.module'
     ],
     providers: [],
 })
-export class AppModule {
-    configure(consumer: MiddlewareConsumer) {
-        // 为 hello 路由添加中间件
-        consumer.apply(LoggerMiddleware).exclude({ path: 'hello', method: RequestMethod.POST }).forRoutes('hello')
-    }
-}
+export class AppModule {}

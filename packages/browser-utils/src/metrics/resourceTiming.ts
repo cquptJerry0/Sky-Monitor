@@ -291,7 +291,6 @@ function calculateBreakdown(entry: PerformanceResourceTiming): ResourceTimingBre
 export function observeResourceTiming(callback: (resource: ResourceTimingData) => void, options: ResourceTimingOptions = {}): () => void {
     // 检查浏览器是否支持 PerformanceObserver
     if (!('PerformanceObserver' in window)) {
-        console.warn('PerformanceObserver not supported')
         return () => {}
     }
 

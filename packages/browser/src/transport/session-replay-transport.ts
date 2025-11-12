@@ -144,7 +144,7 @@ export class SessionReplayTransport implements Transport {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`)
             }
         } catch (error) {
-            if (retries < this.options.maxRetries) {
+            if (retries < (this.options.maxRetries ?? 3)) {
                 // 指数退避重试
                 const delay = Math.min(1000 * Math.pow(2, retries), 10000)
                 await new Promise(resolve => setTimeout(resolve, delay))

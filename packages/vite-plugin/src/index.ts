@@ -51,14 +51,11 @@ export function skyMonitorPlugin(options: SkyMonitorPluginOptions): Plugin {
 
                     if (deleteAfterUpload) {
                         fs.unlinkSync(filePath)
-                        console.log(`  Deleted: ${path.basename(filePath)}`)
                     }
                 } catch (error) {
-                    console.error(`  Failed to upload ${path.basename(filePath)}:`, error)
+                    // Upload failed, but continue with other files
                 }
             }
-
-            console.log('[Sky Monitor] Source map upload completed')
         },
     }
 }

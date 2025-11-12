@@ -1,1 +1,0 @@
-export { ResourceTiming } from './ResourceTiming'

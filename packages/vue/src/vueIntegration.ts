@@ -45,11 +45,6 @@ export class VueIntegration implements Integration {
             if (originalErrorHandler && typeof originalErrorHandler === 'function') {
                 originalErrorHandler.call(this.options.Vue, err, vm, info)
             }
-
-            // 在控制台打印错误
-            if (this.options.logErrors) {
-                console.error('[Sky Monitor Vue Error]', err)
-            }
         }
     }
 

@@ -13,6 +13,11 @@ build
 dist-ssr
 *.local
 
+# Environment variables
+.env
+.env.local
+.env.*.local
+
 # packages/*/build 是编译输出产物，需要保留用于 workspace 链接
 # 但应用层的 build/dist 应该被忽略
 
@@ -30,7 +35,8 @@ dist-ssr
 
 .eslintcache
 .coverage
-.curosr
+.curosr/
+.augment/
 script
 .turbo
 

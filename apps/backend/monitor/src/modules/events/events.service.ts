@@ -3,6 +3,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common'
 import Redis from 'ioredis'
 
 import { RedisService } from '../../fundamentals/redis'
+import { mapEventsForFrontend, mapEventForFrontend } from './events.mapper'
 
 @Injectable()
 export class EventsService {
@@ -24,17 +25,23 @@ export class EventsService {
             const { appId, eventType, limit = 50, offset = 0, startTime, endTime } = params
 
             const whereConditions = []
+            const queryParams: Record<string, any> = { limit, offset }
+
             if (appId) {
-                whereConditions.push(`app_id = '${appId}'`)
+                whereConditions.push(`app_id = {appId:String}`)
+                queryParams.appId = appId
             }
             if (eventType) {
-                whereConditions.push(`event_type = '${eventType}'`)
+                whereConditions.push(`event_type = {eventType:String}`)
+                queryParams.eventType = eventType
             }
             if (startTime) {
-                whereConditions.push(`timestamp >= '${startTime}'`)
+                whereConditions.push(`timestamp >= {startTime:String}`)
+                queryParams.startTime = startTime
             }
             if (endTime) {
-                whereConditions.push(`timestamp <= '${endTime}'`)
+                whereConditions.push(`timestamp <= {endTime:String}`)
+                queryParams.endTime = endTime
             }
 
             const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : ''
@@ -123,12 +130,15 @@ export class EventsService {
                 FROM monitor_events
                 ${whereClause}
                 ORDER BY timestamp DESC
-                LIMIT ${limit}
-                OFFSET ${offset}
+                LIMIT {limit:UInt32}
+                OFFSET {offset:UInt32}
             `
 
-            const result = await this.clickhouseClient.query({ query })
-            const data = await result.json()
+            const result = await this.clickhouseClient.query({
+                query,
+                query_params: queryParams,
+            })
+            const data = (await result.json()) as { data: any[] }
 
             // 获取总数
             const countQuery = `
@@ -136,11 +146,17 @@ export class EventsService {
                 FROM monitor_events
                 ${whereClause}
             `
-            const countResult = await this.clickhouseClient.query({ query: countQuery })
+            const countResult = await this.clickhouseClient.query({
+                query: countQuery,
+                query_params: queryParams,
+            })
             const countData = (await countResult.json()) as { data: Array<{ total: number }> }
 
+            // 映射数据库字段到前端期望的格式
+            const mappedEvents = mapEventsForFrontend(data.data as any)
+
             return {
-                data: data.data,
+                data: mappedEvents,
                 total: countData.data[0]?.total || 0,
                 limit,
                 offset,
@@ -171,11 +187,14 @@ export class EventsService {
             const query = `
                 SELECT *
                 FROM monitor_events
-                WHERE id = '${id}'
+                WHERE id = {id:String}
                 LIMIT 1
             `
 
-            const result = await this.clickhouseClient.query({ query })
+            const result = await this.clickhouseClient.query({
+                query,
+                query_params: { id },
+            })
             const data = await result.json()
 
             if (!data.data || data.data.length === 0) {
@@ -207,9 +226,12 @@ export class EventsService {
                 }
             }
 
+            // 映射数据库字段到前端格式
+            const mappedEvent = mapEventForFrontend(event)
+
             // 返回增强后的事件数据
             return {
-                ...event,
+                ...mappedEvent,
                 parsedStack,
                 originalStack,
                 sourceMapStatus,
@@ -318,14 +340,19 @@ export class EventsService {
             const { appId, startTime, endTime } = params
 
             const whereConditions = []
+            const queryParams: Record<string, any> = {}
+
             if (appId) {
-                whereConditions.push(`app_id = '${appId}'`)
+                whereConditions.push(`app_id = {appId:String}`)
+                queryParams.appId = appId
             }
             if (startTime) {
-                whereConditions.push(`timestamp >= '${startTime}'`)
+                whereConditions.push(`timestamp >= {startTime:String}`)
+                queryParams.startTime = startTime
             }
             if (endTime) {
-                whereConditions.push(`timestamp <= '${endTime}'`)
+                whereConditions.push(`timestamp <= {endTime:String}`)
+                queryParams.endTime = endTime
             }
 
             const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : ''
@@ -366,9 +393,9 @@ export class EventsService {
             `
 
             const [eventTypeResult, errorTrendResult, webVitalsResult] = await Promise.all([
-                this.clickhouseClient.query({ query: eventTypeQuery }),
-                this.clickhouseClient.query({ query: errorTrendQuery }),
-                this.clickhouseClient.query({ query: webVitalsQuery }),
+                this.clickhouseClient.query({ query: eventTypeQuery, query_params: queryParams }),
+                this.clickhouseClient.query({ query: errorTrendQuery, query_params: queryParams }),
+                this.clickhouseClient.query({ query: webVitalsQuery, query_params: queryParams }),
             ])
 
             const eventTypeData = await eventTypeResult.json()
@@ -392,29 +419,32 @@ export class EventsService {
     async getAppSummary(appId: string) {
         try {
             const query = `
-                SELECT 
+                SELECT
                     count() as total_events,
                     countIf(event_type IN ('error', 'unhandledrejection')) as error_count,
                     countIf(event_type = 'webVital') as performance_count,
                     min(timestamp) as first_seen,
                     max(timestamp) as last_seen,
-                    
+
                     -- Session 统计
                     uniq(session_id) as session_count,
-                    
+
                     -- User 统计
                     uniq(user_id) as user_count,
-                    
+
                     -- 慢请求统计
                     countIf(perf_is_slow = 1) as slow_request_count,
-                    
+
                     -- 去重后错误数
                     sum(dedup_count) as total_error_occurrences
                 FROM monitor_events
-                WHERE app_id = '${appId}'
+                WHERE app_id = {appId:String}
             `
 
-            const result = await this.clickhouseClient.query({ query })
+            const result = await this.clickhouseClient.query({
+                query,
+                query_params: { appId },
+            })
             const data = await result.json()
 
             return data.data[0] || null
@@ -432,11 +462,14 @@ export class EventsService {
             const query = `
                 SELECT *
                 FROM monitor_events
-                WHERE session_id = '${sessionId}'
+                WHERE session_id = {sessionId:String}
                 ORDER BY timestamp ASC
             `
 
-            const result = await this.clickhouseClient.query({ query })
+            const result = await this.clickhouseClient.query({
+                query,
+                query_params: { sessionId },
+            })
             const data = await result.json()
 
             return {
@@ -457,7 +490,7 @@ export class EventsService {
             const { appId, limit = 50, offset = 0 } = params
 
             const query = `
-                SELECT 
+                SELECT
                     session_id,
                     MIN(session_start_time) as start_time,
                     MAX(session_duration) as duration,
@@ -470,23 +503,29 @@ export class EventsService {
                     MAX(timestamp) as last_event_time,
                     MIN(timestamp) as first_event_time
                 FROM monitor_events
-                WHERE app_id = '${appId}' AND session_id != ''
+                WHERE app_id = {appId:String} AND session_id != ''
                 GROUP BY session_id
                 ORDER BY start_time DESC
-                LIMIT ${limit}
-                OFFSET ${offset}
+                LIMIT {limit:UInt32}
+                OFFSET {offset:UInt32}
             `
 
-            const result = await this.clickhouseClient.query({ query })
+            const result = await this.clickhouseClient.query({
+                query,
+                query_params: { appId, limit, offset },
+            })
             const data = await result.json()
 
             // 获取总数
             const countQuery = `
                 SELECT uniq(session_id) as total
                 FROM monitor_events
-                WHERE app_id = '${appId}' AND session_id != ''
+                WHERE app_id = {appId:String} AND session_id != ''
             `
-            const countResult = await this.clickhouseClient.query({ query: countQuery })
+            const countResult = await this.clickhouseClient.query({
+                query: countQuery,
+                query_params: { appId },
+            })
             const countData = (await countResult.json()) as { data: Array<{ total: number }> }
 
             return {
@@ -509,7 +548,7 @@ export class EventsService {
             const { appId, threshold = 3000, limit = 100 } = params
 
             const query = `
-                SELECT 
+                SELECT
                     http_url,
                     http_method,
                     AVG(http_duration) as avg_duration,
@@ -519,15 +558,18 @@ export class EventsService {
                     countIf(perf_success = 0) as error_count,
                     (error_count / count) * 100 as error_rate
                 FROM monitor_events
-                WHERE app_id = '${appId}' 
+                WHERE app_id = {appId:String}
                   AND perf_category = 'http'
-                  AND http_duration > ${threshold}
+                  AND http_duration > {threshold:UInt32}
                 GROUP BY http_url, http_method
                 ORDER BY avg_duration DESC
-                LIMIT ${limit}
+                LIMIT {limit:UInt32}
             `
 
-            const result = await this.clickhouseClient.query({ query })
+            const result = await this.clickhouseClient.query({
+                query,
+                query_params: { appId, threshold, limit },
+            })
             const data = await result.json()
 
             return {
@@ -548,7 +590,7 @@ export class EventsService {
             const { appId, limit = 100 } = params
 
             const query = `
-                SELECT 
+                SELECT
                     error_fingerprint,
                     any(error_message) as error_message,
                     any(error_stack) as error_stack,
@@ -561,15 +603,18 @@ export class EventsService {
                     any(device_browser) as browser,
                     any(device_os) as os
                 FROM monitor_events
-                WHERE app_id = '${appId}' 
-                  AND event_type = 'error' 
+                WHERE app_id = {appId:String}
+                  AND event_type = 'error'
                   AND error_fingerprint != ''
                 GROUP BY error_fingerprint
                 ORDER BY total_count DESC
-                LIMIT ${limit}
+                LIMIT {limit:UInt32}
             `
 
-            const result = await this.clickhouseClient.query({ query })
+            const result = await this.clickhouseClient.query({
+                query,
+                query_params: { appId, limit },
+            })
             const data = await result.json()
 
             return {
@@ -592,12 +637,15 @@ export class EventsService {
             const query = `
                 SELECT *
                 FROM monitor_events
-                WHERE app_id = '${appId}' AND user_id = '${userId}'
+                WHERE app_id = {appId:String} AND user_id = {userId:String}
                 ORDER BY timestamp DESC
-                LIMIT ${limit}
+                LIMIT {limit:UInt32}
             `
 
-            const result = await this.clickhouseClient.query({ query })
+            const result = await this.clickhouseClient.query({
+                query,
+                query_params: { appId, userId, limit },
+            })
             const data = await result.json()
 
             return {
@@ -616,17 +664,20 @@ export class EventsService {
     async getSamplingStats(appId: string) {
         try {
             const query = `
-                SELECT 
+                SELECT
                     event_type,
                     AVG(sampling_rate) as avg_rate,
                     COUNT(*) as sampled_count,
                     SUM(1 / sampling_rate) as estimated_total
                 FROM monitor_events
-                WHERE app_id = '${appId}' AND sampling_sampled = 1
+                WHERE app_id = {appId:String} AND sampling_sampled = 1
                 GROUP BY event_type
             `
 
-            const result = await this.clickhouseClient.query({ query })
+            const result = await this.clickhouseClient.query({
+                query,
+                query_params: { appId },
+            })
             const data = await result.json()
 
             return {
@@ -634,6 +685,111 @@ export class EventsService {
             }
         } catch (error) {
             this.logger.error(`Failed to get sampling stats: ${error.message}`, error.stack)
+            throw error
+        }
+    }
+
+    /**
+     * 获取会话统计数据
+     */
+    async getSessionStats(params: { appId: string; timeWindow?: 'hour' | 'day' | 'week' }) {
+        try {
+            const { appId, timeWindow = 'day' } = params
+
+            // 计算时间范围
+            const timeRanges = {
+                hour: 'now() - INTERVAL 1 HOUR',
+                day: 'now() - INTERVAL 1 DAY',
+                week: 'now() - INTERVAL 7 DAY',
+            }
+
+            const timeCondition = timeRanges[timeWindow]
+
+            const query = `
+                SELECT
+                    uniq(session_id) as total_sessions,
+                    uniqIf(session_id, timestamp >= now() - INTERVAL 30 MINUTE) as active_sessions,
+                    avg(session_duration) as avg_duration,
+                    countIf(session_page_views = 1) / count() as bounce_rate
+                FROM monitor_events
+                WHERE app_id = {appId:String}
+                    AND session_id != ''
+                    AND timestamp >= ${timeCondition}
+            `
+
+            const result = await this.clickhouseClient.query({
+                query,
+                query_params: { appId },
+            })
+            const data = await result.json()
+
+            // 返回统计数据，如果没有数据则返回默认值
+            return (
+                data.data[0] || {
+                    total_sessions: 0,
+                    active_sessions: 0,
+                    avg_duration: 0,
+                    bounce_rate: 0,
+                }
+            )
+        } catch (error) {
+            this.logger.error(`Failed to get session stats: ${error.message}`, error.stack)
+            throw error
+        }
+    }
+
+    /**
+     * 获取会话回放数据
+     */
+    async getSessionReplay(sessionId: string) {
+        try {
+            const query = `
+                SELECT
+                    session_replay_events,
+                    session_replay_size,
+                    event_data,
+                    timestamp
+                FROM monitor_events
+                WHERE session_id = {sessionId:String}
+                    AND event_type = 'sessionReplay'
+                    AND session_replay_events != ''
+                ORDER BY timestamp DESC
+                LIMIT 1
+            `
+
+            const result = await this.clickhouseClient.query({
+                query,
+                query_params: { sessionId },
+            })
+            const data = await result.json()
+
+            if (data.data.length === 0) {
+                return {
+                    events: [],
+                    metadata: {
+                        message: 'No replay data found for this session',
+                    },
+                }
+            }
+
+            const record = data.data[0] as any
+
+            // 解析 rrweb 事件数据
+            const events = record.session_replay_events ? JSON.parse(record.session_replay_events) : []
+
+            // 解析元数据
+            const metadata = record.event_data ? JSON.parse(record.event_data) : {}
+
+            return {
+                events,
+                metadata: {
+                    ...metadata,
+                    size: record.session_replay_size,
+                    timestamp: record.timestamp,
+                },
+            }
+        } catch (error) {
+            this.logger.error(`Failed to get session replay: ${error.message}`, error.stack)
             throw error
         }
     }

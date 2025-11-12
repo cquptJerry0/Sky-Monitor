@@ -1,1 +1,0 @@
-export { AlertsConfig } from './AlertsConfig'

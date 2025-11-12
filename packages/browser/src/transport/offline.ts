@@ -109,8 +109,7 @@ export class OfflineTransport implements Transport {
 
             localStorage.setItem(this.storageKey, JSON.stringify(queue))
         } catch (error) {
-            // LocalStorage 满了或被禁用
-            console.warn('Failed to save to LocalStorage:', error)
+            // LocalStorage 满了或被禁用，静默失败
         }
     }
 

@@ -5,7 +5,7 @@
 
 import { BaseTransport, Transport } from '@sky-monitor/monitor-sdk-core'
 import { BatchedTransport } from './batched'
-import { HttpTransport } from './http-transport'
+import { BrowserTransport } from './index'
 import { SessionReplayTransport } from './session-replay-transport'
 
 /**
@@ -157,20 +157,13 @@ export class LayeredTransportManager extends BaseTransport {
     private createTransport(layer: EventLayer, config: LayerConfig): Transport {
         const endpoint = config.endpoint || this.getEndpointForLayer(layer)
 
-        // 创建基础 HTTP 传输
-        const httpTransport = new HttpTransport({
-            url: endpoint,
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...(config.compress && { 'Content-Encoding': 'gzip' }),
-            },
-        })
+        // 创建基础 Browser 传输（支持批量路由）
+        const browserTransport = new BrowserTransport(endpoint)
 
         // 如果需要批量，包装成批量传输
         if (config.batchSize > 1) {
             return new BatchedTransport(
-                httpTransport,
+                browserTransport,
                 {
                     batchSize: config.batchSize,
                     flushInterval: config.flushInterval,
@@ -182,7 +175,7 @@ export class LayeredTransportManager extends BaseTransport {
             )
         }
 
-        return httpTransport
+        return browserTransport
     }
 
     /**

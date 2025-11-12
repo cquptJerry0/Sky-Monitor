@@ -48,6 +48,24 @@ export class MonitoringService {
      */
     async receiveEvent(appId: string, event: MonitoringEventDto, userAgent?: string) {
         try {
+            // 特殊处理: Session Replay 事件
+            if (event.type === 'custom' && event.category === 'sessionReplay' && event.extra?.events) {
+                return await this.receiveSessionReplay(
+                    appId,
+                    {
+                        sessionId: event.sessionId,
+                        events: event.extra.events,
+                        metadata: {
+                            eventCount: event.extra.eventCount,
+                            duration: event.extra.duration,
+                        },
+                        path: event.path,
+                        trigger: 'auto',
+                    },
+                    userAgent
+                )
+            }
+
             const eventId = this.generateEventId()
             const eventData = {
                 id: eventId,
@@ -145,23 +163,6 @@ export class MonitoringService {
                 format: 'JSONEachRow',
             })
 
-            this.logger.log(`Event received for app: ${appId}, type: ${event.type}`)
-
-            /**
-             * 自动触发 SourceMap 解析
-             *
-             * @description
-             * 当满足以下条件时，将错误堆栈加入解析队列：
-             * 1. 事件包含堆栈信息（stack）
-             * 2. 事件包含版本信息（release），用于匹配对应版本的 SourceMap
-             * 3. 事件类型为错误相关（error, exception, unhandledrejection）
-             *
-             * 解析过程：
-             * - 使用 Bull Queue 异步处理，不阻塞事件上报
-             * - SourceMapProcessor 从数据库获取对应的 SourceMap 文件
-             * - StackParserService 使用 source-map 库还原源码位置
-             * - 解析结果更新回事件记录
-             */
             if (event.stack && event.release && this.isErrorEvent(event.type)) {
                 await this.parseQueue.add('parse-stack', {
                     eventId,
@@ -169,7 +170,6 @@ export class MonitoringService {
                     release: event.release,
                     appId,
                 })
-                this.logger.log(`Stack parsing queued for event: ${eventId}`)
             }
 
             return { success: true, message: 'Event recorded' }
@@ -227,7 +227,6 @@ export class MonitoringService {
             const [applications, count] = await this.applicationRepository.findAndCount({
                 where: { userId },
             })
-            this.logger.log(`Fetched ${applications.length} applications for user: ${userId}`)
             return { success: true, data: applications, count }
         } catch (error) {
             this.logger.error(`Failed to get applications for user ${userId}: ${error.message}`, error.stack)
@@ -244,7 +243,7 @@ export class MonitoringService {
             if (!app && appId.startsWith('demo_')) {
                 app = await this.applicationRepository.save({
                     appId: appId,
-                    appName: `Auto-created: ${appId}`,
+                    name: `Auto-created: ${appId}`,
                     userId: 1,
                 })
                 this.logger.log(`Auto-created demo application: ${appId}`)
@@ -287,16 +286,18 @@ export class MonitoringService {
 
     /**
      * 接收 Session Replay 数据
-     * 特殊处理：存储到对象存储，数据库只存元数据
+     * 当前方案：直接存储到 ClickHouse
+     * 生产环境建议：存储到 S3/OSS，数据库只存元数据
      */
     async receiveSessionReplay(appId: string, replayData: any, userAgent?: string) {
         try {
             const sessionId = replayData.sessionId || this.generateEventId()
 
-            // TODO: 实际项目应该存储到 S3/OSS
-            // const s3Url = await this.uploadToS3(replayData)
+            // 将 rrweb 事件数组转换为 JSON 字符串
+            const replayEventsJson = JSON.stringify(replayData.events || [])
+            const replaySize = replayEventsJson.length
 
-            // 存储元数据到 ClickHouse
+            // 存储完整数据到 ClickHouse（包括 rrweb 事件）
             const metadata = {
                 id: this.generateEventId(),
                 app_id: appId,
@@ -307,7 +308,6 @@ export class MonitoringService {
                     eventCount: replayData.events?.length || 0,
                     duration: replayData.metadata?.duration || 0,
                     trigger: replayData.trigger || 'manual',
-                    // s3Url, // 实际的存储地址
                 }),
                 path: replayData.path || '',
                 user_agent: userAgent || '',
@@ -316,6 +316,10 @@ export class MonitoringService {
                 // Session 相关字段
                 session_id: sessionId,
                 session_event_count: replayData.events?.length || 0,
+
+                // Session Replay 数据字段
+                session_replay_events: replayEventsJson,
+                session_replay_size: replaySize,
 
                 // 其他字段使用默认值
                 error_message: '',

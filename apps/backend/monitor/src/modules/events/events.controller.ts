@@ -190,6 +190,49 @@ export class EventsController {
     }
 
     /**
+     * 获取会话统计数据
+     * GET /api/events/sessions/stats
+     */
+    @Get('sessions/stats')
+    @ApiOperation({ summary: '获取会话统计数据' })
+    @ApiQuery({ name: 'appId', required: true })
+    @ApiQuery({ name: 'timeWindow', required: false, description: '时间窗口: hour, day, week，默认 day' })
+    async getSessionStats(@Query('appId') appId: string, @Query('timeWindow') timeWindow?: 'hour' | 'day' | 'week', @Request() req?: any) {
+        // 验证权限
+        await this.validateUserOwnsApp(appId, req.user.id)
+
+        const stats = await this.eventsService.getSessionStats({
+            appId,
+            timeWindow: timeWindow || 'day',
+        })
+
+        return {
+            success: true,
+            data: stats,
+        }
+    }
+
+    /**
+     * 获取会话回放数据
+     * GET /api/events/sessions/:sessionId/replay
+     */
+    @Get('sessions/:sessionId/replay')
+    @ApiOperation({ summary: '获取会话回放数据' })
+    async getSessionReplay(@Param('sessionId') sessionId: string, @Query('appId') appId: string, @Request() req?: any) {
+        // 验证权限
+        if (appId) {
+            await this.validateUserOwnsApp(appId, req.user.id)
+        }
+
+        const result = await this.eventsService.getSessionReplay(sessionId)
+
+        return {
+            success: true,
+            data: result,
+        }
+    }
+
+    /**
      * 按会话ID查询事件
      * GET /api/events/sessions/:sessionId
      */
