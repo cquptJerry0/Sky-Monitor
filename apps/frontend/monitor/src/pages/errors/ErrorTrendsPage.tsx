@@ -2,7 +2,8 @@
  * 错误趋势页
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useCurrentApp } from '@/hooks/useCurrentApp'
 import { useErrorTrends, useCompareErrorTrends } from '@/hooks/useErrorQuery'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -13,14 +14,30 @@ import { Badge } from '@/components/ui/badge'
 import { CHART_COLORS } from '@/utils/constants'
 import { transformTrendData } from '@/utils/chart'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
-import { Plus, X } from 'lucide-react'
+import { Plus, X, TrendingUp, TrendingDown, BarChart3, Activity } from 'lucide-react'
 
 export default function ErrorTrendsPage() {
     const { currentApp } = useCurrentApp()
+    const [searchParams, setSearchParams] = useSearchParams()
     const [window, setWindow] = useState<'hour' | 'day' | 'week'>('hour')
     const [fingerprint, setFingerprint] = useState('')
     const [compareFingerprints, setCompareFingerprints] = useState<string[]>([])
     const [newFingerprint, setNewFingerprint] = useState('')
+
+    // 从 URL 参数读取指纹
+    useEffect(() => {
+        const fpParam = searchParams.get('fingerprint')
+        const compareFpParam = searchParams.get('compare')
+
+        if (fpParam) {
+            setFingerprint(fpParam)
+        }
+
+        if (compareFpParam) {
+            const fps = compareFpParam.split(',').filter(Boolean)
+            setCompareFingerprints(fps.slice(0, 4)) // 最多 4 个
+        }
+    }, [searchParams])
 
     // 查询主趋势
     const { data: mainTrends, isLoading: mainLoading } = useErrorTrends({
@@ -189,31 +206,89 @@ export default function ErrorTrendsPage() {
                 </CardContent>
             </Card>
 
-            {/* 统计信息 */}
+            {/* 对比统计卡片 */}
+            {compareFingerprints.length > 0 && compareTrends && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {Object.entries(compareTrends).map(([fp, trends]: [string, any], idx) => {
+                        const total = Array.isArray(trends) ? trends.reduce((sum: number, t: any) => sum + t.count, 0) : 0
+                        const avg = Array.isArray(trends) && trends.length > 0 ? total / trends.length : 0
+                        const peak = Array.isArray(trends) && trends.length > 0 ? Math.max(...trends.map((t: any) => t.count)) : 0
+                        const color = colors[idx % colors.length]
+
+                        return (
+                            <Card key={fp}>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">对比 {idx + 1}</CardTitle>
+                                    <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs text-muted-foreground">总数</span>
+                                            <span className="text-sm font-bold" style={{ color }}>
+                                                {total.toLocaleString()}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs text-muted-foreground">平均</span>
+                                            <span className="text-sm font-bold" style={{ color }}>
+                                                {avg.toFixed(1)}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs text-muted-foreground">峰值</span>
+                                            <span className="text-sm font-bold" style={{ color }}>
+                                                {peak}
+                                            </span>
+                                        </div>
+                                        <div className="text-xs text-muted-foreground font-mono truncate" title={fp}>
+                                            {fp.slice(0, 16)}...
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )
+                    })}
+                </div>
+            )}
+
+            {/* 主趋势统计信息 */}
             {mainTrends && mainTrends.length > 0 && (
                 <Card>
                     <CardHeader>
-                        <CardTitle>统计信息</CardTitle>
+                        <CardTitle>主趋势统计</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div>
-                                <div className="text-sm font-medium text-muted-foreground">总错误数</div>
-                                <div className="text-2xl font-bold mt-1">{mainTrends.reduce((sum, t) => sum + t.count, 0)}</div>
+                                <div className="text-sm font-medium text-muted-foreground mb-1 flex items-center gap-1">
+                                    <Activity className="h-3 w-3" />
+                                    总错误数
+                                </div>
+                                <div className="text-2xl font-bold">{mainTrends.reduce((sum, t) => sum + t.count, 0).toLocaleString()}</div>
                             </div>
                             <div>
-                                <div className="text-sm font-medium text-muted-foreground">平均错误数</div>
-                                <div className="text-2xl font-bold mt-1">
+                                <div className="text-sm font-medium text-muted-foreground mb-1 flex items-center gap-1">
+                                    <BarChart3 className="h-3 w-3" />
+                                    平均错误数
+                                </div>
+                                <div className="text-2xl font-bold">
                                     {(mainTrends.reduce((sum, t) => sum + t.count, 0) / mainTrends.length).toFixed(1)}
                                 </div>
                             </div>
                             <div>
-                                <div className="text-sm font-medium text-muted-foreground">峰值错误数</div>
-                                <div className="text-2xl font-bold mt-1">{Math.max(...mainTrends.map(t => t.count))}</div>
+                                <div className="text-sm font-medium text-muted-foreground mb-1 flex items-center gap-1">
+                                    <TrendingUp className="h-3 w-3" />
+                                    峰值错误数
+                                </div>
+                                <div className="text-2xl font-bold">{Math.max(...mainTrends.map(t => t.count))}</div>
                             </div>
                             <div>
-                                <div className="text-sm font-medium text-muted-foreground">数据点数</div>
-                                <div className="text-2xl font-bold mt-1">{mainTrends.length}</div>
+                                <div className="text-sm font-medium text-muted-foreground mb-1 flex items-center gap-1">
+                                    <TrendingDown className="h-3 w-3" />
+                                    数据点数
+                                </div>
+                                <div className="text-2xl font-bold">{mainTrends.length}</div>
                             </div>
                         </div>
                     </CardContent>
