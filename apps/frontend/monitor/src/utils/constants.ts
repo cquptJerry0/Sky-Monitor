@@ -351,9 +351,11 @@ export const ROUTES = {
     SESSIONS: '/sessions',
     SESSION_DETAIL: '/sessions/:id',
     SESSION_REPLAY: '/sessions/:sessionId/replay',
+    MESSAGES: '/messages',
     ALERTS: '/alerts',
     ALERT_HISTORY: '/alerts/:id/history',
     ALERT_CONFIG: '/alerts/config',
+    PROFILE: '/profile',
 } as const
 
 // ==================== 图表配置 ====================

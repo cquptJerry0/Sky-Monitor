@@ -35,6 +35,8 @@ const AlertConfigPage = lazy(() => import('@/pages/alerts/AlertConfigPage'))
 const UserTimelinePage = lazy(() => import('@/pages/users/UserTimelinePage'))
 const TransactionsPage = lazy(() => import('@/pages/transactions/TransactionsPage'))
 const TransactionDetailPage = lazy(() => import('@/pages/transactions/TransactionDetailPage'))
+const MessagesPage = lazy(() => import('@/pages/messages/MessagesPage'))
+const UserProfilePage = lazy(() => import('@/pages/profile/UserProfilePage'))
 
 /**
  * 懒加载包装组件
@@ -232,6 +234,16 @@ export const router: ReturnType<typeof createBrowserRouter> = createBrowserRoute
                 ),
             },
 
+            // 消息
+            {
+                path: ROUTES.MESSAGES,
+                element: (
+                    <LazyPage>
+                        <MessagesPage />
+                    </LazyPage>
+                ),
+            },
+
             // 告警
             {
                 path: ROUTES.ALERTS,
@@ -282,6 +294,16 @@ export const router: ReturnType<typeof createBrowserRouter> = createBrowserRoute
                 element: (
                     <LazyPage>
                         <TransactionDetailPage />
+                    </LazyPage>
+                ),
+            },
+
+            // 用户资料
+            {
+                path: ROUTES.PROFILE,
+                element: (
+                    <LazyPage>
+                        <UserProfilePage />
                     </LazyPage>
                 ),
             },

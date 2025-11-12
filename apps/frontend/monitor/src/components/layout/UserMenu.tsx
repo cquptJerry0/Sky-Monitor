@@ -3,7 +3,9 @@
  */
 
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth, useLogout, useLogoutAll } from '@/hooks/useAuth'
+import { ROUTES } from '@/utils/constants'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -26,6 +28,7 @@ import { Button } from '@/components/ui/button'
 import { User, LogOut, Settings, Shield } from 'lucide-react'
 
 export function UserMenu() {
+    const navigate = useNavigate()
     const { user } = useAuth()
     const { mutate: logout } = useLogout()
     const { mutate: logoutAll } = useLogoutAll()
@@ -56,6 +59,13 @@ export function UserMenu() {
                         </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator className="bg-[var(--border-primary)]" />
+                    <DropdownMenuItem
+                        onClick={() => navigate(ROUTES.PROFILE)}
+                        className="text-[var(--text-primary)] focus:bg-[var(--bg-hover)]"
+                    >
+                        <User className="mr-2 h-4 w-4" />
+                        <span>个人资料</span>
+                    </DropdownMenuItem>
                     <DropdownMenuItem className="text-[var(--text-primary)] focus:bg-[var(--bg-hover)]">
                         <Settings className="mr-2 h-4 w-4" />
                         <span>设置</span>
