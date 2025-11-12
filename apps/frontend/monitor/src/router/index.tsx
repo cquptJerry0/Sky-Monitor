@@ -17,6 +17,8 @@ const EventsPage = lazy(() => import('@/pages/events/EventsPage'))
 const EventDetailPage = lazy(() => import('@/pages/events/EventDetailPage'))
 const ErrorsPage = lazy(() => import('@/pages/errors/ErrorsPage'))
 const ErrorDetailPage = lazy(() => import('@/pages/errors/ErrorDetailPage'))
+const ErrorTrendsPage = lazy(() => import('@/pages/errors/ErrorTrendsPage'))
+const ErrorSpikesPage = lazy(() => import('@/pages/errors/ErrorSpikesPage'))
 const ErrorGroupsPage = lazy(() => import('@/pages/errors/ErrorGroupsPage'))
 const PerformancePage = lazy(() => import('@/pages/performance/PerformancePage'))
 const WebVitalsPage = lazy(() => import('@/pages/performance/WebVitalsPage'))
@@ -119,6 +121,22 @@ export const router = createBrowserRouter([
                 element: (
                     <LazyPage>
                         <ErrorDetailPage />
+                    </LazyPage>
+                ),
+            },
+            {
+                path: ROUTES.ERROR_TRENDS,
+                element: (
+                    <LazyPage>
+                        <ErrorTrendsPage />
+                    </LazyPage>
+                ),
+            },
+            {
+                path: ROUTES.ERROR_SPIKES,
+                element: (
+                    <LazyPage>
+                        <ErrorSpikesPage />
                     </LazyPage>
                 ),
             },
