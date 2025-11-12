@@ -13,7 +13,10 @@ import { ROUTES } from '@/utils/constants'
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'))
 const ProjectsPage = lazy(() => import('@/pages/projects/ProjectsPage'))
 const DashboardPage = lazy(() => import('@/pages/dashboard/DashboardPage'))
+const EventsPage = lazy(() => import('@/pages/events/EventsPage'))
+const EventDetailPage = lazy(() => import('@/pages/events/EventDetailPage'))
 const ErrorsPage = lazy(() => import('@/pages/errors/ErrorsPage'))
+const ErrorDetailPage = lazy(() => import('@/pages/errors/ErrorDetailPage'))
 const ErrorGroupsPage = lazy(() => import('@/pages/errors/ErrorGroupsPage'))
 const PerformancePage = lazy(() => import('@/pages/performance/PerformancePage'))
 const WebVitalsPage = lazy(() => import('@/pages/performance/WebVitalsPage'))
@@ -84,12 +87,38 @@ export const router = createBrowserRouter([
                 ),
             },
 
+            // 事件监控
+            {
+                path: ROUTES.EVENTS,
+                element: (
+                    <LazyPage>
+                        <EventsPage />
+                    </LazyPage>
+                ),
+            },
+            {
+                path: ROUTES.EVENT_DETAIL,
+                element: (
+                    <LazyPage>
+                        <EventDetailPage />
+                    </LazyPage>
+                ),
+            },
+
             // 错误监控
             {
                 path: ROUTES.ERRORS,
                 element: (
                     <LazyPage>
                         <ErrorsPage />
+                    </LazyPage>
+                ),
+            },
+            {
+                path: ROUTES.ERROR_DETAIL,
+                element: (
+                    <LazyPage>
+                        <ErrorDetailPage />
                     </LazyPage>
                 ),
             },

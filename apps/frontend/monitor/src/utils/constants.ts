@@ -335,7 +335,12 @@ export const ROUTES = {
     LOGIN: '/auth/login',
     PROJECTS: '/projects',
     DASHBOARD: '/dashboard',
+    EVENTS: '/events',
+    EVENT_DETAIL: '/events/:id',
     ERRORS: '/errors',
+    ERROR_DETAIL: '/errors/:id',
+    ERROR_TRENDS: '/errors/trends',
+    ERROR_SPIKES: '/errors/spikes',
     ERROR_GROUPS: '/errors/groups',
     PERFORMANCE: '/performance',
     WEB_VITALS: '/performance/web-vitals',
@@ -344,23 +349,25 @@ export const ROUTES = {
     HTTP_ERRORS: '/integrations/http-errors',
     RESOURCE_ERRORS: '/integrations/resource-errors',
     SESSIONS: '/sessions',
+    SESSION_DETAIL: '/sessions/:id',
     SESSION_REPLAY: '/sessions/:sessionId/replay',
     ALERTS: '/alerts',
+    ALERT_HISTORY: '/alerts/:id/history',
     ALERT_CONFIG: '/alerts/config',
 } as const
 
 // ==================== 图表配置 ====================
 
 /**
- * 图表颜色
+ * 图表颜色（使用 CSS 变量）
  */
 export const CHART_COLORS = {
-    PRIMARY: '#6a5acd',
-    SUCCESS: '#10b981',
-    WARNING: '#f59e0b',
-    ERROR: '#ef4444',
-    INFO: '#3b82f6',
-    GRAY: '#6b7280',
+    PRIMARY: 'hsl(var(--chart-1))',
+    SUCCESS: 'hsl(var(--chart-2))',
+    WARNING: 'hsl(var(--chart-4))',
+    ERROR: 'hsl(var(--destructive))',
+    INFO: 'hsl(var(--chart-3))',
+    PURPLE: 'hsl(var(--chart-5))',
 }
 
 /**
