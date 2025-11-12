@@ -26,13 +26,12 @@ export default function SlowRequestsPage() {
         appId: currentApp?.appId || '',
         threshold,
         limit: pageSize,
-        offset: page * pageSize,
     })
 
-    const slowRequests = data || []
+    const slowRequests = Array.isArray(data) ? data : []
 
     // 转换为图表数据（横向柱状图）
-    const chartData = slowRequests.slice(0, 10).map(req => ({
+    const chartData = slowRequests.slice(0, 10).map((req: any) => ({
         url: req.url?.split('?')[0].slice(-30) || 'Unknown',
         duration: req.performance_value || 0,
         fullUrl: req.url,
@@ -97,9 +96,10 @@ export default function SlowRequestsPage() {
                     <CardContent>
                         <div className="text-2xl font-bold">
                             {slowRequests.length > 0
-                                ? (slowRequests.reduce((sum, req) => sum + (req.performance_value || 0), 0) / slowRequests.length).toFixed(
-                                      0
-                                  )
+                                ? (
+                                      slowRequests.reduce((sum: number, req: any) => sum + (req.performance_value || 0), 0) /
+                                      slowRequests.length
+                                  ).toFixed(0)
                                 : 0}
                             <span className="text-sm font-normal text-muted-foreground ml-1">ms</span>
                         </div>
@@ -112,7 +112,9 @@ export default function SlowRequestsPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold" style={{ color: CHART_COLORS.ERROR }}>
-                            {slowRequests.length > 0 ? Math.max(...slowRequests.map(req => req.performance_value || 0)).toFixed(0) : 0}
+                            {slowRequests.length > 0
+                                ? Math.max(...slowRequests.map((req: any) => req.performance_value || 0)).toFixed(0)
+                                : 0}
                             <span className="text-sm font-normal text-muted-foreground ml-1">ms</span>
                         </div>
                     </CardContent>
@@ -144,7 +146,7 @@ export default function SlowRequestsPage() {
                                     formatter={(value: any) => [`${value.toFixed(0)} ms`, '响应时间']}
                                 />
                                 <Bar dataKey="duration" radius={[0, 4, 4, 0]}>
-                                    {chartData.map((entry, index) => (
+                                    {chartData.map((entry: any, index: number) => (
                                         <Cell key={`cell-${index}`} fill={getColorByDuration(entry.duration)} />
                                     ))}
                                 </Bar>
@@ -166,7 +168,7 @@ export default function SlowRequestsPage() {
                         <div className="text-center py-8 text-muted-foreground">暂无慢请求</div>
                     ) : (
                         <div className="space-y-3">
-                            {slowRequests.map(req => (
+                            {slowRequests.map((req: any) => (
                                 <div key={req.id} className="p-4 border rounded-lg hover:bg-muted/50">
                                     <div className="flex items-start justify-between">
                                         <div className="flex-1 min-w-0">

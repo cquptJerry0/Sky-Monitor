@@ -3,12 +3,12 @@
  */
 
 import { useApplications } from '@/hooks/useApplicationQuery'
-import { useCurrentApp, useSetCurrentApp } from '@/hooks/useCurrentApp'
+import { useCurrentAppId, useSetCurrentApp } from '@/hooks/useCurrentApp'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 export function AppSelector() {
     const { data: applications = [], isLoading } = useApplications()
-    const currentAppId = useCurrentApp()
+    const currentAppId = useCurrentAppId()
     const setCurrentAppId = useSetCurrentApp()
 
     console.log('[AppSelector] 应用列表:', applications)

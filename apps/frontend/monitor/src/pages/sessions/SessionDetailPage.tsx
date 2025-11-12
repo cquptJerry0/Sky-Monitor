@@ -3,6 +3,7 @@
  */
 
 import { useParams, useNavigate } from 'react-router-dom'
+import { useCurrentApp } from '@/hooks/useCurrentApp'
 import { useSessionEvents } from '@/hooks/useEventQuery'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -16,7 +17,8 @@ import type { EventType } from '@/api/types'
 export default function SessionDetailPage() {
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
-    const { data: events, isLoading } = useSessionEvents(id || null)
+    const { currentApp } = useCurrentApp()
+    const { data: events, isLoading } = useSessionEvents(id || null, currentApp?.appId || null)
 
     if (isLoading) {
         return (
@@ -36,6 +38,14 @@ export default function SessionDetailPage() {
 
     const firstEvent = events[0]
     const lastEvent = events[events.length - 1]
+
+    if (!firstEvent || !lastEvent) {
+        return (
+            <div className="flex items-center justify-center h-96">
+                <div className="text-muted-foreground">会话数据不完整</div>
+            </div>
+        )
+    }
     const duration = new Date(lastEvent.timestamp).getTime() - new Date(firstEvent.timestamp).getTime()
 
     const getEventTypeBadge = (type: EventType) => {
@@ -130,7 +140,7 @@ export default function SessionDetailPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-3">
-                        {events.map((event, index) => {
+                        {events.map((event: any, index: number) => {
                             const relativeTime =
                                 index === 0 ? 0 : new Date(event.timestamp).getTime() - new Date(firstEvent.timestamp).getTime()
                             return (
@@ -169,22 +179,25 @@ export default function SessionDetailPage() {
                             <div className="text-2xl font-bold mt-1" style={{ color: 'hsl(var(--destructive))' }}>
                                 {
                                     events.filter(
-                                        e => e.event_type === 'error' || e.event_type === 'httpError' || e.event_type === 'resourceError'
+                                        (e: any) =>
+                                            e.event_type === 'error' || e.event_type === 'httpError' || e.event_type === 'resourceError'
                                     ).length
                                 }
                             </div>
                         </div>
                         <div>
                             <div className="text-sm font-medium text-muted-foreground">性能事件</div>
-                            <div className="text-2xl font-bold mt-1">{events.filter(e => e.event_type === 'performance').length}</div>
+                            <div className="text-2xl font-bold mt-1">
+                                {events.filter((e: any) => e.event_type === 'performance').length}
+                            </div>
                         </div>
                         <div>
                             <div className="text-sm font-medium text-muted-foreground">Web Vitals</div>
-                            <div className="text-2xl font-bold mt-1">{events.filter(e => e.event_type === 'webVital').length}</div>
+                            <div className="text-2xl font-bold mt-1">{events.filter((e: any) => e.event_type === 'webVital').length}</div>
                         </div>
                         <div>
                             <div className="text-sm font-medium text-muted-foreground">会话事件</div>
-                            <div className="text-2xl font-bold mt-1">{events.filter(e => e.event_type === 'session').length}</div>
+                            <div className="text-2xl font-bold mt-1">{events.filter((e: any) => e.event_type === 'session').length}</div>
                         </div>
                     </div>
                 </CardContent>

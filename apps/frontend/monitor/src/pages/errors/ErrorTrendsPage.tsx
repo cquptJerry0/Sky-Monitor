@@ -39,16 +39,18 @@ export default function ErrorTrendsPage() {
     })
 
     const mainData = mainTrends ? transformTrendData(mainTrends) : []
-    const compareData = compareTrends || []
+    const compareData = Array.isArray(compareTrends) ? compareTrends : []
 
     // 合并数据用于图表展示
     const mergedData = mainData.map((item, index) => {
         const result: any = { ...item, main: item.count }
-        compareData.forEach((compare, idx) => {
-            if (compare.trends[index]) {
-                result[`compare${idx}`] = compare.trends[index].count
-            }
-        })
+        if (Array.isArray(compareData)) {
+            compareData.forEach((compare: any, idx: number) => {
+                if (compare.trends && compare.trends[index]) {
+                    result[`compare${idx}`] = compare.trends[index].count
+                }
+            })
+        }
         return result
     })
 
@@ -169,17 +171,18 @@ export default function ErrorTrendsPage() {
                                         fillOpacity={0.2}
                                     />
                                 )}
-                                {compareData.map((compare, idx) => (
-                                    <Area
-                                        key={compare.fingerprint}
-                                        type="monotone"
-                                        dataKey={`compare${idx}`}
-                                        name={`对比 ${idx + 1}`}
-                                        stroke={colors[idx % colors.length]}
-                                        fill={colors[idx % colors.length]}
-                                        fillOpacity={0.2}
-                                    />
-                                ))}
+                                {Array.isArray(compareData) &&
+                                    compareData.map((compare: any, idx: number) => (
+                                        <Area
+                                            key={compare.fingerprint}
+                                            type="monotone"
+                                            dataKey={`compare${idx}`}
+                                            name={`对比 ${idx + 1}`}
+                                            stroke={colors[idx % colors.length]}
+                                            fill={colors[idx % colors.length]}
+                                            fillOpacity={0.2}
+                                        />
+                                    ))}
                             </AreaChart>
                         </ResponsiveContainer>
                     )}

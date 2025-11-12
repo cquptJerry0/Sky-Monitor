@@ -101,8 +101,13 @@ export function fillMissingTimePoints(trends: ErrorTrend[], window: 'hour' | 'da
 
     const sortedTrends = [...trends].sort((a, b) => new Date(a.time_bucket).getTime() - new Date(b.time_bucket).getTime())
 
-    const firstTime = new Date(sortedTrends[0].time_bucket).getTime()
-    const lastTime = new Date(sortedTrends[sortedTrends.length - 1].time_bucket).getTime()
+    const firstTrend = sortedTrends[0]
+    const lastTrend = sortedTrends[sortedTrends.length - 1]
+
+    if (!firstTrend || !lastTrend) return []
+
+    const firstTime = new Date(firstTrend.time_bucket).getTime()
+    const lastTime = new Date(lastTrend.time_bucket).getTime()
 
     const filled: ErrorTrend[] = []
     const trendMap = new Map(sortedTrends.map(t => [new Date(t.time_bucket).getTime(), t]))
@@ -157,8 +162,11 @@ export function calculateMovingAverage(data: number[], window: number): number[]
 
     const result: number[] = []
     for (let i = 0; i < data.length; i++) {
+        const value = data[i]
+        if (value === undefined) continue
+
         if (i < window - 1) {
-            result.push(data[i])
+            result.push(value)
         } else {
             const sum = data.slice(i - window + 1, i + 1).reduce((a, b) => a + b, 0)
             result.push(sum / window)
@@ -181,6 +189,9 @@ export function detectOutliers(data: number[]): number[] {
 
     const q1 = sorted[q1Index]
     const q3 = sorted[q3Index]
+
+    if (q1 === undefined || q3 === undefined) return []
+
     const iqr = q3 - q1
 
     const lowerBound = q1 - 1.5 * iqr

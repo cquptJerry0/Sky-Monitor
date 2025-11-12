@@ -31,7 +31,7 @@ export default function SessionReplayPage() {
             const newPlayer = new rrwebPlayer({
                 target: playerRef.current,
                 props: {
-                    events: replayData.events,
+                    events: replayData.events as any,
                     width: 1024,
                     height: 768,
                     autoPlay: false,
@@ -145,22 +145,22 @@ export default function SessionReplayPage() {
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div>
                             <div className="text-sm font-medium text-muted-foreground">事件数量</div>
-                            <div className="mt-1 text-lg font-semibold">{replayData.events.length}</div>
+                            <div className="mt-1 text-lg font-semibold">{replayData.metadata.eventCount}</div>
                         </div>
                         <div>
                             <div className="text-sm font-medium text-muted-foreground">会话时长</div>
                             <div className="mt-1 text-lg font-semibold">
-                                {replayData.duration ? `${(replayData.duration / 1000).toFixed(1)}s` : '-'}
+                                {replayData.metadata.duration ? `${(replayData.metadata.duration / 1000).toFixed(1)}s` : '-'}
                             </div>
                         </div>
                         <div>
-                            <div className="text-sm font-medium text-muted-foreground">用户 ID</div>
-                            <div className="mt-1 font-mono text-sm">{replayData.user_id || '-'}</div>
+                            <div className="text-sm font-medium text-muted-foreground">会话 ID</div>
+                            <div className="mt-1 font-mono text-sm">{replayData.metadata.sessionId || '-'}</div>
                         </div>
                         <div>
-                            <div className="text-sm font-medium text-muted-foreground">开始时间</div>
+                            <div className="text-sm font-medium text-muted-foreground">记录时间</div>
                             <div className="mt-1 text-sm">
-                                {replayData.start_time ? new Date(replayData.start_time).toLocaleString('zh-CN') : '-'}
+                                {replayData.metadata.timestamp ? new Date(replayData.metadata.timestamp).toLocaleString('zh-CN') : '-'}
                             </div>
                         </div>
                     </div>

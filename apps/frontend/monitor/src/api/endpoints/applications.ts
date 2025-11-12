@@ -30,6 +30,11 @@ export interface DeleteApplicationRequest {
     appId: string
 }
 
+/**
+ * 应用列表数据类型（用于类型导出）
+ */
+export type ApplicationListData = ApplicationListResponse['data']
+
 export const applicationsAPI = {
     /**
      * 获取应用列表

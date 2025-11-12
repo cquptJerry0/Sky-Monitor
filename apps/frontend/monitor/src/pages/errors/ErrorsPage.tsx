@@ -38,10 +38,10 @@ export default function ErrorsPage() {
         50
     )
 
-    const errorGroups = data || []
+    const errorGroups = Array.isArray(data) ? data : []
 
     // 筛选错误类型
-    const filteredGroups = errorGroups.filter(group => {
+    const filteredGroups = errorGroups.filter((group: any) => {
         if (errorType === 'all') return true
         return group.error_type === errorType
     })
@@ -133,7 +133,7 @@ export default function ErrorsPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredGroups.map(group => (
+                                {filteredGroups.map((group: any) => (
                                     <TableRow
                                         key={group.fingerprint}
                                         className="cursor-pointer hover:bg-muted/50"

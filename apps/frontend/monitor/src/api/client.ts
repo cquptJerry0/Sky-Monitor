@@ -7,14 +7,26 @@
  * 3. 错误处理
  */
 
-import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios'
+import axios, { AxiosError, type InternalAxiosRequestConfig, type AxiosRequestConfig } from 'axios'
 import { useAuthStore } from '@/stores/auth.store'
 import { API_BASE_URL } from '@/utils/constants'
 
 /**
+ * 自定义 Axios 实例类型
+ * 由于响应拦截器返回 response.data，所以类型应该是 T 而不是 AxiosResponse<T>
+ */
+interface CustomAxiosInstance {
+    get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>
+    post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
+    put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
+    delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>
+    patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
+}
+
+/**
  * 创建 Axios 实例
  */
-export const client = axios.create({
+const axiosInstance = axios.create({
     baseURL: API_BASE_URL,
     timeout: 30000,
     withCredentials: true, // 发送 Cookie（用于 Refresh Token）
@@ -26,7 +38,7 @@ export const client = axios.create({
 /**
  * 请求拦截器：附加 Access Token
  */
-client.interceptors.request.use(
+axiosInstance.interceptors.request.use(
     config => {
         const token = useAuthStore.getState().accessToken
         if (token) {
@@ -46,7 +58,7 @@ interface RetryConfig extends InternalAxiosRequestConfig {
     _retry?: boolean
 }
 
-client.interceptors.response.use(
+axiosInstance.interceptors.response.use(
     response => {
         // 直接返回 data，简化调用
         return response.data
@@ -82,7 +94,7 @@ client.interceptors.response.use(
                 // 重试原始请求
                 originalRequest.headers.Authorization = `Bearer ${newToken}`
                 console.log('[Token 刷新] 重试原始请求')
-                return client(originalRequest)
+                return axiosInstance(originalRequest)
             } catch (refreshError) {
                 console.error('[Token 刷新] 刷新失败:', refreshError)
                 // 刷新失败，清除认证信息并跳转到登录页
@@ -97,6 +109,12 @@ client.interceptors.response.use(
         return Promise.reject(error)
     }
 )
+
+/**
+ * 导出类型安全的 client
+ * 类型定义反映了响应拦截器的实际行为（返回 response.data）
+ */
+export const client = axiosInstance as unknown as CustomAxiosInstance
 
 /**
  * 获取错误消息

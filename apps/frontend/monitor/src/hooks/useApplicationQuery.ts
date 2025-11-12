@@ -4,13 +4,8 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { applicationsAPI } from '@/api'
-import type { Application, ApiResponse } from '@/api/types'
-import type {
-    ApplicationListData,
-    CreateApplicationRequest,
-    UpdateApplicationRequest,
-    DeleteApplicationRequest,
-} from '@/api/endpoints/applications'
+import type { Application } from '@/api/types'
+import type { CreateApplicationRequest, UpdateApplicationRequest, DeleteApplicationRequest } from '@/api/endpoints/applications'
 
 /**
  * 查询应用列表

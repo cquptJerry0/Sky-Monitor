@@ -13,7 +13,7 @@ export default function PerformancePage() {
     const { currentApp } = useCurrentApp()
 
     // 查询性能统计
-    const { data: stats, isLoading } = useEventStats(currentApp?.appId || '', '24h')
+    const { data: stats, isLoading } = useEventStats(currentApp?.appId || null)
 
     if (isLoading) {
         return (

@@ -41,7 +41,7 @@ export default function LoginPage() {
             const response = await authAPI.login(username, password)
             console.log('[登录] 步骤 2: 收到响应', response)
 
-            // 检查响应格式
+            // 检查响应格式 - 后端返回 { success: true, data: { access_token, expires_in } }
             if (!response?.data?.access_token) {
                 console.error('[登录] 错误: 响应格式不正确', response)
                 throw new Error('登录响应格式错误')
@@ -66,14 +66,14 @@ export default function LoginPage() {
             const userResponse = await authAPI.getCurrentUser()
             console.log('[登录] 步骤 7: 用户信息', userResponse)
 
-            if (userResponse?.data) {
-                setUser(userResponse.data)
+            if (userResponse) {
+                setUser(userResponse)
                 console.log('[登录] 步骤 8: 用户信息已存储')
             }
 
             toast({
                 title: '登录成功',
-                description: `欢迎回来，${userResponse?.data?.username || username}！`,
+                description: `欢迎回来，${userResponse?.username || username}！`,
             })
 
             console.log('[登录] 步骤 9: 跳转到应用列表页')

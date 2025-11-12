@@ -28,8 +28,6 @@ export default function ErrorSpikesPage() {
         refetch,
     } = useRecentSpikes({
         appId: currentApp?.appId || '',
-        window,
-        threshold,
         limit: 50,
     })
 
@@ -148,7 +146,7 @@ export default function ErrorSpikesPage() {
                                             <div className="text-xs text-muted-foreground font-mono truncate mt-1">{spike.fingerprint}</div>
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant="outline">{spike.error_type}</Badge>
+                                            <Badge variant="outline">错误</Badge>
                                         </TableCell>
                                         <TableCell>{getSeverityBadge(spike.severity)}</TableCell>
                                         <TableCell>
@@ -158,7 +156,7 @@ export default function ErrorSpikesPage() {
                                         </TableCell>
                                         <TableCell className="text-muted-foreground">{spike.baseline_count}</TableCell>
                                         <TableCell>
-                                            <Badge variant="secondary">{spike.spike_ratio.toFixed(1)}x</Badge>
+                                            <Badge variant="secondary">{spike.increase_rate.toFixed(1)}x</Badge>
                                         </TableCell>
                                         <TableCell className="text-muted-foreground text-sm">
                                             {format(new Date(spike.detected_at), 'yyyy-MM-dd HH:mm:ss', { locale: zhCN })}
@@ -192,12 +190,12 @@ export default function ErrorSpikesPage() {
                             <div>
                                 <div className="text-sm font-medium text-muted-foreground">平均增长倍数</div>
                                 <div className="text-2xl font-bold mt-1">
-                                    {(spikes.reduce((sum, s) => sum + s.spike_ratio, 0) / spikes.length).toFixed(1)}x
+                                    {(spikes.reduce((sum, s) => sum + s.increase_rate, 0) / spikes.length).toFixed(1)}x
                                 </div>
                             </div>
                             <div>
                                 <div className="text-sm font-medium text-muted-foreground">最大增长倍数</div>
-                                <div className="text-2xl font-bold mt-1">{Math.max(...spikes.map(s => s.spike_ratio)).toFixed(1)}x</div>
+                                <div className="text-2xl font-bold mt-1">{Math.max(...spikes.map(s => s.increase_rate)).toFixed(1)}x</div>
                             </div>
                         </div>
                     </CardContent>

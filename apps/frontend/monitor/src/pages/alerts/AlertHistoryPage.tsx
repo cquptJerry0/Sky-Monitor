@@ -24,7 +24,6 @@ export default function AlertHistoryPage() {
     const { data: history, isLoading } = useAlertHistory({
         ruleId: id || '',
         limit: pageSize,
-        offset: page * pageSize,
     })
 
     const getSeverityBadge = (severity: string) => {
@@ -96,11 +95,11 @@ export default function AlertHistoryPage() {
                                             <TableCell>{getSeverityBadge(item.severity)}</TableCell>
                                             <TableCell>
                                                 <span className="font-semibold" style={{ color: 'hsl(var(--destructive))' }}>
-                                                    {item.triggered_value}
+                                                    {item.actual_value}
                                                 </span>
                                             </TableCell>
                                             <TableCell className="text-muted-foreground">{item.threshold}</TableCell>
-                                            <TableCell className="max-w-md truncate">{item.message}</TableCell>
+                                            <TableCell className="max-w-md truncate">{item.rule_name}</TableCell>
                                             <TableCell>
                                                 {item.resolved ? (
                                                     <Badge variant="outline">已解决</Badge>

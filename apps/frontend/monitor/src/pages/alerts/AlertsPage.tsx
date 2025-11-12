@@ -28,9 +28,15 @@ export default function AlertsPage() {
     const [editingRule, setEditingRule] = useState<AlertRule | null>(null)
 
     // 表单状态
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<{
+        name: string
+        type: 'error_rate' | 'slow_request' | 'session_anomaly'
+        threshold: number
+        window: string
+        enabled: boolean
+    }>({
         name: '',
-        condition: 'error_count',
+        type: 'error_rate',
         threshold: 10,
         window: 'hour',
         enabled: true,
@@ -43,8 +49,6 @@ export default function AlertsPage() {
         refetch,
     } = useAlertRules({
         appId: currentApp?.appId || '',
-        limit: pageSize,
-        offset: page * pageSize,
     })
 
     const createMutation = useCreateAlertRule()
@@ -55,7 +59,7 @@ export default function AlertsPage() {
         setEditingRule(null)
         setFormData({
             name: '',
-            condition: 'error_count',
+            type: 'error_rate',
             threshold: 10,
             window: 'hour',
             enabled: true,
@@ -67,7 +71,7 @@ export default function AlertsPage() {
         setEditingRule(rule)
         setFormData({
             name: rule.name,
-            condition: rule.condition,
+            type: rule.type,
             threshold: rule.threshold,
             window: rule.window,
             enabled: rule.enabled,
@@ -85,8 +89,12 @@ export default function AlertsPage() {
         if (!currentApp) return
 
         const payload = {
-            ...formData,
-            appId: currentApp.appId,
+            app_id: currentApp.appId,
+            name: formData.name,
+            type: formData.type,
+            threshold: formData.threshold,
+            window: formData.window,
+            enabled: formData.enabled,
         }
 
         if (editingRule) {
@@ -150,13 +158,15 @@ export default function AlertsPage() {
                                     <TableRow key={rule.id}>
                                         <TableCell className="font-medium">{rule.name}</TableCell>
                                         <TableCell>
-                                            <Badge variant="outline">{rule.condition}</Badge>
+                                            <Badge variant="outline">{rule.type}</Badge>
                                         </TableCell>
                                         <TableCell>{rule.threshold}</TableCell>
                                         <TableCell>{rule.window}</TableCell>
                                         <TableCell>{getStatusBadge(rule.enabled)}</TableCell>
                                         <TableCell className="text-muted-foreground text-sm">
-                                            {format(new Date(rule.created_at), 'yyyy-MM-dd HH:mm', { locale: zhCN })}
+                                            {rule.created_at
+                                                ? format(new Date(rule.created_at), 'yyyy-MM-dd HH:mm', { locale: zhCN })
+                                                : '-'}
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-2">
@@ -195,15 +205,15 @@ export default function AlertsPage() {
                             />
                         </div>
                         <div>
-                            <label className="text-sm font-medium mb-2 block">告警条件</label>
-                            <Select value={formData.condition} onValueChange={v => setFormData({ ...formData, condition: v })}>
+                            <label className="text-sm font-medium mb-2 block">告警类型</label>
+                            <Select value={formData.type} onValueChange={(v: any) => setFormData({ ...formData, type: v })}>
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="error_count">错误数量</SelectItem>
                                     <SelectItem value="error_rate">错误率</SelectItem>
-                                    <SelectItem value="performance_degradation">性能下降</SelectItem>
+                                    <SelectItem value="slow_request">慢请求</SelectItem>
+                                    <SelectItem value="session_anomaly">会话异常</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

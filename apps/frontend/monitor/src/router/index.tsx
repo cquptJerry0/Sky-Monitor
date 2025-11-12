@@ -43,7 +43,7 @@ function LazyPage({ children }: { children: React.ReactNode }) {
 /**
  * 路由配置
  */
-export const router = createBrowserRouter([
+export const router: ReturnType<typeof createBrowserRouter> = createBrowserRouter([
     // 登录页
     {
         path: ROUTES.LOGIN,

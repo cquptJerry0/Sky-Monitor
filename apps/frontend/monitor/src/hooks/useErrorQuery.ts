@@ -57,11 +57,11 @@ export function useDetectSpikes(params: Parameters<typeof errorsAPI.detectSpikes
 /**
  * 查询最近的错误突增
  */
-export function useRecentSpikes(appId: string | null) {
+export function useRecentSpikes(params: Parameters<typeof errorsAPI.getRecentSpikes>[0]) {
     return useQuery({
-        queryKey: ['recentSpikes', appId],
-        queryFn: () => errorsAPI.getRecentSpikes({ appId: appId! }),
-        enabled: !!appId,
+        queryKey: ['recentSpikes', params],
+        queryFn: () => errorsAPI.getRecentSpikes(params),
+        enabled: !!params.appId,
         staleTime: QUERY_CONFIG.STALE_TIME,
     })
 }

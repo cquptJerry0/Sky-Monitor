@@ -3,11 +3,25 @@
  */
 
 import { useAppStore } from '@/stores/app.store'
+import { useApplications } from './useApplicationQuery'
 
 /**
- * 获取当前应用 ID
+ * 获取当前应用对象
+ * 返回: { currentApp: Application | null }
  */
 export function useCurrentApp() {
+    const currentAppId = useAppStore(state => state.currentAppId)
+    const { data: applications = [] } = useApplications()
+
+    const currentApp = applications.find(app => app.appId === currentAppId) || null
+
+    return { currentApp }
+}
+
+/**
+ * 获取当前应用 ID（仅 ID）
+ */
+export function useCurrentAppId() {
     return useAppStore(state => state.currentAppId)
 }
 

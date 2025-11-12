@@ -66,7 +66,10 @@ export function useAppSummary(appId: string | null) {
 export function useSessions(params: Parameters<typeof eventsAPI.getSessions>[0]) {
     return useQuery({
         queryKey: ['sessions', params],
-        queryFn: () => eventsAPI.getSessions(params),
+        queryFn: async () => {
+            const response = await eventsAPI.getSessions(params)
+            return response.data
+        },
         enabled: !!params.appId,
         staleTime: QUERY_CONFIG.STALE_TIME,
     })
@@ -78,7 +81,10 @@ export function useSessions(params: Parameters<typeof eventsAPI.getSessions>[0])
 export function useSessionEvents(sessionId: string | null, appId: string | null) {
     return useQuery({
         queryKey: ['sessionEvents', sessionId, appId],
-        queryFn: () => eventsAPI.getSessionEvents(sessionId!, appId!),
+        queryFn: async () => {
+            const response = await eventsAPI.getSessionEvents(sessionId!, appId!)
+            return response.data
+        },
         enabled: !!sessionId && !!appId,
     })
 }
@@ -89,7 +95,10 @@ export function useSessionEvents(sessionId: string | null, appId: string | null)
 export function useSlowRequests(params: Parameters<typeof eventsAPI.getSlowRequests>[0]) {
     return useQuery({
         queryKey: ['slowRequests', params],
-        queryFn: () => eventsAPI.getSlowRequests(params),
+        queryFn: async () => {
+            const response = await eventsAPI.getSlowRequests(params)
+            return Array.isArray(response) ? response : []
+        },
         enabled: !!params.appId,
         staleTime: QUERY_CONFIG.STALE_TIME,
     })
@@ -101,7 +110,10 @@ export function useSlowRequests(params: Parameters<typeof eventsAPI.getSlowReque
 export function useErrorGroups(params: Parameters<typeof eventsAPI.getErrorGroups>[0]) {
     return useQuery({
         queryKey: ['errorGroups', params],
-        queryFn: () => eventsAPI.getErrorGroups(params),
+        queryFn: async () => {
+            const response = await eventsAPI.getErrorGroups(params)
+            return Array.isArray(response) ? response : []
+        },
         enabled: !!params.appId,
         staleTime: QUERY_CONFIG.STALE_TIME,
     })

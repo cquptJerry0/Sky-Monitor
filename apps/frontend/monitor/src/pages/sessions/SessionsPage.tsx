@@ -30,10 +30,10 @@ export default function SessionsPage() {
         offset: page * pageSize,
     })
 
-    const sessions = data || []
+    const sessions = Array.isArray(data) ? data : []
 
     // 筛选用户 ID
-    const filteredSessions = sessions.filter(session => {
+    const filteredSessions = sessions.filter((session: { user_id?: string }) => {
         if (searchUserId && !session.user_id?.toLowerCase().includes(searchUserId.toLowerCase())) {
             return false
         }
@@ -114,7 +114,7 @@ export default function SessionsPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredSessions.map(session => (
+                                {filteredSessions.map((session: any) => (
                                     <TableRow
                                         key={session.session_id}
                                         className="cursor-pointer hover:bg-muted/50"
