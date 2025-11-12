@@ -27,8 +27,10 @@ const ResourceTimingPage = lazy(() => import('@/pages/performance/ResourceTiming
 const HttpErrorsPage = lazy(() => import('@/pages/integrations/HttpErrorsPage'))
 const ResourceErrorsPage = lazy(() => import('@/pages/integrations/ResourceErrorsPage'))
 const SessionsPage = lazy(() => import('@/pages/sessions/SessionsPage'))
+const SessionDetailPage = lazy(() => import('@/pages/sessions/SessionDetailPage'))
 const SessionReplayPage = lazy(() => import('@/pages/sessions/SessionReplayPage'))
 const AlertsPage = lazy(() => import('@/pages/alerts/AlertsPage'))
+const AlertHistoryPage = lazy(() => import('@/pages/alerts/AlertHistoryPage'))
 const AlertConfigPage = lazy(() => import('@/pages/alerts/AlertConfigPage'))
 
 /**
@@ -211,6 +213,14 @@ export const router = createBrowserRouter([
                 ),
             },
             {
+                path: ROUTES.SESSION_DETAIL,
+                element: (
+                    <LazyPage>
+                        <SessionDetailPage />
+                    </LazyPage>
+                ),
+            },
+            {
                 path: ROUTES.SESSION_REPLAY,
                 element: (
                     <LazyPage>
@@ -225,6 +235,14 @@ export const router = createBrowserRouter([
                 element: (
                     <LazyPage>
                         <AlertsPage />
+                    </LazyPage>
+                ),
+            },
+            {
+                path: ROUTES.ALERT_HISTORY,
+                element: (
+                    <LazyPage>
+                        <AlertHistoryPage />
                     </LazyPage>
                 ),
             },
