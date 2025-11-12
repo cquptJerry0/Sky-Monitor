@@ -29,11 +29,6 @@ const menuItems = [
         icon: Gauge,
     },
     {
-        path: '/integrations',
-        label: '集成',
-        icon: Layers,
-    },
-    {
         path: ROUTES.SESSIONS,
         label: '会话',
         icon: Users,

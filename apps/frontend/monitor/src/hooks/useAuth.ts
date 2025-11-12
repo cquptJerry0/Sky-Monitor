@@ -5,7 +5,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '@/stores/auth.store'
 import { authAPI } from '@/api'
-import { encryptPassword } from '@/utils/crypto'
 
 /**
  * 使用认证状态
@@ -26,19 +25,21 @@ export function useAuth() {
  * 登录 Mutation
  */
 export function useLogin() {
-    const { setAccessToken, setUser } = useAuthStore()
+    const { setAccessToken } = useAuthStore()
     const queryClient = useQueryClient()
 
     return useMutation({
         mutationFn: async ({ username, password }: { username: string; password: string }) => {
-            // 加密密码
-            const encryptedPassword = encryptPassword(password)
-            const response = await authAPI.login(username, encryptedPassword)
+            const response = await authAPI.login(username, password)
             return response
         },
         onSuccess: (data: any) => {
             // 保存 Token
-            setAccessToken(data.access_token)
+            if (data?.data?.access_token) {
+                setAccessToken(data.data.access_token)
+            } else if (data?.access_token) {
+                setAccessToken(data.access_token)
+            }
 
             // 获取用户信息
             queryClient.invalidateQueries({ queryKey: ['currentUser'] })
@@ -72,7 +73,9 @@ export function useCurrentUser() {
     return useQuery({
         queryKey: ['currentUser'],
         queryFn: async () => {
-            const user = await authAPI.getCurrentUser()
+            const response = await authAPI.getCurrentUser()
+            // 后端返回格式: { data: { id, username, ... } }
+            const user = (response as any)?.data || response
             setUser(user)
             return user
         },
