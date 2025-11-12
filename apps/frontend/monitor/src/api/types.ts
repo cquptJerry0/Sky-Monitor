@@ -153,12 +153,13 @@ export interface Event {
 
 /**
  * 事件统计数据
+ * 注意：所有字段都可能为 undefined，因为后端可能返回不完整的数据
  */
 export interface EventStats {
-    total_events: number
-    error_count: number
-    performance_count: number
-    session_count: number
+    total_events?: number
+    error_count?: number
+    performance_count?: number
+    session_count?: number
     web_vital_count?: number
     http_error_count?: number
     resource_error_count?: number

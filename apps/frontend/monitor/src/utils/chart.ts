@@ -130,25 +130,30 @@ export function fillMissingTimePoints(trends: ErrorTrend[], window: 'hour' | 'da
 
 /**
  * 计算增长率
- * @param current - 当前值
- * @param previous - 之前值
- * @returns 增长率（百分比）
+ * @param current - 当前值（可以为 null 或 undefined）
+ * @param previous - 之前值（可以为 null 或 undefined）
+ * @returns 增长率（百分比），如果参数无效则返回 0
  */
-export function calculateGrowthRate(current: number, previous: number): number {
-    if (previous === 0) {
-        return current > 0 ? 100 : 0
+export function calculateGrowthRate(current: number | null | undefined, previous: number | null | undefined): number {
+    // 参数验证
+    const curr = current ?? 0
+    const prev = previous ?? 0
+
+    if (prev === 0) {
+        return curr > 0 ? 100 : 0
     }
-    return ((current - previous) / previous) * 100
+    return ((curr - prev) / prev) * 100
 }
 
 /**
  * 格式化增长率
- * @param rate - 增长率
+ * @param rate - 增长率（可以为 null 或 undefined）
  * @returns 格式化后的字符串，如 "+15.5%" 或 "-8.2%"
  */
-export function formatGrowthRate(rate: number): string {
-    const sign = rate >= 0 ? '+' : ''
-    return `${sign}${rate.toFixed(1)}%`
+export function formatGrowthRate(rate: number | null | undefined): string {
+    const validRate = rate ?? 0
+    const sign = validRate >= 0 ? '+' : ''
+    return `${sign}${validRate.toFixed(1)}%`
 }
 
 /**
@@ -209,32 +214,44 @@ export function detectOutliers(data: number[]): number[] {
 
 /**
  * 格式化大数字（K, M, B）
- * @param num - 数字
- * @returns 格式化后的字符串，如 "1.5K" 或 "2.3M"
+ * @param num - 数字（可以为 null 或 undefined）
+ * @returns 格式化后的字符串，如 "1.5K" 或 "2.3M"，如果输入为 null/undefined 则返回 "0"
  */
-export function formatLargeNumber(num: number): string {
-    if (num >= 1_000_000_000) {
-        return `${(num / 1_000_000_000).toFixed(1)}B`
+export function formatLargeNumber(num: number | null | undefined): string {
+    // 参数验证：处理 null、undefined 和非数字类型
+    if (num == null || typeof num !== 'number' || isNaN(num)) {
+        return '0'
     }
-    if (num >= 1_000_000) {
-        return `${(num / 1_000_000).toFixed(1)}M`
+
+    // 处理负数
+    const absNum = Math.abs(num)
+    const sign = num < 0 ? '-' : ''
+
+    if (absNum >= 1_000_000_000) {
+        return `${sign}${(absNum / 1_000_000_000).toFixed(1)}B`
     }
-    if (num >= 1_000) {
-        return `${(num / 1_000).toFixed(1)}K`
+    if (absNum >= 1_000_000) {
+        return `${sign}${(absNum / 1_000_000).toFixed(1)}M`
+    }
+    if (absNum >= 1_000) {
+        return `${sign}${(absNum / 1_000).toFixed(1)}K`
     }
     return num.toString()
 }
 
 /**
  * 格式化百分比
- * @param value - 值
- * @param total - 总数
+ * @param value - 值（可以为 null 或 undefined）
+ * @param total - 总数（可以为 null 或 undefined）
  * @param decimals - 小数位数
  * @returns 格式化后的百分比字符串，如 "15.5%"
  */
-export function formatPercentage(value: number, total: number, decimals: number = 1): string {
-    if (total === 0) return '0%'
-    const percentage = (value / total) * 100
+export function formatPercentage(value: number | null | undefined, total: number | null | undefined, decimals: number = 1): string {
+    const validValue = value ?? 0
+    const validTotal = total ?? 0
+
+    if (validTotal === 0) return '0%'
+    const percentage = (validValue / validTotal) * 100
     return `${percentage.toFixed(decimals)}%`
 }
 
@@ -292,20 +309,22 @@ export function calculateYAxisRange(data: number[], padding: number = 0.1): { mi
 
 /**
  * 格式化图表 Tooltip 值
- * @param value - 值
+ * @param value - 值（可以为 null 或 undefined）
  * @param type - 类型（count, duration, percentage）
  * @returns 格式化后的字符串
  */
-export function formatTooltipValue(value: number, type: 'count' | 'duration' | 'percentage' = 'count'): string {
+export function formatTooltipValue(value: number | null | undefined, type: 'count' | 'duration' | 'percentage' = 'count'): string {
+    const validValue = value ?? 0
+
     switch (type) {
         case 'count':
-            return formatLargeNumber(value)
+            return formatLargeNumber(validValue)
         case 'duration':
-            return `${value.toFixed(2)}ms`
+            return `${validValue.toFixed(2)}ms`
         case 'percentage':
-            return `${value.toFixed(1)}%`
+            return `${validValue.toFixed(1)}%`
         default:
-            return value.toString()
+            return validValue.toString()
     }
 }
 
