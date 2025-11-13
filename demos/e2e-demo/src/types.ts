@@ -1,5 +1,5 @@
 // Tab 定义
-export type TabId = 'overview' | 'e2e' | 'errors' | 'breadcrumbs' | 'replay' | 'performance' | 'http' | 'batch' | 'advanced'
+export type TabId = 'overview' | 'e2e' | 'errors' | 'breadcrumbs' | 'replay' | 'performance' | 'http' | 'batch' | 'offline' | 'advanced'
 
 export interface Tab {
     id: TabId

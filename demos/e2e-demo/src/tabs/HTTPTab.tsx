@@ -46,7 +46,6 @@ export const HTTPTab: React.FC = () => {
             const response = await fetch('https://httpstat.us/500')
             addResult('success', `HTTP ${response.status} 已被 HttpErrorIntegration 捕获`)
             addResult('info', 'HTTP 错误将上报到 /critical')
-            nextStep()
         } catch (error) {
             nextStep()
             addResult('error', '请求失败', error)

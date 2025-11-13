@@ -109,46 +109,6 @@ export const OverviewTab: React.FC = () => {
                     </div>
                 </div>
             </div>
-
-            {/* 配置信息 */}
-            <div className="border border-gray-300 p-6">
-                <h3 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-300">配置信息</h3>
-                <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                        <span className="text-gray-600">批量大小</span>
-                        <span className="font-semibold">20 条</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span className="text-gray-600">刷新间隔</span>
-                        <span className="font-semibold">5000 ms</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span className="text-gray-600">错误采样率</span>
-                        <span className="font-semibold">100%</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span className="text-gray-600">性能采样率</span>
-                        <span className="font-semibold">30%</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span className="text-gray-600">去重时间窗口</span>
-                        <span className="font-semibold">5000 ms</span>
-                    </div>
-                </div>
-            </div>
-
-            {/* 使用说明 */}
-            <div className="border border-gray-300 p-6 bg-gray-50">
-                <h3 className="text-lg font-semibold mb-3">使用说明</h3>
-                <ul className="space-y-2 text-sm text-gray-700">
-                    <li>• 切换到不同的 Tab 测试各个 Integration 的功能</li>
-                    <li>• 每个 Tab 都包含独立的测试按钮和验证逻辑</li>
-                    <li>• 测试结果会实时显示在页面下方</li>
-                    <li>• 打开浏览器控制台可以查看详细的 SDK 日志</li>
-                    <li>• 打开浏览器 Network 面板查看事件路由到不同端点</li>
-                    <li>• 确保 DSN 服务器（localhost:8080）正在运行</li>
-                </ul>
-            </div>
         </div>
     )
 }

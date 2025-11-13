@@ -1,0 +1,45 @@
+<svg width="400" height="100" viewBox="0 0 400 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Logo with Text - WiFi 图标 (旋转 30 度) -->
+  <defs>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6a5fc1;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#8c5393;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e1567c;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- 图标部分 -->
+  <g transform="translate(10, 10)">
+    <!-- 背景正方形 -->
+    <rect x="2" y="2" width="76" height="76" rx="12" fill="url(#logoGradient)"/>
+
+    <!-- WiFi 图标 (旋转 30 度) -->
+    <g transform="rotate(30 40 40)">
+      <!-- 最外层波 -->
+      <path d="M 18 42 Q 40 20 62 42"
+            stroke="#ffffff" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.3"/>
+
+      <!-- 第二层波 -->
+      <path d="M 25 49 Q 40 34 55 49"
+            stroke="#ffffff" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.5"/>
+
+      <!-- 第三层波 -->
+      <path d="M 32 56 Q 40 48 48 56"
+            stroke="#ffffff" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.7"/>
+    </g>
+  </g>
+
+  <!-- 文字部分 -->
+  <g transform="translate(110, 0)">
+    <!-- Sky Monitor 文字 -->
+    <text x="0" y="45" font-family="Arial, sans-serif" font-size="36" font-weight="700" fill="#362d59">
+      Sky Monitor
+    </text>
+
+    <!-- 副标题 -->
+    <text x="0" y="70" font-family="Arial, sans-serif" font-size="14" font-weight="400" fill="#8c5393">
+      性能与监控平台
+    </text>
+  </g>
+</svg>
+

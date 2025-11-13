@@ -8,6 +8,7 @@ import { PerformanceTab } from '../tabs/PerformanceTab'
 import { HTTPTab } from '../tabs/HTTPTab'
 import { AdvancedTab } from '../tabs/AdvancedTab'
 import { BatchTab } from '../tabs/BatchTab'
+import { OfflineTab } from '../tabs/OfflineTab'
 import { E2ETab } from '../tabs/E2ETab'
 import { type Tab, type TabId } from '../types'
 import { initializeSDK } from '../sdk'
@@ -22,6 +23,7 @@ const tabs: Tab[] = [
     { id: 'performance', name: 'Performance', description: '性能监控' },
     { id: 'http', name: 'HTTP & Resources', description: 'HTTP 和资源错误' },
     { id: 'batch', name: 'Batch', description: '批量上报测试' },
+    { id: 'offline', name: 'Offline Test', description: '离线队列测试' },
     { id: 'advanced', name: 'Advanced', description: '高级功能' },
 ]
 
@@ -34,10 +36,9 @@ export const AppContent = () => {
         initializeSDK(appId)
             .then(() => {
                 setSdkInitialized(true)
-                console.log('[App] SDK initialized successfully with appId:', appId)
             })
-            .catch(error => {
-                console.error('[App] SDK initialization failed:', error)
+            .catch(() => {
+                // SDK initialization failed
             })
     }, [appId])
 
@@ -57,6 +58,8 @@ export const AppContent = () => {
                 return <HTTPTab />
             case 'batch':
                 return <BatchTab />
+            case 'offline':
+                return <OfflineTab />
             case 'advanced':
                 return <AdvancedTab />
             case 'overview':

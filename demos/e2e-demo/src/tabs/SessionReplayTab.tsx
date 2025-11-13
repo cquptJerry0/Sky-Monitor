@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { TestResults } from '../components/TestResults'
 import { type TestResult } from '../types'
+import { getSDKClient } from '../sdk'
 
 export const SessionReplayTab: React.FC = () => {
     const [results, setResults] = useState<TestResult[]>([])
@@ -43,21 +44,28 @@ export const SessionReplayTab: React.FC = () => {
         addResult('success', '输入框内容已自动脱敏（maskAllInputs: true）')
         addResult('info', '查看 Replay 时，敏感信息将被替换为星号')
 
-        // 拦截 /replay 请求，查看录制数据
-        const originalFetch = window.fetch
-        window.fetch = async (...args) => {
-            const response = await originalFetch(...args)
-            const url = typeof args[0] === 'string' ? args[0] : args[0] instanceof Request ? args[0].url : String(args[0])
-
-            if (url.includes('/replay')) {
-                const clonedResponse = response.clone()
-                const data = await clonedResponse.json()
-                setReplayData(JSON.stringify(data, null, 2))
-                addResult('success', '已拦截 /replay 请求，可以查看录制数据（见下方）')
-            }
-
-            return response
+        // 从 SDK 获取原始 rrweb events
+        const client = getSDKClient()
+        if (!client) {
+            addResult('error', 'SDK 未初始化')
+            return
         }
+
+        const replayIntegration = client.getIntegration('SessionReplay')
+        if (!replayIntegration) {
+            addResult('error', 'SessionReplayIntegration 未启用')
+            return
+        }
+
+        const events = replayIntegration.getRecordedEvents()
+        if (events.length === 0) {
+            addResult('error', '暂无录制数据，请先在输入框中输入内容')
+            return
+        }
+
+        setReplayData(JSON.stringify(events, null, 2))
+        addResult('success', `已获取 ${events.length} 个 rrweb 事件，可以查看录制数据（见下方）`)
+        addResult('info', '查找 type=3 的事件（增量快照），检查 input 元素的 value 是否被脱敏')
 
         nextStep()
     }
@@ -266,11 +274,28 @@ export const SessionReplayTab: React.FC = () => {
             {/* 录制数据查看器 */}
             {replayData && (
                 <div className="border border-gray-300 p-6 mt-6">
-                    <h3 className="text-lg font-semibold mb-3">录制数据（查看脱敏效果）</h3>
+                    <h3 className="text-lg font-semibold mb-3">rrweb 录制数据（原始 events）</h3>
                     <div className="bg-gray-100 p-4 rounded overflow-auto max-h-96">
                         <pre className="text-xs">{replayData}</pre>
                     </div>
-                    <p className="mt-2 text-sm text-gray-600">查找 "attributes" 字段中的 "value" 属性，输入框的值应该被替换为 "***"</p>
+                    <div className="mt-3 space-y-2 text-sm text-gray-600">
+                        <p className="font-semibold">如何验证脱敏效果:</p>
+                        <ul className="list-disc list-inside space-y-1 ml-2">
+                            <li>
+                                查找 <code className="bg-gray-200 px-1">type: 3</code> 的事件（增量快照 - IncrementalSnapshot）
+                            </li>
+                            <li>
+                                在 <code className="bg-gray-200 px-1">data.attributes</code> 中查找{' '}
+                                <code className="bg-gray-200 px-1">value</code> 属性
+                            </li>
+                            <li>
+                                输入框的值应该显示为 <code className="bg-gray-200 px-1">"***"</code> 而不是实际输入的内容
+                            </li>
+                            <li>
+                                密码输入框的值也应该被脱敏为 <code className="bg-gray-200 px-1">"***"</code>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             )}
         </div>

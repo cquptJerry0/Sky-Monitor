@@ -1,11 +1,14 @@
 import React, { useState } from 'react'
 import { TestResults } from '../components/TestResults'
 import { type TestResult } from '../types'
-import { addBreadcrumb } from '../sdk'
+import { addBreadcrumb, getSDKClient } from '../sdk'
+import { ReplayPlayer } from '../components/ReplayPlayer'
 
 export const BreadcrumbsTab: React.FC = () => {
     const [results, setResults] = useState<TestResult[]>([])
     const [currentStep, setCurrentStep] = useState(0)
+    const [replayEvents, setReplayEvents] = useState<any[]>([])
+    const [showReplay, setShowReplay] = useState(false)
 
     const addResult = (type: 'success' | 'error' | 'info', message: string, details?: unknown) => {
         setResults(prev => [
@@ -20,7 +23,7 @@ export const BreadcrumbsTab: React.FC = () => {
     }
 
     const nextStep = () => {
-        setCurrentStep(prev => Math.min(prev + 1, 6))
+        setCurrentStep(prev => Math.min(prev + 1, 7))
     }
 
     const resetTest = () => {
@@ -97,6 +100,54 @@ export const BreadcrumbsTab: React.FC = () => {
         xhr.send()
     }
 
+    const testErrorWithBreadcrumbs = () => {
+        addResult('info', '步骤 7: 触发错误,测试 Breadcrumb 附加...')
+        addResult('info', '错误将在 1 秒后触发,同时会触发 Session Replay 上报 (10秒后)')
+
+        setTimeout(() => {
+            try {
+                // 触发一个错误
+                throw new Error('测试错误: Breadcrumb 应该附加到此错误事件中')
+            } catch (error) {
+                // 手动捕获并上报错误
+                addResult('error', '错误已触发', error)
+                addResult('success', '错误事件已上报到 /critical 端点')
+                addResult('info', '查看错误事件的 breadcrumbs 字段,应包含前面6个步骤的所有 Breadcrumb')
+                addResult('info', 'Session Replay 将在 10 秒后上报到 /replay 端点')
+                addResult('info', 'Replay 数据包含: 错误前60秒 + 错误后10秒的完整录制')
+                nextStep()
+
+                // 重新抛出错误,让 SDK 捕获
+                throw error
+            }
+        }, 1000)
+    }
+
+    const loadReplayEvents = () => {
+        const client = getSDKClient()
+        if (!client) {
+            addResult('error', 'SDK 未初始化')
+            return
+        }
+
+        const replayIntegration = client.getIntegration('SessionReplay')
+        if (!replayIntegration) {
+            addResult('error', 'SessionReplayIntegration 未启用')
+            return
+        }
+
+        const events = replayIntegration.getRecordedEvents()
+        const status = replayIntegration.getRecordingStatus()
+
+        setReplayEvents(events)
+        setShowReplay(true)
+
+        addResult('info', `录制状态: ${status.isRecording ? '录制中' : '未录制'}`)
+        addResult('info', `事件数量: ${status.eventsCount}`)
+        addResult('info', `录制时长: ${status.duration}秒`)
+        addResult('success', '已加载 Replay 事件，请查看下方播放器')
+    }
+
     return (
         <div className="space-y-6">
             <div>
@@ -153,6 +204,13 @@ export const BreadcrumbsTab: React.FC = () => {
                         <div>
                             <div className="font-semibold">XHR 请求采集</div>
                             <div className="text-gray-600">自动拦截 XMLHttpRequest 并记录请求信息为 Breadcrumb</div>
+                        </div>
+                    </div>
+                    <div className={`flex items-start gap-3 p-3 rounded ${currentStep >= 7 ? 'bg-green-100' : 'bg-white'}`}>
+                        <span className="font-semibold min-w-[60px]">{currentStep >= 7 ? '[完成]' : '[7]'} 步骤 7</span>
+                        <div>
+                            <div className="font-semibold">触发错误,测试 Breadcrumb 附加</div>
+                            <div className="text-gray-600">触发错误事件,验证前面6个步骤的 Breadcrumb 是否附加到错误事件中</div>
                         </div>
                     </div>
                 </div>
@@ -280,16 +338,61 @@ export const BreadcrumbsTab: React.FC = () => {
                             {currentStep > 5 ? '已完成' : currentStep < 5 ? '等待步骤 5' : '点击测试'}
                         </button>
                     </div>
+
+                    <div className={`border p-4 ${currentStep === 6 ? 'border-blue-500 bg-blue-50' : 'border-gray-300'}`}>
+                        <h4 className="font-semibold mb-2">[7] 触发错误</h4>
+                        <p className="text-sm text-gray-600 mb-3">触发错误,测试 Breadcrumb 附加到错误事件</p>
+                        <button
+                            onClick={testErrorWithBreadcrumbs}
+                            className={`w-full px-4 py-2 font-medium transition-colors ${
+                                currentStep === 6
+                                    ? 'bg-red-600 text-white hover:bg-red-700'
+                                    : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                            }`}
+                            disabled={currentStep !== 6}
+                        >
+                            {currentStep > 6 ? '已完成' : currentStep < 6 ? '等待步骤 6' : '点击触发错误'}
+                        </button>
+                    </div>
                 </div>
 
-                {currentStep === 6 && (
+                {currentStep === 7 && (
                     <div className="mt-4 p-4 bg-green-50 border border-green-500 rounded">
-                        <p className="text-green-700 font-semibold">所有测试步骤已完成，Breadcrumb 已记录在内存中</p>
+                        <p className="text-green-700 font-semibold">所有测试步骤已完成，错误已触发并上报</p>
                         <ul className="mt-2 text-sm text-green-700 space-y-1">
-                            <li>- Breadcrumb 不会单独上报，只会附加到错误事件中</li>
-                            <li>- 切换到"错误捕获"Tab，触发一个错误，查看错误事件的 breadcrumbs 字段</li>
-                            <li>- 应该包含刚才记录的所有 Breadcrumb（手动、Console、DOM、Fetch、History、XHR）</li>
+                            <li>- 错误事件已上报到 /critical 端点,包含前面6个步骤的所有 Breadcrumb</li>
+                            <li>- Session Replay 将在 10 秒后上报到 /replay 端点</li>
+                            <li>- Replay 数据包含: 错误前60秒 + 错误后10秒的完整录制</li>
+                            <li>- 打开 Network 面板,查看 /critical 和 /replay 请求</li>
                         </ul>
+                    </div>
+                )}
+            </div>
+
+            {/* Session Replay 播放器 */}
+            <div className="border border-gray-300 p-6">
+                <h3 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-300">Session Replay 播放器</h3>
+                <p className="text-sm text-gray-600 mb-4">查看录制的会话回放，验证敏感信息是否被正确隐藏</p>
+
+                <button
+                    onClick={loadReplayEvents}
+                    className="mb-4 px-4 py-2 bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
+                >
+                    加载 Replay 事件
+                </button>
+
+                {showReplay && (
+                    <div className="mt-4">
+                        <ReplayPlayer events={replayEvents} width={1024} height={600} />
+                        <div className="mt-4 p-4 bg-yellow-50 border border-yellow-500 rounded">
+                            <p className="text-yellow-800 font-semibold mb-2">验证敏感信息隐藏:</p>
+                            <ul className="text-sm text-yellow-700 space-y-1">
+                                <li>- 所有 input 输入框应该显示为 ***（maskAllInputs: true）</li>
+                                <li>- password 类型的输入框应该被完全隐藏</li>
+                                <li>- 带有 sky-monitor-mask 类名的元素文本应该被脱敏</li>
+                                <li>- 带有 sky-monitor-block 类名的元素不应该被录制</li>
+                            </ul>
+                        </div>
                     </div>
                 )}
             </div>
