@@ -1,4 +1,4 @@
-import { captureEvent, Integration } from '@sky-monitor/monitor-sdk-core'
+import { captureEvent, getChinaTimestamp, Integration } from '@sky-monitor/monitor-sdk-core'
 
 /**
  * 性能配置
@@ -82,6 +82,7 @@ export class PerformanceIntegration implements Integration {
 
         const handleResponse = this.handleResponse.bind(this)
         const handleError = this.handleError.bind(this)
+        const isSdkRequest = this.isSdkRequest.bind(this)
 
         window.fetch = function (input: any, init?: RequestInit): Promise<Response> {
             const url = typeof input === 'string' ? input : input instanceof Request ? input.url : String(input)
@@ -89,6 +90,11 @@ export class PerformanceIntegration implements Integration {
             const startTime = performance.now()
 
             const request = { url, method, startTime }
+
+            // 过滤 SDK 自己的请求
+            if (isSdkRequest(url)) {
+                return originalFetch.call(this, input, init)
+            }
 
             return originalFetch
                 .call(this, input, init)
@@ -114,6 +120,8 @@ export class PerformanceIntegration implements Integration {
         const originalXHROpen = this.originalXHROpen
         const originalXHRSend = this.originalXHRSend
 
+        const isSdkRequest = this.isSdkRequest.bind(this)
+
         XMLHttpRequest.prototype.open = function (
             method: string,
             url: string | URL,
@@ -138,19 +146,22 @@ export class PerformanceIntegration implements Integration {
             const request = (xhrInstance as any).__skyMonitor as RequestInfo | undefined
 
             if (request) {
-                request.startTime = performance.now()
+                // 过滤 SDK 自己的请求
+                if (!isSdkRequest(request.url)) {
+                    request.startTime = performance.now()
 
-                xhrInstance.addEventListener('loadend', () => {
-                    handleResponse(request, xhrInstance.status, xhrInstance.status >= 200 && xhrInstance.status < 300)
-                })
+                    xhrInstance.addEventListener('loadend', () => {
+                        handleResponse(request, xhrInstance.status, xhrInstance.status >= 200 && xhrInstance.status < 300)
+                    })
 
-                xhrInstance.addEventListener('error', () => {
-                    handleError(request, new Error('Network Error'))
-                })
+                    xhrInstance.addEventListener('error', () => {
+                        handleError(request, new Error('Network Error'))
+                    })
 
-                xhrInstance.addEventListener('timeout', () => {
-                    handleError(request, new Error('Timeout'))
-                })
+                    xhrInstance.addEventListener('timeout', () => {
+                        handleError(request, new Error('Timeout'))
+                    })
+                }
             }
 
             return originalXHRSend.apply(this, [body])
@@ -164,8 +175,9 @@ export class PerformanceIntegration implements Integration {
         const duration = performance.now() - request.startTime
         const isSlow = duration > this.config.slowRequestThreshold
 
-        // 根据配置决定是否上报
-        const shouldReport = this.config.traceAllRequests || isSlow || !ok
+        // 只上报成功的请求或慢请求
+        // 错误请求（4xx, 5xx）由 HttpErrorIntegration 处理，避免重复上报
+        const shouldReport = ok && (this.config.traceAllRequests || isSlow)
 
         if (shouldReport) {
             captureEvent({
@@ -177,28 +189,21 @@ export class PerformanceIntegration implements Integration {
                 duration: Math.round(duration),
                 isSlow,
                 success: ok,
-                timestamp: new Date().toISOString(),
+                timestamp: getChinaTimestamp(),
             })
         }
     }
 
     /**
      * 处理错误
+     *
+     * 注意：网络错误（status: 0）由 HttpErrorIntegration 处理
+     * PerformanceIntegration 只负责性能监控，不上报错误
      */
     private handleError(request: RequestInfo, error: Error): void {
-        const duration = performance.now() - request.startTime
-
-        captureEvent({
-            type: 'performance',
-            category: 'http',
-            url: request.url,
-            method: request.method,
-            status: 0,
-            duration: Math.round(duration),
-            error: error.message,
-            success: false,
-            timestamp: new Date().toISOString(),
-        })
+        // 网络错误由 HttpErrorIntegration 处理，避免重复上报
+        // PerformanceIntegration 只负责性能数据收集
+        console.log(`[PerformanceIntegration] Network error detected, delegating to HttpErrorIntegration: ${request.url}`)
     }
 
     /**
@@ -221,6 +226,16 @@ export class PerformanceIntegration implements Integration {
         }
 
         this.isSetup = false
+    }
+
+    /**
+     * 判断是否是 SDK 自己的请求
+     * 避免监听 SDK 自己的上报请求，防止无限循环
+     */
+    private isSdkRequest(url: string): boolean {
+        // 检查 URL 是否包含 SDK 的端点路径
+        const sdkEndpoints = ['/api/monitoring/', '/batch', '/critical', '/replay']
+        return sdkEndpoints.some(endpoint => url.includes(endpoint))
     }
 }
 

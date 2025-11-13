@@ -17,6 +17,9 @@ export class ClickhouseInitService implements OnModuleInit {
         try {
             await this.createMonitorEventsTable()
             this.logger.log('monitor_events table is ready')
+
+            await this.createSessionReplaysTable()
+            this.logger.log('session_replays table is ready')
         } catch (error) {
             this.logger.error(`Failed to initialize ClickHouse tables: ${error.message}`, error.stack)
             throw error
@@ -90,6 +93,70 @@ export class ClickhouseInitService implements OnModuleInit {
         } catch (error) {
             this.logger.error(`Failed to create monitor_events table: ${error.message}`)
             throw error
+        }
+    }
+
+    /**
+     * 创建 Session Replays 表
+     * 专门存储会话重放数据，与 monitor_events 分离
+     */
+    private async createSessionReplaysTable() {
+        const query = `
+            CREATE TABLE IF NOT EXISTS session_replays (
+                id UUID DEFAULT generateUUIDv4(),
+                app_id String,
+                replay_id String,
+                error_event_id String DEFAULT '',
+
+                -- Replay 数据
+                events String,
+
+                -- 元数据
+                event_count UInt32 DEFAULT 0,
+                duration UInt32 DEFAULT 0,
+                compressed UInt8 DEFAULT 0,
+                original_size UInt32 DEFAULT 0,
+                compressed_size UInt32 DEFAULT 0,
+
+                -- 触发方式
+                trigger String DEFAULT '',
+
+                -- 时间戳
+                timestamp DateTime DEFAULT now(),
+                created_at DateTime DEFAULT now()
+            ) ENGINE = MergeTree()
+            PARTITION BY toYYYYMM(timestamp)
+            ORDER BY (app_id, replay_id, timestamp)
+            SETTINGS index_granularity = 8192
+        `
+
+        try {
+            await this.clickhouseClient.query({ query })
+
+            // 创建索引
+            await this.createSessionReplayIndexes()
+        } catch (error) {
+            this.logger.error(`Failed to create session_replays table: ${error.message}`)
+            throw error
+        }
+    }
+
+    /**
+     * 创建 Session Replays 表的索引
+     */
+    private async createSessionReplayIndexes() {
+        const indexes = [
+            'ALTER TABLE session_replays ADD INDEX IF NOT EXISTS idx_replay_id (replay_id) TYPE bloom_filter GRANULARITY 4',
+            'ALTER TABLE session_replays ADD INDEX IF NOT EXISTS idx_error_event_id (error_event_id) TYPE bloom_filter GRANULARITY 4',
+            'ALTER TABLE session_replays ADD INDEX IF NOT EXISTS idx_trigger (trigger) TYPE set(10) GRANULARITY 4',
+        ]
+
+        for (const indexQuery of indexes) {
+            try {
+                await this.clickhouseClient.query({ query: indexQuery })
+            } catch (error) {
+                this.logger.warn(`Session replay index creation warning: ${error.message}`)
+            }
         }
     }
 

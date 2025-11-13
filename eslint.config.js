@@ -14,7 +14,6 @@ const ignores = [
     '**/*.mjs',
     '**/*.d.ts',
     'eslint.config.js',
-    'commitlint.config.js',
     'apps/frontend/monitor/src/components/ui/**/*',
     'packages/browser-utils/src/metrics/**/*',
 ]
@@ -36,5 +35,6 @@ module.exports = tseslint.config({
         '@typescript-eslint/no-unused-vars': 'off',
         'no-unused-vars': 'off',
         'no-console': 'off',
+        '@typescript-eslint/no-unused-expressions': 'off',
     },
 })

@@ -450,6 +450,13 @@ export class MonitoringEventDto {
         sampled: boolean
         timestamp: number
     }
+
+    /**
+     * 事件时间戳（中国时区格式：YYYY-MM-DD HH:mm:ss）
+     */
+    @IsString()
+    @IsOptional()
+    timestamp?: string
 }
 
 /**

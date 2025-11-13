@@ -1,5 +1,6 @@
 import { getCurrentClient } from './baseClient'
 import { MonitoringEvent } from './types'
+import { getChinaTimestamp } from './utils/time'
 
 /**
  * 捕获异常
@@ -11,7 +12,7 @@ export function captureException(error: Error): void {
             type: 'error',
             message: error.message,
             stack: error.stack,
-            timestamp: new Date().toISOString(),
+            timestamp: getChinaTimestamp(),
         })
     }
 }
@@ -25,7 +26,7 @@ export function captureMessage(message: string): void {
         client.captureEvent({
             type: 'message',
             message,
-            timestamp: new Date().toISOString(),
+            timestamp: getChinaTimestamp(),
         })
     }
 }

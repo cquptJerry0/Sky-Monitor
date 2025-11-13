@@ -20,6 +20,8 @@
         "strictBindCallApply": false,
         "target": "es2018",
         "noUncheckedIndexedAccess": true,
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
         "baseUrl": ".",
         "paths": {
             "@sky-monitor/monitor-sdk-core": ["packages/core/src/index.ts"],

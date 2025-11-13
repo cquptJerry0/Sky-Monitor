@@ -11,8 +11,19 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useToast } from '@/hooks/use-toast'
 import { PAGINATION } from '@/utils/constants'
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
@@ -22,10 +33,13 @@ import type { AlertRule } from '@/api/types'
 export default function AlertsPage() {
     const navigate = useNavigate()
     const { currentApp } = useCurrentApp()
+    const { toast } = useToast()
     const [page, setPage] = useState(0)
     const [pageSize] = useState(PAGINATION.DEFAULT_PAGE_SIZE)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [editingRule, setEditingRule] = useState<AlertRule | null>(null)
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+    const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
 
     // 表单状态
     const [formData, setFormData] = useState<{
@@ -79,10 +93,31 @@ export default function AlertsPage() {
         setIsDialogOpen(true)
     }
 
-    const handleDelete = async (ruleId: string) => {
-        if (!confirm('确定要删除这条告警规则吗？')) return
-        await deleteMutation.mutateAsync(ruleId)
-        refetch()
+    const handleDeleteClick = (ruleId: string) => {
+        setDeleteTarget(ruleId)
+        setShowDeleteDialog(true)
+    }
+
+    const handleConfirmDelete = async () => {
+        if (!deleteTarget) return
+
+        try {
+            await deleteMutation.mutateAsync(deleteTarget)
+            toast({
+                title: '删除成功',
+                description: '告警规则已删除',
+            })
+            refetch()
+        } catch (error) {
+            toast({
+                title: '删除失败',
+                description: error instanceof Error ? error.message : '删除告警规则失败',
+                variant: 'destructive',
+            })
+        } finally {
+            setShowDeleteDialog(false)
+            setDeleteTarget(null)
+        }
     }
 
     const handleSubmit = async () => {
@@ -97,14 +132,30 @@ export default function AlertsPage() {
             enabled: formData.enabled,
         }
 
-        if (editingRule) {
-            await updateMutation.mutateAsync({ id: editingRule.id, data: payload })
-        } else {
-            await createMutation.mutateAsync(payload)
-        }
+        try {
+            if (editingRule) {
+                await updateMutation.mutateAsync({ id: editingRule.id, data: payload })
+                toast({
+                    title: '更新成功',
+                    description: '告警规则已更新',
+                })
+            } else {
+                await createMutation.mutateAsync(payload)
+                toast({
+                    title: '创建成功',
+                    description: '告警规则已创建',
+                })
+            }
 
-        setIsDialogOpen(false)
-        refetch()
+            setIsDialogOpen(false)
+            refetch()
+        } catch (error) {
+            toast({
+                title: editingRule ? '更新失败' : '创建失败',
+                description: error instanceof Error ? error.message : '操作失败',
+                variant: 'destructive',
+            })
+        }
     }
 
     const getStatusBadge = (enabled: boolean) => {
@@ -176,7 +227,7 @@ export default function AlertsPage() {
                                                 <Button variant="ghost" size="sm" onClick={() => handleEdit(rule)}>
                                                     <Edit className="h-4 w-4" />
                                                 </Button>
-                                                <Button variant="ghost" size="sm" onClick={() => handleDelete(rule.id)}>
+                                                <Button variant="ghost" size="sm" onClick={() => handleDeleteClick(rule.id)}>
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
                                             </div>
@@ -247,6 +298,22 @@ export default function AlertsPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* 删除确认对话框 */}
+            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>确认删除告警规则？</AlertDialogTitle>
+                        <AlertDialogDescription>此操作无法撤销，确定要删除这条告警规则吗？</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>取消</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-500 hover:bg-red-600">
+                            确认删除
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }

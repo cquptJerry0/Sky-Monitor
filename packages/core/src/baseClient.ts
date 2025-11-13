@@ -39,6 +39,13 @@ export class Monitoring {
     }
 
     /**
+     * 获取指定名称的集成
+     */
+    getIntegration<T extends Integration>(name: string): T | null {
+        return (this.integrations.find(int => int.name === name) as T) || null
+    }
+
+    /**
      * 按优先级排序 integrations
      * 优先级数值越小越先执行，默认为 50
      */
@@ -120,6 +127,8 @@ export class Monitoring {
         const processed = await this.pipeline.execute(enrichedEvent)
 
         if (processed && this.transport) {
+            // 不await，允许批量传输异步处理
+
             this.transport.send(processed as unknown as Record<string, unknown>)
         }
     }

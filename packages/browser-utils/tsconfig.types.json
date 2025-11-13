@@ -5,6 +5,10 @@
         "declaration": true,
         "declarationMap": true,
         "emitDeclarationOnly": true,
-        "outDir": "build/types"
-    }
+        "outDir": "build/types",
+        "declarationDir": "build/types",
+        "noEmit": false,
+        "emitDecoratorMetadata": false
+    },
+    "exclude": ["build"]
 }

@@ -8,11 +8,21 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
 import { useApplications, useCreateApplication, useDeleteApplication } from '@/hooks/useApplicationQuery'
 import { useAppStore } from '@/stores/app.store'
 import { ROUTES } from '@/utils/constants'
-import { Plus, Trash2, Loader2 } from 'lucide-react'
+import { Plus, Trash2, Loader2, Copy } from 'lucide-react'
 import type { Application, ApplicationType } from '@/api/types'
 import { FaReact, FaVuejs } from 'react-icons/fa'
 import { SiJavascript } from 'react-icons/si'
@@ -57,6 +67,8 @@ export default function ProjectsPage() {
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
     const [newAppName, setNewAppName] = useState('')
     const [newAppType, setNewAppType] = useState<ApplicationType>('react')
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+    const [deleteTarget, setDeleteTarget] = useState<Application | null>(null)
 
     // 获取应用列表 - 已在 hook 中解析为 Application[]
     const { data: applications = [], isLoading, error, refetch } = useApplications()
@@ -123,24 +135,27 @@ export default function ProjectsPage() {
         navigate(ROUTES.DASHBOARD)
     }
 
-    // 删除应用
-    const handleDeleteApp = async (app: Application, e: React.MouseEvent) => {
+    // 删除应用 - 打开确认对话框
+    const handleDeleteClick = (app: Application, e: React.MouseEvent) => {
         e.stopPropagation()
+        setDeleteTarget(app)
+        setShowDeleteDialog(true)
+    }
 
-        if (!confirm(`确定要删除应用 "${app.name}" 吗？`)) {
-            return
-        }
+    // 确认删除应用
+    const handleConfirmDelete = async () => {
+        if (!deleteTarget) return
 
-        console.log('[删除应用] 开始删除', app)
+        console.log('[删除应用] 开始删除', deleteTarget)
 
         try {
-            await deleteMutation.mutateAsync({ appId: app.appId })
+            await deleteMutation.mutateAsync({ appId: deleteTarget.appId })
 
             console.log('[删除应用] 删除成功')
 
             toast({
                 title: '删除成功',
-                description: `应用 "${app.name}" 已删除`,
+                description: `应用 "${deleteTarget.name}" 已删除`,
             })
 
             refetch()
@@ -152,7 +167,20 @@ export default function ProjectsPage() {
                 description: errorMessage,
                 variant: 'destructive',
             })
+        } finally {
+            setShowDeleteDialog(false)
+            setDeleteTarget(null)
         }
+    }
+
+    // 复制 AppId
+    const handleCopyAppId = (appId: string, e: React.MouseEvent) => {
+        e.stopPropagation()
+        navigator.clipboard.writeText(appId)
+        toast({
+            title: '已复制',
+            description: 'AppId 已复制到剪贴板',
+        })
     }
 
     if (isLoading) {
@@ -295,12 +323,23 @@ export default function ProjectsPage() {
                                 <div className="flex items-start justify-between mb-4">
                                     <div className="flex-1">
                                         <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-1">{app.name}</h3>
-                                        <p className="text-sm text-[var(--text-secondary)]">{app.appId}</p>
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-sm text-[var(--text-secondary)]">{app.appId}</p>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={e => handleCopyAppId(app.appId, e)}
+                                                className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0"
+                                                title="复制 AppId"
+                                            >
+                                                <Copy className="h-3 w-3" />
+                                            </Button>
+                                        </div>
                                     </div>
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={e => handleDeleteApp(app, e)}
+                                        onClick={e => handleDeleteClick(app, e)}
                                         disabled={deleteMutation.isPending}
                                         className="opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-300 hover:bg-red-500/10"
                                     >
@@ -322,6 +361,24 @@ export default function ProjectsPage() {
                     })}
                 </div>
             )}
+
+            {/* 删除确认对话框 */}
+            <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>确认删除应用？</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            确定要删除应用 "{deleteTarget?.name}" 吗？此操作无法撤销，所有相关数据将被永久删除。
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>取消</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-500 hover:bg-red-600">
+                            确认删除
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }

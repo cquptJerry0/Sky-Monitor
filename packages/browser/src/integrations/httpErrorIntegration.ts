@@ -282,9 +282,10 @@ export class HttpErrorIntegration implements Integration {
      * @description
      * 核心功能：
      * 1. 生成错误指纹（基于 method + url + status）
-     * 2. 执行去重检查（避免短时间内重复上报）
-     * 3. 从全局客户端获取 release 和 appId（用于 SourceMap 匹配）
-     * 4. 构建完整的错误事件并上报
+     * 2. 从全局客户端获取 release 和 appId（用于 SourceMap 匹配）
+     * 3. 构建完整的错误事件并上报
+     *
+     * 注意：去重逻辑已移至 DeduplicationIntegration（Core 层），避免重复去重
      */
     private captureHttpError(details: {
         url: string
@@ -299,13 +300,8 @@ export class HttpErrorIntegration implements Integration {
     }): void {
         const { url, method, status, statusText, duration } = details
 
-        // 生成错误指纹
+        // 生成错误指纹（用于后端分析，不用于去重）
         const fingerprint = generateErrorFingerprint(`${method} ${url} ${status}`, `HTTP ${status}: ${method} ${url}`, 'http')
-
-        // 错误去重检查
-        if (this.options.enableDeduplication && !errorDeduplicator.shouldReport(fingerprint.hash)) {
-            return
-        }
 
         // 获取全局客户端实例，提取 release 和 appId
         // 这些信息对于后端非常重要：

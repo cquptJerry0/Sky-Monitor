@@ -6,9 +6,12 @@
         "declarationMap": true,
         "emitDeclarationOnly": true,
         "outDir": "build/types",
-        "skipLibCheck": true
+        "declarationDir": "build/types",
+        "skipLibCheck": true,
+        "noEmit": false,
+        "emitDecoratorMetadata": false
     },
 
     "include": ["src/**/*"],
-    "exclude": ["src/**/*.test.ts", "src/**/__tests__/**", "node_modules"]
+    "exclude": ["src/**/*.test.ts", "src/**/__tests__/**", "node_modules", "build"]
 }

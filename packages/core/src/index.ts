@@ -34,5 +34,7 @@ export { captureEvent, captureException, captureMessage } from './captures'
 
 export { ScopeImpl } from './scope'
 
+export { getChinaTimestamp } from './utils/time'
+
 // 全局便捷函数
 export { setUser, setTag, addBreadcrumb, configureScope } from './baseClient'

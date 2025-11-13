@@ -1,4 +1,4 @@
-import { Integration, captureEvent } from '@sky-monitor/monitor-sdk-core'
+import { Integration, captureEvent, getChinaTimestamp } from '@sky-monitor/monitor-sdk-core'
 import { record } from 'rrweb'
 
 /**
@@ -140,6 +140,7 @@ export class SessionReplayIntegration implements Integration {
     private isRecording = false
     private errorOccurred = false
     private errorTimer?: any
+    private currentReplayId: string | null = null
 
     constructor(options: SessionReplayOptions = {}) {
         this.options = {
@@ -156,6 +157,21 @@ export class SessionReplayIntegration implements Integration {
             recordCanvas: options.recordCanvas ?? false,
             recordCrossOriginIframes: options.recordCrossOriginIframes ?? false,
         }
+    }
+
+    /**
+     * 生成唯一的 Replay ID
+     */
+    private generateReplayId(): string {
+        return `replay_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    }
+
+    /**
+     * 获取当前的 Replay ID
+     * 供 ErrorsIntegration 使用，将 replayId 附加到错误事件上
+     */
+    getReplayId(): string | null {
+        return this.currentReplayId
     }
 
     /**
@@ -306,13 +322,20 @@ export class SessionReplayIntegration implements Integration {
      * 处理错误事件
      *
      * 执行流程：
-     * 1. 标记错误已发生
-     * 2. 立即上报当前缓冲区的所有事件
-     * 3. 设置定时器，在 afterErrorDuration 后停止录制
+     * 1. 生成唯一的 replayId
+     * 2. 立即上报当前缓冲区的所有事件（包含 replayId）
+     * 3. 设置定时器，在 afterErrorDuration 后继续上报并重置状态
+     *
+     * 改进：允许多次触发 Replay，每次错误都生成新的 replayId
      */
     private handleError(): void {
-        if (this.errorOccurred) return
+        // 如果正在处理错误，清除之前的定时器
+        if (this.errorTimer) {
+            clearTimeout(this.errorTimer)
+        }
 
+        // 生成唯一的 Replay ID（每次错误都生成新的）
+        this.currentReplayId = this.generateReplayId()
         this.errorOccurred = true
 
         // 立即上报所有缓冲事件
@@ -322,10 +345,6 @@ export class SessionReplayIntegration implements Integration {
          * 继续录制一段时间后停止
          * 这样可以捕获错误发生后的操作
          */
-        if (this.errorTimer) {
-            clearTimeout(this.errorTimer)
-        }
-
         this.errorTimer = window.setTimeout(() => {
             // 最后一次上报
             this.flushEvents()
@@ -335,8 +354,9 @@ export class SessionReplayIntegration implements Integration {
                 this.stopRecordingSession()
             }
 
-            // 重置错误标记，允许下次错误再次录制
+            // 重置错误标记和 replayId，允许下次错误再次录制
             this.errorOccurred = false
+            this.currentReplayId = null
         }, this.options.afterErrorDuration * 1000) as any
     }
 
@@ -344,26 +364,34 @@ export class SessionReplayIntegration implements Integration {
      * 上报录制事件
      *
      * 将缓冲区中的所有事件上报到服务器
+     * 创建 type: 'replay' 事件（符合 Sentry 标准）
      * 上报后清空缓冲区
      */
     private flushEvents(): void {
         if (this.events.length === 0) return
 
+        const duration = this.calculateDuration()
+        const eventCount = this.events.length
+
         /**
          * 上报录制数据
-         * 包含所有录制的 DOM 事件
+         * 使用 type: 'replay' 事件类型（不再使用 custom + category）
+         * 包含 replayId 用于与错误事件关联
          */
         captureEvent({
-            type: 'custom',
-            category: 'sessionReplay',
-            name: 'replay-events',
-            timestamp: new Date().toISOString(),
-            extra: {
-                events: this.events,
-                eventCount: this.events.length,
-                duration: this.calculateDuration(),
+            type: 'replay',
+            replayId: this.currentReplayId || this.generateReplayId(),
+            events: this.events, // rrweb 事件数组
+            metadata: {
+                eventCount,
+                duration,
+                compressed: false, // 暂时不压缩，由 Transport 层处理
+                originalSize: JSON.stringify(this.events).length,
+                compressedSize: 0,
             },
-        })
+            trigger: this.errorOccurred ? 'error' : 'manual',
+            timestamp: getChinaTimestamp(),
+        } as any)
 
         // 清空已上报的事件
         this.events = []

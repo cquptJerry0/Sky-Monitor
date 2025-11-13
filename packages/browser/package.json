@@ -39,9 +39,11 @@
     "dependencies": {
         "@sky-monitor/monitor-sdk-browser-utils": "workspace:*",
         "@sky-monitor/monitor-sdk-core": "workspace:*",
+        "pako": "^2.1.0",
         "rrweb": "2.0.0-alpha.4"
     },
     "devDependencies": {
+        "@types/pako": "^2.0.4",
         "@vitest/coverage-v8": "^1.0.0",
         "@vitest/ui": "^1.0.0",
         "jsdom": "^24.0.0",

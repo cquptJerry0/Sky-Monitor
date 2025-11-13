@@ -7,8 +7,28 @@ export type EventLevel = 'debug' | 'info' | 'warning' | 'error' | 'fatal'
 
 /**
  * 事件类型
+ *
+ * 说明：
+ * - error/exception/unhandledrejection: 错误类事件，立即上报
+ * - transaction: 性能追踪事件（包含原来的 performance/webVital），批量上报
+ * - message: 日志消息，批量上报
+ * - session: 会话统计事件，定期上报
+ * - replay: Session Replay 事件，错误触发时上报
+ * - custom: 自定义事件（向后兼容），批量上报
+ *
+ * 注意：breadcrumb 不是事件类型，它只是附加在其他事件上的上下文信息
  */
-export type EventType = 'error' | 'message' | 'performance' | 'webVital' | 'transaction' | 'custom'
+export type EventType =
+    | 'error'
+    | 'exception'
+    | 'unhandledrejection'
+    | 'message'
+    | 'performance'
+    | 'webVital'
+    | 'transaction'
+    | 'session'
+    | 'replay'
+    | 'custom'
 
 /**
  * 基础事件接口
@@ -62,6 +82,37 @@ export interface ErrorEvent extends BaseEvent {
         value?: string
         stacktrace?: string
     }
+    /**
+     * 关联的 Replay ID（如果有 Session Replay）
+     */
+    replayId?: string
+}
+
+/**
+ * 异常事件
+ */
+export interface ExceptionEvent extends BaseEvent {
+    type: 'exception'
+    message: string
+    stack?: string
+    error?: Error
+    /**
+     * 关联的 Replay ID（如果有 Session Replay）
+     */
+    replayId?: string
+}
+
+/**
+ * 未处理的 Promise 拒绝事件
+ */
+export interface UnhandledRejectionEvent extends BaseEvent {
+    type: 'unhandledrejection'
+    message: string
+    reason?: unknown
+    /**
+     * 关联的 Replay ID（如果有 Session Replay）
+     */
+    replayId?: string
 }
 
 /**
@@ -71,6 +122,7 @@ export interface PerformanceEvent extends BaseEvent {
     type: 'performance' | 'webVital'
     name?: string
     value?: number
+    rating?: 'good' | 'needs-improvement' | 'poor' // Web Vitals 评级
     metrics?: Record<string, number>
     duration?: number
     path?: string
@@ -121,10 +173,51 @@ export interface CustomEvent extends BaseEvent {
 }
 
 /**
+ * Session 事件（会话统计）
+ */
+export interface SessionEvent extends BaseEvent {
+    type: 'session'
+    sessionId: string
+    startTime: number
+    duration: number
+    eventCount: number
+    errorCount: number
+    pageViews: number
+}
+
+/**
+ * Replay 事件（Session Replay）
+ */
+export interface ReplayEvent extends BaseEvent {
+    type: 'replay'
+    replayId: string
+    events: any[] | string // rrweb 事件数组，或压缩后的 Base64 字符串
+    metadata: {
+        eventCount: number
+        duration: number
+        compressed: boolean
+        originalSize: number
+        compressedSize: number
+    }
+    trigger: 'error' | 'manual' | 'sampled'
+}
+
+/**
  * 监控事件联合类型
  * 使用判别联合（discriminated unions）提供类型安全
+ *
+ * 注意：BreadcrumbEvent 已删除，breadcrumb 不是独立事件，只是附加在其他事件上的上下文
  */
-export type MonitoringEvent = ErrorEvent | PerformanceEvent | MessageEvent | TransactionEvent | CustomEvent
+export type MonitoringEvent =
+    | ErrorEvent
+    | ExceptionEvent
+    | UnhandledRejectionEvent
+    | PerformanceEvent
+    | MessageEvent
+    | TransactionEvent
+    | SessionEvent
+    | ReplayEvent
+    | CustomEvent
 
 /**
  * Integration interface

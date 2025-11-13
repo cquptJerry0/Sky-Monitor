@@ -173,15 +173,20 @@ export class EventFieldMapper {
         events: MonitoringEventDto[],
         appId: string,
         userAgent: string,
-        timestamp: string,
+        fallbackTimestamp: string,
         generateId: () => string
     ) {
-        const commonFields = {
-            app_id: appId,
-            user_agent: userAgent,
-            timestamp,
-        }
+        return events.map(event => {
+            // 使用事件自己的 timestamp，如果没有则使用 fallbackTimestamp
+            const timestamp = event.timestamp || fallbackTimestamp
 
-        return events.map(event => this.mapToClickhouse(event, commonFields, generateId()))
+            const commonFields = {
+                app_id: appId,
+                user_agent: userAgent,
+                timestamp,
+            }
+
+            return this.mapToClickhouse(event, commonFields, generateId())
+        })
     }
 }

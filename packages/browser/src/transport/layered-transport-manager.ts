@@ -269,6 +269,7 @@ export class LayeredTransportManager extends BaseTransport {
 
     /**
      * 刷新所有传输通道
+     * 使用 allSettled 确保所有层级都能 flush，即使某个失败
      */
     async flush(): Promise<void> {
         const flushPromises = Array.from(this.transports.values()).map(transport => {
@@ -278,7 +279,14 @@ export class LayeredTransportManager extends BaseTransport {
             return Promise.resolve()
         })
 
-        await Promise.all(flushPromises)
+        const results = await Promise.allSettled(flushPromises)
+
+        // 记录失败的 flush
+        results.forEach((result, index) => {
+            if (result.status === 'rejected') {
+                console.error(`[LayeredTransport] Flush failed for transport ${index}:`, result.reason)
+            }
+        })
     }
 
     /**

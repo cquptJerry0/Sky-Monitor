@@ -1,7 +1,7 @@
 import { Controller, Query, Sse, UseGuards } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger'
-import { interval, map, Observable } from 'rxjs'
+import { interval, switchMap, Observable, finalize } from 'rxjs'
 import { EventsService } from './events.service'
 
 @ApiTags('Events Stream')
@@ -23,19 +23,41 @@ export class EventsStreamController {
         @Query('type') type?: 'error' | 'performance' | 'webVital' | 'message' | 'transaction' | 'custom'
     ): Observable<any> {
         return interval(2000).pipe(
-            map(async () => {
-                const events = await this.eventsService.getEvents({
-                    appId,
-                    eventType: type,
-                    limit: 10,
-                })
+            switchMap(async () => {
+                try {
+                    const events = await this.eventsService.getEvents({
+                        appId,
+                        eventType: type,
+                        limit: 10,
+                    })
 
-                return {
-                    data: JSON.stringify(events),
-                    id: Date.now().toString(),
-                    type: 'events',
-                    retry: 10000,
+                    // 如果没有数据，发送心跳
+                    if (!events.data || events.data.length === 0) {
+                        return {
+                            data: JSON.stringify({ type: 'heartbeat', timestamp: Date.now() }),
+                            type: 'heartbeat',
+                            retry: 10000,
+                        }
+                    }
+
+                    return {
+                        data: JSON.stringify(events),
+                        id: Date.now().toString(),
+                        type: 'events',
+                        retry: 10000,
+                    }
+                } catch (error) {
+                    console.error(`[SSE] Error fetching events for appId ${appId}:`, error)
+                    // 错误时发送心跳，保持连接
+                    return {
+                        data: JSON.stringify({ type: 'heartbeat', timestamp: Date.now(), error: true }),
+                        type: 'heartbeat',
+                        retry: 10000,
+                    }
                 }
+            }),
+            finalize(() => {
+                console.log(`[SSE] Connection closed for appId: ${appId}, type: ${type || 'all'}`)
             })
         )
     }
@@ -49,19 +71,39 @@ export class EventsStreamController {
     @ApiQuery({ name: 'appId', required: true })
     streamErrors(@Query('appId') appId: string): Observable<any> {
         return interval(2000).pipe(
-            map(async () => {
-                const events = await this.eventsService.getEvents({
-                    appId,
-                    eventType: 'error',
-                    limit: 10,
-                })
+            switchMap(async () => {
+                try {
+                    const events = await this.eventsService.getEvents({
+                        appId,
+                        eventType: 'error',
+                        limit: 10,
+                    })
 
-                return {
-                    data: JSON.stringify(events),
-                    id: Date.now().toString(),
-                    type: 'error_events',
-                    retry: 10000,
+                    if (!events.data || events.data.length === 0) {
+                        return {
+                            data: JSON.stringify({ type: 'heartbeat', timestamp: Date.now() }),
+                            type: 'heartbeat',
+                            retry: 10000,
+                        }
+                    }
+
+                    return {
+                        data: JSON.stringify(events),
+                        id: Date.now().toString(),
+                        type: 'error_events',
+                        retry: 10000,
+                    }
+                } catch (error) {
+                    console.error(`[SSE] Error fetching error events for appId ${appId}:`, error)
+                    return {
+                        data: JSON.stringify({ type: 'heartbeat', timestamp: Date.now(), error: true }),
+                        type: 'heartbeat',
+                        retry: 10000,
+                    }
                 }
+            }),
+            finalize(() => {
+                console.log(`[SSE] Error stream connection closed for appId: ${appId}`)
             })
         )
     }
@@ -75,19 +117,39 @@ export class EventsStreamController {
     @ApiQuery({ name: 'appId', required: true })
     streamPerformance(@Query('appId') appId: string): Observable<any> {
         return interval(5000).pipe(
-            map(async () => {
-                const events = await this.eventsService.getEvents({
-                    appId,
-                    eventType: 'performance',
-                    limit: 10,
-                })
+            switchMap(async () => {
+                try {
+                    const events = await this.eventsService.getEvents({
+                        appId,
+                        eventType: 'performance',
+                        limit: 10,
+                    })
 
-                return {
-                    data: JSON.stringify(events),
-                    id: Date.now().toString(),
-                    type: 'performance_events',
-                    retry: 10000,
+                    if (!events.data || events.data.length === 0) {
+                        return {
+                            data: JSON.stringify({ type: 'heartbeat', timestamp: Date.now() }),
+                            type: 'heartbeat',
+                            retry: 10000,
+                        }
+                    }
+
+                    return {
+                        data: JSON.stringify(events),
+                        id: Date.now().toString(),
+                        type: 'performance_events',
+                        retry: 10000,
+                    }
+                } catch (error) {
+                    console.error(`[SSE] Error fetching performance events for appId ${appId}:`, error)
+                    return {
+                        data: JSON.stringify({ type: 'heartbeat', timestamp: Date.now(), error: true }),
+                        type: 'heartbeat',
+                        retry: 10000,
+                    }
                 }
+            }),
+            finalize(() => {
+                console.log(`[SSE] Performance stream connection closed for appId: ${appId}`)
             })
         )
     }
@@ -101,19 +163,39 @@ export class EventsStreamController {
     @ApiQuery({ name: 'appId', required: true })
     streamWebVitals(@Query('appId') appId: string): Observable<any> {
         return interval(10000).pipe(
-            map(async () => {
-                const events = await this.eventsService.getEvents({
-                    appId,
-                    eventType: 'webVital',
-                    limit: 20,
-                })
+            switchMap(async () => {
+                try {
+                    const events = await this.eventsService.getEvents({
+                        appId,
+                        eventType: 'webVital',
+                        limit: 20,
+                    })
 
-                return {
-                    data: JSON.stringify(events),
-                    id: Date.now().toString(),
-                    type: 'web_vitals',
-                    retry: 10000,
+                    if (!events.data || events.data.length === 0) {
+                        return {
+                            data: JSON.stringify({ type: 'heartbeat', timestamp: Date.now() }),
+                            type: 'heartbeat',
+                            retry: 10000,
+                        }
+                    }
+
+                    return {
+                        data: JSON.stringify(events),
+                        id: Date.now().toString(),
+                        type: 'web_vitals',
+                        retry: 10000,
+                    }
+                } catch (error) {
+                    console.error(`[SSE] Error fetching web vitals for appId ${appId}:`, error)
+                    return {
+                        data: JSON.stringify({ type: 'heartbeat', timestamp: Date.now(), error: true }),
+                        type: 'heartbeat',
+                        retry: 10000,
+                    }
                 }
+            }),
+            finalize(() => {
+                console.log(`[SSE] Web vitals stream connection closed for appId: ${appId}`)
             })
         )
     }
@@ -127,15 +209,27 @@ export class EventsStreamController {
     @ApiQuery({ name: 'appId', required: true })
     streamStats(@Query('appId') appId: string): Observable<any> {
         return interval(5000).pipe(
-            map(async () => {
-                const stats = await this.eventsService.getStats({ appId })
+            switchMap(async () => {
+                try {
+                    const stats = await this.eventsService.getStats({ appId })
 
-                return {
-                    data: JSON.stringify(stats),
-                    id: Date.now().toString(),
-                    type: 'stats',
-                    retry: 10000,
+                    return {
+                        data: JSON.stringify(stats),
+                        id: Date.now().toString(),
+                        type: 'stats',
+                        retry: 10000,
+                    }
+                } catch (error) {
+                    console.error(`[SSE] Error fetching stats for appId ${appId}:`, error)
+                    return {
+                        data: JSON.stringify({ type: 'heartbeat', timestamp: Date.now(), error: true }),
+                        type: 'heartbeat',
+                        retry: 10000,
+                    }
                 }
+            }),
+            finalize(() => {
+                console.log(`[SSE] Stats stream connection closed for appId: ${appId}`)
             })
         )
     }
@@ -149,21 +243,37 @@ export class EventsStreamController {
     @ApiQuery({ name: 'eventId', required: true })
     streamSourceMapProgress(@Query('eventId') eventId: string): Observable<any> {
         return interval(1000).pipe(
-            map(async () => {
-                const event = await this.eventsService.getEventById(eventId)
+            switchMap(async () => {
+                try {
+                    const event = await this.eventsService.getEventById(eventId)
 
-                const sourceMapStatus = (event as any).sourceMapStatus || 'not_available'
+                    const sourceMapStatus = (event as any).sourceMapStatus || 'not_available'
 
-                return {
-                    data: JSON.stringify({
-                        eventId,
-                        status: sourceMapStatus,
-                        timestamp: Date.now(),
-                    }),
-                    id: Date.now().toString(),
-                    type: 'sourcemap_progress',
-                    retry: 10000,
+                    return {
+                        data: JSON.stringify({
+                            eventId,
+                            status: sourceMapStatus,
+                            timestamp: Date.now(),
+                        }),
+                        id: Date.now().toString(),
+                        type: 'sourcemap_progress',
+                        retry: 10000,
+                    }
+                } catch (error) {
+                    console.error(`[SSE] Error fetching sourcemap progress for eventId ${eventId}:`, error)
+                    return {
+                        data: JSON.stringify({
+                            eventId,
+                            status: 'error',
+                            timestamp: Date.now(),
+                        }),
+                        type: 'sourcemap_progress',
+                        retry: 10000,
+                    }
                 }
+            }),
+            finalize(() => {
+                console.log(`[SSE] SourceMap progress stream connection closed for eventId: ${eventId}`)
             })
         )
     }

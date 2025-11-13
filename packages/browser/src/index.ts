@@ -2,9 +2,7 @@ export { browserTracingIntegration } from './tracing/browserTracingIntegration'
 
 import { Integration, Monitoring, Transport } from '@sky-monitor/monitor-sdk-core'
 
-import { BrowserTransport } from './transport'
-import { BatchedTransport } from './transport/batched'
-import { LayeredTransportManager, EventLayer } from './transport/layered-transport-manager'
+import { TransportRouter } from './transport/transport-router'
 import { OfflineTransport } from './transport/offline'
 
 export { Metrics } from '@sky-monitor/monitor-sdk-browser-utils'
@@ -16,6 +14,9 @@ export {
     setTag,
     addBreadcrumb,
     configureScope,
+    captureEvent,
+    captureException,
+    captureMessage,
 } from '@sky-monitor/monitor-sdk-core'
 export type { SamplingConfig, DeduplicationConfig, Breadcrumb, User, Scope } from '@sky-monitor/monitor-sdk-core'
 export type { ErrorsOptions } from './tracing/errorsIntegration'
@@ -37,6 +38,8 @@ export { BatchedTransport } from './transport/batched'
 export type { BatchedTransportOptions } from './transport/batched'
 export { LayeredTransportManager, EventLayer } from './transport/layered-transport-manager'
 export type { LayeredTransportConfig } from './transport/layered-transport-manager'
+export { TransportRouter } from './transport/transport-router'
+export type { TransportRouterConfig } from './transport/transport-router'
 export { OfflineTransport } from './transport/offline'
 export type { OfflineTransportOptions } from './transport/offline'
 
@@ -63,26 +66,16 @@ export async function init(options: {
     release?: string // 版本号
     appId?: string // 应用ID
     environment?: string // 环境标识
-    enableBatching?: boolean // 是否启用批量传输，默认true
     batchSize?: number // 批次大小，默认20
     flushInterval?: number // 刷新间隔，默认5000ms
     enableOffline?: boolean // 是否启用离线队列
     offlineQueueSize?: number // 离线队列大小
     retryInterval?: number // 重试间隔
-    enableLayeredTransport?: boolean // 是否启用分层传输
-    layeredTransportConfig?: {
-        layers?: Partial<
-            Record<
-                EventLayer,
-                {
-                    batchSize: number
-                    flushInterval: number
-                    endpoint?: string
-                    compress?: boolean
-                }
-            >
-        >
-        eventTypeMapping?: Record<string, EventLayer>
+    // 自定义端点路径（可选）
+    endpoints?: {
+        critical?: string // 关键事件端点，默认 /critical
+        batch?: string // 批量事件端点，默认 /batch
+        replay?: string // Replay 事件端点，默认 /replay
     }
 }) {
     const monitoring = new Monitoring()
@@ -90,43 +83,27 @@ export async function init(options: {
     // 链式添加集成
     options.integrations.forEach(int => monitoring.addIntegration(int))
 
-    // 创建传输层
-    let transport: Transport
+    // 创建传输层 - 统一使用 TransportRouter
+    let transport: Transport = new TransportRouter({
+        baseEndpoint: options.dsn,
+        batched: {
+            batchSize: options.batchSize,
+            flushInterval: options.flushInterval,
+        },
+        immediate: {
+            endpoint: options.endpoints?.critical ? `${options.dsn}${options.endpoints.critical}` : undefined,
+        },
+        replay: {
+            endpoint: options.endpoints?.replay ? `${options.dsn}${options.endpoints.replay}` : undefined,
+        },
+    })
 
-    // 使用分层传输（新架构）
-    if (options.enableLayeredTransport) {
-        transport = new LayeredTransportManager({
-            baseEndpoint: options.dsn,
-            ...options.layeredTransportConfig,
+    // 如果启用离线，包装 TransportRouter
+    if (options.enableOffline) {
+        transport = new OfflineTransport(transport, {
+            maxQueueSize: options.offlineQueueSize,
+            retryInterval: options.retryInterval,
         })
-
-        // 如果启用离线，包装分层传输
-        if (options.enableOffline) {
-            transport = new OfflineTransport(transport, {
-                maxQueueSize: options.offlineQueueSize,
-                retryInterval: options.retryInterval,
-            })
-        }
-    } else {
-        // 传统模式（按顺序包装：基础 -> 离线 -> 批量）
-        const browserTransport = new BrowserTransport(options.dsn)
-        transport = browserTransport
-
-        // 第一层：离线传输包装（如果启用）
-        if (options.enableOffline) {
-            transport = new OfflineTransport(transport, {
-                maxQueueSize: options.offlineQueueSize,
-                retryInterval: options.retryInterval,
-            })
-        }
-
-        // 第二层：批量传输包装（默认启用）
-        if (options.enableBatching !== false) {
-            transport = new BatchedTransport(transport, {
-                batchSize: options.batchSize,
-                flushInterval: options.flushInterval,
-            })
-        }
     }
 
     await monitoring.init(transport, {
@@ -145,7 +122,7 @@ export async function init(options: {
  * import { captureException } from '@sky-monitor/monitor-sdk-core'
  *
  * const monitoring = init({
- *    dsn: 'http://localhost:8080/api/v1/monitoring/reactRqL9vG',
+ *    dsn: 'http://localhost:8080/api/monitoring/reactRqL9vG',
  *    integrations: [
  *        new Errors(),
  *        new SamplingIntegration({
@@ -154,10 +131,14 @@ export async function init(options: {
  *        }),
  *        new Metrics()
  *    ],
- *    enableBatching: true,  // 默认true，启用批量传输
- *    batchSize: 20,         // 默认20，批次大小
- *    flushInterval: 5000    // 默认5000ms，刷新间隔
+ *    batchSize: 20,         // 批次大小，默认20
+ *    flushInterval: 5000    // 刷新间隔，默认5000ms
  * })
+ *
+ * // 事件自动路由到不同端点：
+ * // - 错误事件 → /critical (立即发送)
+ * // - Replay 事件 → /replay (专用通道)
+ * // - 其他事件 → /batch (批量发送)
  *
  * // 设置用户信息（用于错误定位）
  * setUser({
@@ -174,12 +155,6 @@ export async function init(options: {
  * addBreadcrumb({
  *    message: 'User clicked login button',
  *    category: 'ui.click',
- *    level: 'info'
- * })
- *
- * addBreadcrumb({
- *    message: 'API call: POST /api/login',
- *    category: 'http',
  *    level: 'info'
  * })
  *

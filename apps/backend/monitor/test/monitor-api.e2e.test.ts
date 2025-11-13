@@ -405,7 +405,7 @@ describe('Monitor Server - Complete API Test Suite', () => {
             expect(data.data).toBeDefined()
         })
 
-        it('GET /events/stats/sampling - 应该包含采样率和估算总数', async () => {
+        it('GET /events/stats/sampling - 应该返回正确的数据格式', async () => {
             const { status, data } = await client.get('/events/stats/sampling', {
                 params: { appId: testApp.appId },
             })
@@ -413,7 +413,19 @@ describe('Monitor Server - Complete API Test Suite', () => {
             expect(status).toBe(200)
             expect(data.success).toBe(true)
             expect(data.data).toBeDefined()
-            // 数据格式可能是对象或数组，只要有数据即可
+
+            // 验证返回格式: { sampled: number, total: number, rate: number }
+            expect(data.data).toHaveProperty('sampled')
+            expect(data.data).toHaveProperty('total')
+            expect(data.data).toHaveProperty('rate')
+
+            expect(typeof data.data.sampled).toBe('number')
+            expect(typeof data.data.total).toBe('number')
+            expect(typeof data.data.rate).toBe('number')
+
+            // 验证采样率在 0-1 之间
+            expect(data.data.rate).toBeGreaterThanOrEqual(0)
+            expect(data.data.rate).toBeLessThanOrEqual(1)
         })
     })
 

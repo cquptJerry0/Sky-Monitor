@@ -660,9 +660,11 @@ export class EventsService {
 
     /**
      * 获取采样率统计
+     * 返回格式: { sampled: number, total: number, rate: number }
      */
     async getSamplingStats(appId: string) {
         try {
+            // 先按事件类型分组统计
             const query = `
                 SELECT
                     event_type,
@@ -680,8 +682,30 @@ export class EventsService {
             })
             const data = await result.json()
 
+            // 聚合计算总体统计
+            const stats = data.data as Array<{
+                event_type: string
+                avg_rate: number
+                sampled_count: number
+                estimated_total: number
+            }>
+
+            if (!stats || stats.length === 0) {
+                return {
+                    sampled: 0,
+                    total: 0,
+                    rate: 0,
+                }
+            }
+
+            const totalSampled = stats.reduce((sum, item) => sum + item.sampled_count, 0)
+            const totalEstimated = stats.reduce((sum, item) => sum + item.estimated_total, 0)
+            const overallRate = totalSampled / totalEstimated
+
             return {
-                data: data.data,
+                sampled: totalSampled,
+                total: Math.round(totalEstimated),
+                rate: overallRate,
             }
         } catch (error) {
             this.logger.error(`Failed to get sampling stats: ${error.message}`, error.stack)

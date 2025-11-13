@@ -67,9 +67,9 @@ export class MonitoringController {
 
     /**
      * 接收 Session Replay 数据 - 特殊处理大数据
-     * POST /api/monitoring/:appId/session-replay
+     * POST /api/monitoring/:appId/replay
      */
-    @Post(':appId/session-replay')
+    @Post(':appId/replay')
     @ApiOperation({ summary: '接收 Session Replay 录制数据' })
     @ApiParam({ name: 'appId', description: '应用ID' })
     async receiveSessionReplay(@Param('appId') appId: string, @Body() replayData: any, @Headers('user-agent') userAgent?: string) {
@@ -77,23 +77,5 @@ export class MonitoringController {
 
         // Session Replay 需要特殊处理（压缩、存储到 S3 等）
         return await this.monitoringService.receiveSessionReplay(appId, replayData, userAgent)
-    }
-
-    /**
-     * 接收辅助数据（面包屑、用户上下文等）- 延迟处理
-     * POST /api/monitoring/:appId/auxiliary
-     */
-    @Post(':appId/auxiliary')
-    @ApiOperation({ summary: '接收辅助数据（面包屑、用户上下文等）' })
-    @ApiParam({ name: 'appId', description: '应用ID' })
-    async receiveAuxiliaryEvents(
-        @Param('appId') appId: string,
-        @Body() events: MonitoringEventDto[],
-        @Headers('user-agent') userAgent?: string
-    ) {
-        await this.monitoringService.validateAppId(appId)
-
-        // 辅助数据可以延迟处理，放入队列
-        return await this.monitoringService.receiveAuxiliaryEvents(appId, events, userAgent)
     }
 }

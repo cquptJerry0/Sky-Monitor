@@ -1,7 +1,7 @@
 import { Controller, Query, Sse, UseGuards } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger'
-import { interval, map, Observable } from 'rxjs'
+import { interval, switchMap, Observable, finalize } from 'rxjs'
 import { ErrorTrendsService } from './services/error-trends.service'
 
 @ApiTags('Error Analytics Stream')
@@ -19,24 +19,36 @@ export class ErrorAnalyticsStreamController {
     @ApiQuery({ name: 'appId', required: true })
     streamErrorSpikes(@Query('appId') appId: string): Observable<any> {
         return interval(5000).pipe(
-            map(async () => {
-                const spikes = await this.errorTrendsService.getRecentSpikes(appId, 1)
+            switchMap(async () => {
+                try {
+                    const spikes = await this.errorTrendsService.getRecentSpikes(appId, 1)
 
-                if (spikes.spikes && spikes.spikes.length > 0) {
-                    const spike = spikes.spikes[0]
+                    if (spikes.spikes && spikes.spikes.length > 0) {
+                        const spike = spikes.spikes[0]
+                        return {
+                            data: JSON.stringify(spike),
+                            id: Date.now().toString(),
+                            type: 'spike',
+                            retry: 10000,
+                        }
+                    }
+
                     return {
-                        data: JSON.stringify(spike),
-                        id: Date.now().toString(),
-                        type: 'spike',
+                        data: JSON.stringify({ type: 'heartbeat', timestamp: Date.now() }),
+                        type: 'heartbeat',
+                        retry: 10000,
+                    }
+                } catch (error) {
+                    console.error(`[SSE] Error fetching error spikes for appId ${appId}:`, error)
+                    return {
+                        data: JSON.stringify({ type: 'heartbeat', timestamp: Date.now(), error: true }),
+                        type: 'heartbeat',
                         retry: 10000,
                     }
                 }
-
-                return {
-                    data: JSON.stringify({ type: 'heartbeat', timestamp: Date.now() }),
-                    type: 'heartbeat',
-                    retry: 10000,
-                }
+            }),
+            finalize(() => {
+                console.log(`[SSE] Error spikes stream connection closed for appId: ${appId}`)
             })
         )
     }
@@ -51,20 +63,32 @@ export class ErrorAnalyticsStreamController {
     @ApiQuery({ name: 'fingerprint', required: false })
     streamErrorTrends(@Query('appId') appId: string, @Query('fingerprint') fingerprint?: string): Observable<any> {
         return interval(10000).pipe(
-            map(async () => {
-                const trends = await this.errorTrendsService.getErrorTrends({
-                    appId,
-                    fingerprint,
-                    window: 'hour',
-                    limit: 24,
-                })
+            switchMap(async () => {
+                try {
+                    const trends = await this.errorTrendsService.getErrorTrends({
+                        appId,
+                        fingerprint,
+                        window: 'hour',
+                        limit: 24,
+                    })
 
-                return {
-                    data: JSON.stringify(trends),
-                    id: Date.now().toString(),
-                    type: 'trend_update',
-                    retry: 10000,
+                    return {
+                        data: JSON.stringify(trends),
+                        id: Date.now().toString(),
+                        type: 'trend_update',
+                        retry: 10000,
+                    }
+                } catch (error) {
+                    console.error(`[SSE] Error fetching error trends for appId ${appId}:`, error)
+                    return {
+                        data: JSON.stringify({ type: 'heartbeat', timestamp: Date.now(), error: true }),
+                        type: 'heartbeat',
+                        retry: 10000,
+                    }
                 }
+            }),
+            finalize(() => {
+                console.log(`[SSE] Error trends stream connection closed for appId: ${appId}, fingerprint: ${fingerprint || 'all'}`)
             })
         )
     }

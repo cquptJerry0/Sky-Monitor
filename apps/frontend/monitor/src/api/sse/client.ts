@@ -38,10 +38,19 @@ export function createSSEConnection(endpoint: string, options: SSEOptions) {
         onmessage(event) {
             try {
                 const data = JSON.parse(event.data)
+
+                // 忽略心跳消息
+                if (data.type === 'heartbeat') {
+                    console.log('[SSE] Heartbeat received:', data.timestamp)
+                    return
+                }
+
                 options.onMessage(data)
                 retryCount = 0 // 重置重试计数
             } catch (error) {
                 console.error('SSE parse error:', error, 'raw data:', event.data)
+                // 通知错误处理器
+                options.onError?.(error instanceof Error ? error : new Error('SSE parse error'))
             }
         },
 
@@ -55,11 +64,14 @@ export function createSSEConnection(endpoint: string, options: SSEOptions) {
                 retryCount++
                 console.log(`SSE reconnecting... (${retryCount}/${SSE_CONFIG.MAX_RETRIES})`)
                 return SSE_CONFIG.RETRY_DELAY
-            } else {
-                console.error('SSE max retries exceeded')
-                controller.abort()
-                throw new Error('SSE max retries exceeded')
             }
+
+            // 达到最大重试次数，关闭连接
+            console.error('SSE max retries exceeded')
+            controller.abort()
+            options.onClose?.()
+            // 返回 undefined 表示不再重试
+            return undefined
         },
 
         // 连接打开

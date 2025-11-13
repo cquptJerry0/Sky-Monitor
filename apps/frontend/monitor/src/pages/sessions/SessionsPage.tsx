@@ -28,7 +28,7 @@ export default function SessionsPage() {
 
     // 查询会话统计
     const { data: stats, isLoading: statsLoading } = useSessionStats({
-        appId: currentApp?.appId || null,
+        appId: currentApp?.appId || '',
         timeWindow,
     })
 

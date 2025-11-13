@@ -1,4 +1,4 @@
-import { Integration, captureEvent } from '@sky-monitor/monitor-sdk-core'
+import { Integration, captureEvent, getChinaTimestamp } from '@sky-monitor/monitor-sdk-core'
 import {
     collectResourceTiming,
     observeResourceTiming,
@@ -171,7 +171,7 @@ export class ResourceTimingIntegration implements Integration {
                 type: 'performance',
                 category: 'resourceTiming',
                 name: 'resource-summary',
-                timestamp: new Date().toISOString(),
+                timestamp: getChinaTimestamp(),
                 extra: {
                     summary: report.summary,
                 },
@@ -194,7 +194,7 @@ export class ResourceTimingIntegration implements Integration {
                 type: 'performance',
                 category: 'resourceTiming',
                 name: 'resources',
-                timestamp: new Date().toISOString(),
+                timestamp: getChinaTimestamp(),
                 extra: {
                     resources: resourcesToReport,
                     totalCount: report.resources.length,
@@ -225,7 +225,7 @@ export class ResourceTimingIntegration implements Integration {
                         type: 'performance',
                         category: 'resourceTiming',
                         name: 'resource',
-                        timestamp: new Date().toISOString(),
+                        timestamp: getChinaTimestamp(),
                         extra: {
                             resource,
                         },

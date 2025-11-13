@@ -65,17 +65,7 @@ export default function UserProfilePage() {
                             <div>
                                 <div className="text-sm font-medium text-muted-foreground">创建时间</div>
                                 <div className="text-base">
-                                    {user.createdAt ? format(new Date(user.createdAt), 'yyyy-MM-dd HH:mm:ss', { locale: zhCN }) : '-'}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex items-start gap-3">
-                            <Calendar className="w-5 h-5 text-muted-foreground mt-0.5" />
-                            <div>
-                                <div className="text-sm font-medium text-muted-foreground">更新时间</div>
-                                <div className="text-base">
-                                    {user.updatedAt ? format(new Date(user.updatedAt), 'yyyy-MM-dd HH:mm:ss', { locale: zhCN }) : '-'}
+                                    {user.created_at ? format(new Date(user.created_at), 'yyyy-MM-dd HH:mm:ss', { locale: zhCN }) : '-'}
                                 </div>
                             </div>
                         </div>

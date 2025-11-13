@@ -43,12 +43,12 @@ export class DeduplicationIntegration implements Integration {
      * 事件发送前处理
      */
     beforeSend(event: MonitoringEvent): MonitoringEvent | null {
-        // 只对错误类事件去重
-        if (!isErrorEvent(event)) {
+        // 对错误类事件、Web Vitals 事件、Performance 事件和 Message 事件去重
+        if (!isErrorEvent(event) && event.type !== 'webVital' && event.type !== 'performance' && event.type !== 'message') {
             return event
         }
 
-        const fingerprint = this.generateFingerprint(event)
+        const fingerprint = this.generateEventFingerprint(event)
         const now = Date.now()
 
         // 检查缓存
@@ -65,7 +65,7 @@ export class DeduplicationIntegration implements Integration {
             cached.timestamp = now
             cached.count = 1
         } else {
-            // 新错误，添加到缓存
+            // 新事件，添加到缓存
             this.addToCache(fingerprint, now)
         }
 
@@ -76,6 +76,94 @@ export class DeduplicationIntegration implements Integration {
         }
 
         return event
+    }
+
+    /**
+     * 生成事件指纹（统一入口）
+     */
+    private generateEventFingerprint(event: MonitoringEvent): string {
+        if (isErrorEvent(event)) {
+            // 检查是否是 HTTP 错误
+            if ((event as any).httpError) {
+                return this.generateHttpErrorFingerprint(event)
+            }
+            return this.generateFingerprint(event)
+        } else if (event.type === 'webVital') {
+            return this.generateWebVitalFingerprint(event)
+        } else if (event.type === 'performance') {
+            return this.generatePerformanceFingerprint(event)
+        } else if (event.type === 'message') {
+            return this.generateMessageFingerprint(event)
+        }
+        return ''
+    }
+
+    /**
+     * 生成 HTTP 错误指纹
+     * 基于：method + url + status
+     */
+    private generateHttpErrorFingerprint(event: MonitoringEvent): string {
+        const httpError = (event as any).httpError
+        if (!httpError) {
+            return ''
+        }
+
+        // 标准化 URL（移除查询参数、哈希、动态 ID）
+        const normalizedUrl = this.normalizeUrl(httpError.url)
+
+        const parts = ['http', httpError.method, normalizedUrl, String(httpError.status)]
+
+        return this.hash(parts.join('|'))
+    }
+
+    /**
+     * 标准化 URL
+     * 移除动态部分，保留路径结构
+     */
+    private normalizeUrl(url: string): string {
+        return url
+            .replace(/\?.*$/g, '') // 移除查询参数
+            .replace(/#.*$/g, '') // 移除哈希
+            .replace(/\/\d+/g, '/:id') // 将数字 ID 替换为 :id
+            .replace(/\/[a-f0-9]{8,}/g, '/:hash') // 将长哈希替换为 :hash
+            .replace(/https?:\/\/[^/]+/g, '') // 移除域名，保留路径
+            .substring(0, 200) // 限制长度
+    }
+
+    /**
+     * 生成 Message 指纹
+     * 基于：消息内容
+     */
+    private generateMessageFingerprint(event: MonitoringEvent): string {
+        if (event.type !== 'message') {
+            return ''
+        }
+        const message = this.normalizeMessage(event.message || '')
+        return this.hash(`message|${message}`)
+    }
+
+    /**
+     * 生成 Web Vital 指纹
+     * 基于：指标名称 + 路径
+     */
+    private generateWebVitalFingerprint(event: MonitoringEvent): string {
+        if (event.type !== 'webVital') {
+            return ''
+        }
+        const parts = [event.type, event.name, event.path]
+        return this.hash(parts.join('|'))
+    }
+
+    /**
+     * 生成 Performance 事件指纹
+     * 基于：事件类型 + 分类 + 名称
+     */
+    private generatePerformanceFingerprint(event: MonitoringEvent): string {
+        if (event.type !== 'performance') {
+            return ''
+        }
+        const parts = [event.type, event.category, event.name]
+        return this.hash(parts.join('|'))
     }
 
     /**

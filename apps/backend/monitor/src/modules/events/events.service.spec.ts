@@ -278,7 +278,7 @@ describe('EventsService', () => {
     })
 
     describe('getSamplingStats', () => {
-        it('应该返回采样率统计', async () => {
+        it('应该返回聚合后的采样率统计', async () => {
             const mockData = {
                 data: [
                     { event_type: 'error', avg_rate: 1.0, sampled_count: 100, estimated_total: 100 },
@@ -292,10 +292,32 @@ describe('EventsService', () => {
 
             const result = await service.getSamplingStats('test-app')
 
-            expect(result.data).toEqual(mockData.data)
+            // 验证返回格式: { sampled, total, rate }
+            expect(result).toHaveProperty('sampled')
+            expect(result).toHaveProperty('total')
+            expect(result).toHaveProperty('rate')
+
+            // 验证计算结果
+            expect(result.sampled).toBe(130) // 100 + 30
+            expect(result.total).toBe(200) // Math.round(100 + 100)
+            expect(result.rate).toBeCloseTo(0.65) // 130 / 200
         })
 
-        it('应该按事件类型分组', async () => {
+        it('应该处理空数据', async () => {
+            mockClickhouseClient.query.mockResolvedValue({
+                json: vi.fn().mockResolvedValue({ data: [] }),
+            })
+
+            const result = await service.getSamplingStats('test-app')
+
+            expect(result).toEqual({
+                sampled: 0,
+                total: 0,
+                rate: 0,
+            })
+        })
+
+        it('应该按事件类型分组查询', async () => {
             mockClickhouseClient.query.mockResolvedValue({
                 json: vi.fn().mockResolvedValue({ data: [] }),
             })
