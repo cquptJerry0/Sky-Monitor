@@ -14,42 +14,70 @@ export const ReplayPlayer: React.FC<ReplayPlayerProps> = ({ events, width = 1024
     const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
-        if (!containerRef.current) return
+        console.log('[ReplayPlayer] useEffect triggered', {
+            hasContainer: !!containerRef.current,
+            eventsLength: events.length,
+            eventsType: Array.isArray(events) ? 'array' : typeof events,
+        })
+
+        if (!containerRef.current) {
+            console.log('[ReplayPlayer] No container ref')
+            return
+        }
         if (events.length === 0) {
+            console.log('[ReplayPlayer] No events')
             setError('没有录制的事件')
             return
         }
 
         try {
+            // 调试：打印第一个事件
+            console.log('[ReplayPlayer] First event:', events[0])
+            console.log('[ReplayPlayer] Total events:', events.length)
+            console.log(
+                '[ReplayPlayer] First 3 event types:',
+                events.slice(0, 3).map(e => e.type)
+            )
+            console.log('[ReplayPlayer] First event has data:', !!events[0].data)
+            console.log('[ReplayPlayer] First event has timestamp:', !!events[0].timestamp)
+            console.log('[ReplayPlayer] First event data keys:', events[0].data ? Object.keys(events[0].data) : 'no data')
+            console.log('[ReplayPlayer] First event data.node:', events[0].data?.node ? 'exists' : 'missing')
+
             // 清空容器
             if (containerRef.current) {
                 containerRef.current.innerHTML = ''
             }
 
             // 创建新的播放器
+            console.log('[ReplayPlayer] Creating rrwebPlayer...')
             playerRef.current = new rrwebPlayer({
                 target: containerRef.current,
                 props: {
                     events,
                     width,
                     height,
-                    autoPlay: false,
+                    autoPlay: true,
                     showController: true,
                     speedOption: [1, 2, 4, 8],
-                    skipInactive: true,
-                    showWarning: false,
+                    skipInactive: false,
+                    showWarning: true,
                 },
             })
+            console.log('[ReplayPlayer] rrwebPlayer created successfully')
 
             setError(null)
         } catch (err) {
+            console.error('[ReplayPlayer] Error:', err)
             setError(`播放器初始化失败: ${err instanceof Error ? err.message : String(err)}`)
         }
 
         return () => {
+            console.log('[ReplayPlayer] Cleanup')
+            // 保存 container 引用，避免 cleanup 时 ref 已经改变
+            const container = containerRef.current
             // rrweb-player 没有 destroy 方法,直接清空容器
-            if (containerRef.current) {
-                containerRef.current.innerHTML = ''
+            if (container) {
+                container.innerHTML = ''
             }
             playerRef.current = null
         }

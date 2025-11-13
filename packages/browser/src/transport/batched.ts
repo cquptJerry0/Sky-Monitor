@@ -36,21 +36,15 @@ export class BatchedTransport extends BaseTransport {
      */
     async send(data: Record<string, unknown>): Promise<void> {
         this.queue.push(data)
-        console.log(`[BatchedTransport] Event added to queue. Queue size: ${this.queue.length}/${this.batchSize}`)
 
         // 大小触发：队列达到批次大小且当前没有在 flush
         if (this.queue.length >= this.batchSize && !this.isFlushing) {
-            console.log(`[BatchedTransport] Queue size reached ${this.batchSize}, flushing...`)
             // 不等待 flush 完成，避免阻塞后续事件
-
             this.flush()
         }
         // 时间触发：启动定时器
         else if (this.timer === null && !this.isFlushing) {
-            console.log(`[BatchedTransport] Starting flush timer (${this.flushInterval}ms)`)
             this.timer = window.setTimeout(() => {
-                console.log(`[BatchedTransport] Timer triggered, flushing ${this.queue.length} events...`)
-
                 this.flush()
             }, this.flushInterval) as unknown as number
         }
@@ -89,10 +83,8 @@ export class BatchedTransport extends BaseTransport {
                         timestamp: getChinaTimestamp(),
                     })
 
-                    console.log(`[BatchedTransport] Successfully flushed ${batchSize} events`)
                     this.triggerSuccess()
                 } catch (error) {
-                    console.error(`[BatchedTransport] Failed to flush ${batchSize} events:`, error)
                     // 失败时，将事件放回队列头部
                     this.queue = [...eventsToSend, ...this.queue]
                     this.triggerError(error instanceof Error ? error : new Error(String(error)))
@@ -111,8 +103,6 @@ export class BatchedTransport extends BaseTransport {
             // flush 完成后，检查是否有新事件进入队列
             // 如果有，且达到批次大小，则触发新的 flush
             if (this.queue.length >= this.batchSize) {
-                console.log(`[BatchedTransport] New events added during flush, triggering another flush...`)
-
                 this.flush()
             }
         }

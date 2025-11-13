@@ -30,6 +30,9 @@ export class Monitoring {
     private appId?: string
     private environment?: string
 
+    // 全局递归防护: 防止 SDK 错误被重复捕获导致无限循环
+    private static isProcessingEvent = false
+
     /**
      * 添加集成
      */
@@ -99,37 +102,51 @@ export class Monitoring {
      *
      * @description
      * 核心事件处理流程：
-     * 1. 应用全局 Scope 上下文（用户信息、标签、面包屑等）
-     * 2. 附加 release、appId、environment 等元数据
-     * 3. 通过 Integration 管道处理（去重、采样、过滤等）
-     * 4. 发送到 Transport 层
+     * 1. 全局递归防护（防止 SDK 错误导致无限循环）
+     * 2. 应用全局 Scope 上下文（用户信息、标签、面包屑等）
+     * 3. 附加 release、appId、environment 等元数据
+     * 4. 通过 Integration 管道处理（去重、采样、过滤等）
+     * 5. 发送到 Transport 层
      */
     async captureEvent(event: MonitoringEvent): Promise<void> {
-        // 应用 Scope 上下文
-        let enrichedEvent = this.globalScope.applyToEvent(event)
-
-        // 附加 release、appId、environment 元数据
-        // 这些信息用于后端识别应用、版本和环境，以便：
-        // - 匹配正确的 SourceMap 文件
-        // - 按版本和环境过滤事件
-        // - 进行版本间的对比分析
-        if (this.release) {
-            enrichedEvent = { ...enrichedEvent, release: this.release }
-        }
-        if (this.appId) {
-            enrichedEvent = { ...enrichedEvent, appId: this.appId }
-        }
-        if (this.environment) {
-            enrichedEvent = { ...enrichedEvent, environment: this.environment }
+        // 全局递归防护: 防止无限循环
+        // 如果正在处理事件,直接返回,避免 SDK 错误被重复捕获
+        if (Monitoring.isProcessingEvent) {
+            console.warn('[Sky-Monitor] Recursive event detected in captureEvent, skipping to prevent infinite loop')
+            return
         }
 
-        // 通过管道处理
-        const processed = await this.pipeline.execute(enrichedEvent)
+        try {
+            Monitoring.isProcessingEvent = true
 
-        if (processed && this.transport) {
-            // 不await，允许批量传输异步处理
+            // 应用 Scope 上下文
+            let enrichedEvent = this.globalScope.applyToEvent(event)
 
-            this.transport.send(processed as unknown as Record<string, unknown>)
+            // 附加 release、appId、environment 元数据
+            // 这些信息用于后端识别应用、版本和环境，以便：
+            // - 匹配正确的 SourceMap 文件
+            // - 按版本和环境过滤事件
+            // - 进行版本间的对比分析
+            if (this.release) {
+                enrichedEvent = { ...enrichedEvent, release: this.release }
+            }
+            if (this.appId) {
+                enrichedEvent = { ...enrichedEvent, appId: this.appId }
+            }
+            if (this.environment) {
+                enrichedEvent = { ...enrichedEvent, environment: this.environment }
+            }
+
+            // 通过管道处理
+            const processed = await this.pipeline.execute(enrichedEvent)
+
+            if (processed && this.transport) {
+                // 不await，允许批量传输异步处理
+
+                this.transport.send(processed as unknown as Record<string, unknown>)
+            }
+        } finally {
+            Monitoring.isProcessingEvent = false
         }
     }
 

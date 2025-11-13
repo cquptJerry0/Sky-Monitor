@@ -1,14 +1,14 @@
 {
     "extends": "./tsconfig.json",
-
+    "include": ["src/**/*"],
+    "exclude": ["src/**/*.test.ts", "src/**/__tests__/**", "node_modules", "build"],
     "compilerOptions": {
         "declaration": true,
         "declarationMap": true,
         "emitDeclarationOnly": true,
         "outDir": "build/types",
-        "declarationDir": "build/types",
+        "skipLibCheck": true,
         "noEmit": false,
         "emitDecoratorMetadata": false
-    },
-    "exclude": ["build"]
+    }
 }

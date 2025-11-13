@@ -14,6 +14,7 @@ export class EventFieldMapper {
             app_id: string
             user_agent: string
             timestamp: string
+            created_at: string
         },
         eventId: string
     ) {
@@ -184,6 +185,7 @@ export class EventFieldMapper {
                 app_id: appId,
                 user_agent: userAgent,
                 timestamp,
+                created_at: fallbackTimestamp, // 显式设置 created_at 为服务器接收时间（UTC+8）
             }
 
             return this.mapToClickhouse(event, commonFields, generateId())

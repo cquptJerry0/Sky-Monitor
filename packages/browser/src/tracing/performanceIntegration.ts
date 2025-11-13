@@ -200,10 +200,9 @@ export class PerformanceIntegration implements Integration {
      * 注意：网络错误（status: 0）由 HttpErrorIntegration 处理
      * PerformanceIntegration 只负责性能监控，不上报错误
      */
-    private handleError(request: RequestInfo, error: Error): void {
+    private handleError(_request: RequestInfo, _error: Error): void {
         // 网络错误由 HttpErrorIntegration 处理，避免重复上报
         // PerformanceIntegration 只负责性能数据收集
-        console.log(`[PerformanceIntegration] Network error detected, delegating to HttpErrorIntegration: ${request.url}`)
     }
 
     /**

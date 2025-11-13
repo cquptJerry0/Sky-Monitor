@@ -67,6 +67,15 @@ export class HttpErrorIntegration implements Integration {
     }
 
     /**
+     * 判断是否是 SDK 自己的请求
+     * 防止捕获 SDK 上报请求的错误,导致无限循环
+     */
+    private isSdkRequest(url: string): boolean {
+        const sdkEndpoints = ['/api/monitoring/', '/batch', '/critical', '/replay', '/session']
+        return sdkEndpoints.some(endpoint => url.includes(endpoint))
+    }
+
+    /**
      * 劫持 fetch API
      */
     private instrumentFetch(): void {
@@ -80,6 +89,11 @@ export class HttpErrorIntegration implements Integration {
             const url = typeof args[0] === 'string' ? args[0] : args[0] instanceof Request ? args[0].url : String(args[0])
             const options = args[1] || {}
             const method = options.method || 'GET'
+
+            // 过滤 SDK 自己的请求,防止无限循环
+            if (this.isSdkRequest(url)) {
+                return originalFetch(...args)
+            }
 
             return originalFetch(...args)
                 .then(response => {
@@ -167,12 +181,18 @@ export class HttpErrorIntegration implements Integration {
         const captureHttpError = this.captureHttpError.bind(this)
         const sanitizeHeaders = this.sanitizeHeaders.bind(this)
         const extractXHRResponseHeaders = this.extractXHRResponseHeaders.bind(this)
+        const isSdkRequest = this.isSdkRequest.bind(this)
 
         XMLHttpRequest.prototype.send = function (body?: Document | XMLHttpRequestBodyInit | null) {
             const xhr = this as any
             const monitorData = xhr.__sky_monitor__
 
             if (!monitorData) {
+                return originalXHRSend.call(this, body)
+            }
+
+            // 过滤 SDK 自己的请求,防止无限循环
+            if (isSdkRequest(monitorData.url)) {
                 return originalXHRSend.call(this, body)
             }
 

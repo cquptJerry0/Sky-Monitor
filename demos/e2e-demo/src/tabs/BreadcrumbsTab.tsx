@@ -3,8 +3,10 @@ import { TestResults } from '../components/TestResults'
 import { type TestResult } from '../types'
 import { addBreadcrumb, getSDKClient } from '../sdk'
 import { ReplayPlayer } from '../components/ReplayPlayer'
+import { useApp } from '../contexts/AppContext'
 
 export const BreadcrumbsTab: React.FC = () => {
+    const { appId } = useApp()
     const [results, setResults] = useState<TestResult[]>([])
     const [currentStep, setCurrentStep] = useState(0)
     const [replayEvents, setReplayEvents] = useState<any[]>([])
@@ -123,29 +125,80 @@ export const BreadcrumbsTab: React.FC = () => {
         }, 1000)
     }
 
-    const loadReplayEvents = () => {
+    const loadReplayEvents = async () => {
         const client = getSDKClient()
         if (!client) {
             addResult('error', 'SDK 未初始化')
             return
         }
 
-        const replayIntegration = client.getIntegration('SessionReplay')
-        if (!replayIntegration) {
-            addResult('error', 'SessionReplayIntegration 未启用')
-            return
+        addResult('info', '正在从 DSN 服务器获取 Replay 数据...')
+
+        try {
+            // 从 DSN 服务器获取最新的 Replay 数据
+            // 添加时间戳参数防止缓存
+            const timestamp = Date.now()
+            const response = await fetch(`http://localhost:8080/api/monitoring/${appId}/replay?t=${timestamp}`, {
+                cache: 'no-cache',
+                headers: {
+                    'Cache-Control': 'no-cache',
+                },
+            })
+
+            if (!response.ok) {
+                addResult('error', `获取 Replay 数据失败: HTTP ${response.status}`)
+                return
+            }
+
+            const data = await response.json()
+
+            console.log('[BreadcrumbsTab] Received replay data:', {
+                count: data.length,
+                replays: data.map((r: any) => ({
+                    replayId: r.replayId,
+                    timestamp: r.timestamp,
+                    eventCount: r.metadata?.eventCount,
+                    trigger: r.trigger,
+                })),
+            })
+
+            if (!data || data.length === 0) {
+                addResult('error', '暂无 Replay 数据,请先触发错误')
+                return
+            }
+
+            // 获取最新的 Replay 事件（DSN 返回的数据按时间倒序，第一个是最新的）
+            const latestReplay = data[0]
+            const events = latestReplay.events || []
+            const metadata = latestReplay.metadata || {}
+
+            console.log('[BreadcrumbsTab] Latest replay:', {
+                replayId: latestReplay.replayId,
+                timestamp: latestReplay.timestamp,
+                eventCount: metadata.eventCount,
+                eventsLength: events.length,
+                trigger: latestReplay.trigger,
+            })
+
+            // 检查 events 是否为空
+            if (!events || events.length === 0) {
+                addResult('error', 'Replay 数据为空，可能录制失败')
+                return
+            }
+
+            setReplayEvents(events)
+            setShowReplay(true)
+
+            addResult('success', `已从 DSN 获取 Replay 数据`)
+            addResult('info', `Replay ID: ${latestReplay.replayId}`)
+            addResult('info', `事件数量: ${metadata.eventCount || events.length}`)
+            addResult('info', `录制时长: ${metadata.duration || 0}秒`)
+            addResult('info', `触发方式: ${latestReplay.trigger || 'unknown'}`)
+            addResult('info', `时间戳: ${latestReplay.timestamp}`)
+            addResult('success', '请查看下方播放器')
+        } catch (error) {
+            addResult('error', `获取 Replay 数据失败: ${error instanceof Error ? error.message : String(error)}`)
         }
-
-        const events = replayIntegration.getRecordedEvents()
-        const status = replayIntegration.getRecordingStatus()
-
-        setReplayEvents(events)
-        setShowReplay(true)
-
-        addResult('info', `录制状态: ${status.isRecording ? '录制中' : '未录制'}`)
-        addResult('info', `事件数量: ${status.eventsCount}`)
-        addResult('info', `录制时长: ${status.duration}秒`)
-        addResult('success', '已加载 Replay 事件，请查看下方播放器')
     }
 
     return (

@@ -22,13 +22,21 @@ export class MonitoringService {
         @InjectQueue('sourcemap-parser') private parseQueue: Queue
     ) {}
 
+    /**
+     * 格式化时间戳为中国时区 (UTC+8)
+     * 格式: YYYY-MM-DD HH:mm:ss
+     */
     private formatTimestamp(date: Date): string {
-        const year = date.getUTCFullYear()
-        const month = String(date.getUTCMonth() + 1).padStart(2, '0')
-        const day = String(date.getUTCDate()).padStart(2, '0')
-        const hours = String(date.getUTCHours()).padStart(2, '0')
-        const minutes = String(date.getUTCMinutes()).padStart(2, '0')
-        const seconds = String(date.getUTCSeconds()).padStart(2, '0')
+        // 转换为中国时区 (UTC+8)
+        const chinaTime = new Date(date.getTime() + 8 * 60 * 60 * 1000)
+
+        const year = chinaTime.getUTCFullYear()
+        const month = String(chinaTime.getUTCMonth() + 1).padStart(2, '0')
+        const day = String(chinaTime.getUTCDate()).padStart(2, '0')
+        const hours = String(chinaTime.getUTCHours()).padStart(2, '0')
+        const minutes = String(chinaTime.getUTCMinutes()).padStart(2, '0')
+        const seconds = String(chinaTime.getUTCSeconds()).padStart(2, '0')
+
         return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
     }
 
@@ -93,6 +101,7 @@ export class MonitoringService {
                 path: event.path || '',
                 user_agent: userAgent || event.userAgent || '',
                 timestamp: this.formatTimestamp(new Date()),
+                created_at: this.formatTimestamp(new Date()), // 显式设置 created_at 为 UTC+8
 
                 // 错误相关字段
                 error_message: event.message || '',
@@ -304,12 +313,14 @@ export class MonitoringService {
             const errorEventId = this.generateEventId()
             // 使用事件自己的 timestamp，如果没有则使用当前时间
             const timestamp = error.timestamp || this.formatTimestamp(new Date())
+            const createdAt = this.formatTimestamp(new Date())
             const errorData = EventFieldMapper.mapToClickhouse(
                 error,
                 {
                     app_id: appId,
                     user_agent: userAgent || '',
                     timestamp,
+                    created_at: createdAt,
                 },
                 errorEventId
             )
@@ -419,12 +430,14 @@ export class MonitoringService {
             const eventId = this.generateEventId()
             // 使用事件自己的 timestamp，如果没有则使用当前时间
             const timestamp = event.timestamp || this.formatTimestamp(new Date())
+            const createdAt = this.formatTimestamp(new Date())
             const eventData = EventFieldMapper.mapToClickhouse(
                 event,
                 {
                     app_id: appId,
                     user_agent: userAgent || '',
                     timestamp,
+                    created_at: createdAt,
                 },
                 eventId
             )
@@ -497,7 +510,8 @@ export class MonitoringService {
 
             // 插入到 session_replays 表
             // 使用事件自己的 timestamp，如果没有则使用当前时间
-            const timestamp = replayData.timestamp || this.formatTimestamp(new Date())
+            const now = this.formatTimestamp(new Date())
+            const timestamp = replayData.timestamp || now
             const replayRecord = {
                 id: this.generateEventId(),
                 app_id: appId,
@@ -511,6 +525,7 @@ export class MonitoringService {
                 compressed_size: compressedSize,
                 trigger: replayData.trigger || 'manual',
                 timestamp,
+                created_at: now, // 显式设置 created_at 为 UTC+8
             }
 
             await this.clickhouseClient.insert({
@@ -523,6 +538,209 @@ export class MonitoringService {
             return { success: true, message: 'Session Replay received', replayId }
         } catch (error) {
             this.logger.error(`Failed to process Session Replay: ${error.message}`, error.stack)
+            throw error
+        }
+    }
+
+    /**
+     * 获取 Session Replay 数据
+     */
+    async getSessionReplays(appId: string, limit: number = 10) {
+        try {
+            const safeLimit = Math.min(Math.max(1, limit), 100)
+            const query = `
+                SELECT
+                    id,
+                    replay_id as replayId,
+                    error_event_id as errorEventId,
+                    events,
+                    event_count as eventCount,
+                    duration,
+                    compressed,
+                    original_size as originalSize,
+                    compressed_size as compressedSize,
+                    trigger,
+                    timestamp
+                FROM session_replays
+                WHERE app_id = {appId:String}
+                ORDER BY timestamp DESC
+                LIMIT {limit:UInt32}
+            `
+
+            const result = await this.clickhouseClient.query({
+                query,
+                query_params: { appId, limit: safeLimit },
+            })
+            const data = await result.json()
+
+            this.logger.log(`Retrieved ${data.data.length} session replays for app: ${appId}`)
+
+            // 打印每条记录的时间戳，方便调试
+            if (data.data.length > 0) {
+                this.logger.log(`Replay timestamps: ${data.data.map((row: any) => `${row.replayId}: ${row.timestamp}`).join(', ')}`)
+            }
+
+            // 解析 events JSON 字符串
+            const replays = data.data.map((row: any) => {
+                let events = []
+                try {
+                    events = JSON.parse(row.events || '[]')
+                } catch (error) {
+                    this.logger.error(`Failed to parse replay events: ${error.message}`)
+                }
+
+                return {
+                    replayId: row.replayId,
+                    errorEventId: row.errorEventId,
+                    events,
+                    metadata: {
+                        eventCount: row.eventCount,
+                        duration: row.duration,
+                        compressed: row.compressed === 1,
+                        originalSize: row.originalSize,
+                        compressedSize: row.compressedSize,
+                    },
+                    trigger: row.trigger,
+                    timestamp: row.timestamp,
+                }
+            })
+
+            return replays
+        } catch (error) {
+            this.logger.error(`Failed to get session replays: ${error.message}`, error.stack)
+            throw error
+        }
+    }
+
+    /**
+     * 获取错误事件
+     */
+    async getErrors(appId: string, limit: number = 10) {
+        try {
+            const safeLimit = Math.min(Math.max(1, limit), 100)
+            const query = `
+                SELECT
+                    id,
+                    event_type as type,
+                    event_name as name,
+                    error_message as message,
+                    error_stack as stack,
+                    error_lineno as lineno,
+                    error_colno as colno,
+                    error_fingerprint as errorFingerprint,
+                    path,
+                    user_agent as userAgent,
+                    timestamp,
+                    device_browser as deviceBrowser,
+                    device_browser_version as deviceBrowserVersion,
+                    device_os as deviceOs,
+                    device_os_version as deviceOsVersion,
+                    device_type as deviceType,
+                    device_screen as deviceScreen,
+                    network_type as networkType,
+                    network_rtt as networkRtt,
+                    framework,
+                    component_name as componentName,
+                    component_stack as componentStack,
+                    http_url as httpUrl,
+                    http_method as httpMethod,
+                    http_status as httpStatus,
+                    http_duration as httpDuration,
+                    resource_url as resourceUrl,
+                    resource_type as resourceType,
+                    event_data as eventData
+                FROM monitor_events
+                WHERE app_id = {appId:String}
+                    AND event_type = 'error'
+                ORDER BY timestamp DESC
+                LIMIT {limit:UInt32}
+            `
+
+            const result = await this.clickhouseClient.query({
+                query,
+                query_params: { appId, limit: safeLimit },
+            })
+            const data = await result.json()
+
+            // 格式化返回数据
+            const errors = data.data.map((row: any) => {
+                const error: any = {
+                    id: row.id,
+                    type: row.type,
+                    name: row.name,
+                    message: row.message,
+                    stack: row.stack,
+                    lineno: row.lineno,
+                    colno: row.colno,
+                    errorFingerprint: row.errorFingerprint,
+                    path: row.path,
+                    userAgent: row.userAgent,
+                    timestamp: row.timestamp,
+                    framework: row.framework,
+                }
+
+                // 添加设备信息
+                if (row.deviceBrowser) {
+                    error.device = {
+                        browser: row.deviceBrowser,
+                        browserVersion: row.deviceBrowserVersion,
+                        os: row.deviceOs,
+                        osVersion: row.deviceOsVersion,
+                        deviceType: row.deviceType,
+                        screenResolution: row.deviceScreen,
+                    }
+                }
+
+                // 添加网络信息
+                if (row.networkType) {
+                    error.network = {
+                        effectiveType: row.networkType,
+                        rtt: row.networkRtt,
+                    }
+                }
+
+                // 添加组件信息
+                if (row.componentName) {
+                    error.componentName = row.componentName
+                    error.componentStack = row.componentStack
+                }
+
+                // 添加 HTTP 错误信息
+                if (row.httpUrl) {
+                    error.httpError = {
+                        url: row.httpUrl,
+                        method: row.httpMethod,
+                        status: row.httpStatus,
+                        duration: row.httpDuration,
+                    }
+                }
+
+                // 添加资源错误信息
+                if (row.resourceUrl) {
+                    error.resourceError = {
+                        url: row.resourceUrl,
+                        resourceType: row.resourceType,
+                    }
+                }
+
+                // 解析 event_data
+                if (row.eventData) {
+                    try {
+                        const eventData = JSON.parse(row.eventData)
+                        error.breadcrumbs = eventData.breadcrumbs
+                        error.user = eventData.user
+                        error.tags = eventData.tags
+                    } catch (e) {
+                        // 忽略解析错误
+                    }
+                }
+
+                return error
+            })
+
+            return errors
+        } catch (error) {
+            this.logger.error(`Failed to get errors: ${error.message}`, error.stack)
             throw error
         }
     }

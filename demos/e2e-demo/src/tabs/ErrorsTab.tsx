@@ -31,14 +31,27 @@ export const ErrorsTab: React.FC = () => {
 
     const testJavaScriptError = () => {
         addResult('info', '步骤 1: 触发 JavaScript 错误...')
+        const errorTime = Date.now()
+        addResult('info', `错误触发时间: ${new Date(errorTime).toLocaleTimeString()}.${errorTime % 1000}`)
+
         // 不要用 try-catch 包裹，让 SDK 的全局错误监听器捕获
         setTimeout(() => {
             // @ts-expect-error - Intentionally calling undefined function for testing
             undefinedFunction()
         }, 100)
+
         addResult('success', 'JavaScript 错误已触发')
         addResult('info', 'SDK 将自动捕获并上报到 /critical')
-        addResult('info', 'SessionReplay 将开始录制（触发 window.error 事件）')
+        addResult('info', 'SessionReplay 将在 10 秒后上报（错误前 + 错误后 10 秒）')
+
+        // 10 秒后检查上报状态
+        setTimeout(() => {
+            const uploadTime = Date.now()
+            const elapsed = Math.round((uploadTime - errorTime) / 1000)
+            addResult('info', `预计上报时间: ${new Date(uploadTime).toLocaleTimeString()}.${uploadTime % 1000}`)
+            addResult('info', `距离错误触发已过: ${elapsed} 秒`)
+        }, 10500)
+
         nextStep()
     }
 

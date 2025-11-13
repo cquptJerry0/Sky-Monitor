@@ -24,7 +24,11 @@ export class BrowserTransport extends BaseTransport {
             })
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`)
+                // 不抛出错误,只记录日志和触发回调
+                // 这样可以防止 Transport 错误被 ErrorsIntegration 捕获,导致无限循环
+                console.error(`[BrowserTransport] HTTP error! status: ${response.status}`)
+                this.triggerError(new Error(`HTTP error! status: ${response.status}`))
+                return
             }
 
             this.triggerSuccess()
@@ -39,9 +43,12 @@ export class BrowserTransport extends BaseTransport {
                 return this.send(data, retries + 1)
             }
 
-            // 重试次数用尽，触发错误回调
+            // 重试次数用尽,不抛出错误,只记录日志和触发回调
+            // 原则: Transport 层的职责是发送数据,失败时应该静默处理,而不是抛出错误
+            // 这样可以防止无限循环: Transport 错误 → ErrorsIntegration 捕获 → 再次上报 → 再次失败
+            console.error('[BrowserTransport] Request failed after retries:', error)
             this.triggerError(error)
-            throw error
+            return
         }
     }
 }

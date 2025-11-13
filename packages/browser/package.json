@@ -21,7 +21,7 @@
         "build:watch": "pnpm build:watch:transpile & pnpm build:watch:types",
         "build:watch:transpile": "tsup --watch",
         "build:watch:types": "tsc -p tsconfig.types.json --watch",
-        "build": "pnpm build:transpile && pnpm build:types",
+        "build": "pnpm build:transpile && pnpm build:types && node scripts/fix-types.js",
         "build:transpile": "tsup",
         "build:types": "tsc -p tsconfig.types.json",
         "clean": "rimraf build",

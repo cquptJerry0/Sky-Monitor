@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { TabNavigation } from './TabNavigation'
 import { OverviewTab } from '../tabs/OverviewTab'
 import { ErrorsTab } from '../tabs/ErrorsTab'
@@ -11,7 +11,6 @@ import { BatchTab } from '../tabs/BatchTab'
 import { OfflineTab } from '../tabs/OfflineTab'
 import { E2ETab } from '../tabs/E2ETab'
 import { type Tab, type TabId } from '../types'
-import { initializeSDK } from '../sdk'
 import { useApp } from '../contexts/AppContext'
 
 const tabs: Tab[] = [
@@ -29,18 +28,9 @@ const tabs: Tab[] = [
 
 export const AppContent = () => {
     const [activeTab, setActiveTab] = useState<TabId>('overview')
-    const [sdkInitialized, setSdkInitialized] = useState(false)
     const { appId } = useApp()
 
-    useEffect(() => {
-        initializeSDK(appId)
-            .then(() => {
-                setSdkInitialized(true)
-            })
-            .catch(() => {
-                // SDK initialization failed
-            })
-    }, [appId])
+    // SDK 已经在 main.tsx 中初始化，不需要在这里初始化
 
     const renderTabContent = () => {
         switch (activeTab) {
@@ -76,11 +66,7 @@ export const AppContent = () => {
                     <h1 className="text-3xl font-bold mb-2">Sky Monitor - E2E Test</h1>
                     <p className="text-gray-600">完整的 Integration 测试平台 - 覆盖所有 11 个 Integration</p>
                     <div className="mt-3 flex items-center gap-3">
-                        <span
-                            className={`px-3 py-1 text-sm font-medium ${sdkInitialized ? 'bg-black text-white' : 'bg-gray-300 text-gray-600'}`}
-                        >
-                            {sdkInitialized ? 'SDK 已初始化' : 'SDK 初始化中...'}
-                        </span>
+                        <span className="px-3 py-1 text-sm font-medium bg-black text-white">SDK 已初始化</span>
                         <span className="text-sm text-gray-500">App ID: {appId}</span>
                     </div>
                 </div>

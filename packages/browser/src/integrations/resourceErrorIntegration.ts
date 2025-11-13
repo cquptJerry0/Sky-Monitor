@@ -2,14 +2,13 @@ import { captureEvent, getCurrentClient, Integration } from '@sky-monitor/monito
 
 import { BrowserErrorEvent } from '../types/errorTypes'
 import { collectDeviceInfo, collectNetworkInfo } from '../utils/deviceInfo'
-import { generateErrorFingerprint, errorDeduplicator } from '../utils/errorFingerprint'
+import { generateErrorFingerprint } from '../utils/errorFingerprint'
 
 /**
  * 资源加载错误集成配置
  */
 export interface ResourceErrorIntegrationOptions {
     captureConsole?: boolean // 是否在控制台输出错误，默认 true
-    enableDeduplication?: boolean // 是否启用错误去重，默认 true
     resourceTypes?: Array<'img' | 'script' | 'link' | 'video' | 'audio'> // 监听的资源类型，默认全部
 }
 
@@ -26,7 +25,6 @@ export class ResourceErrorIntegration implements Integration {
     constructor(options: ResourceErrorIntegrationOptions = {}) {
         this.options = {
             captureConsole: options.captureConsole !== false,
-            enableDeduplication: options.enableDeduplication !== false,
             resourceTypes: options.resourceTypes || ['img', 'script', 'link', 'video', 'audio'],
         }
     }
@@ -79,11 +77,6 @@ export class ResourceErrorIntegration implements Integration {
 
         // 生成错误指纹
         const fingerprint = generateErrorFingerprint(url, `Resource failed: ${url}`, 'resource')
-
-        // 错误去重检查
-        if (this.options.enableDeduplication && !errorDeduplicator.shouldReport(fingerprint.hash)) {
-            return
-        }
 
         // 获取全局客户端实例，提取 release 和 appId
         // 这些信息对于后端非常重要：

@@ -109,71 +109,62 @@ export class SessionReplayTransport implements Transport {
     /**
      * 准备上传数据
      * 实现 gzip 压缩以减少数据量
+     *
+     * @param replayEvents - replay 事件对象数组，每个对象包含 replayId, events, metadata, trigger
      */
-    private preparePayload(events: any[]): any {
-        let eventsData: any = events
-        let compressed = false
-        let originalSize = 0
-        let compressedSize = 0
+    private preparePayload(replayEvents: any[]): any {
+        // 如果是单个 replay 事件，直接处理
+        if (replayEvents.length === 1) {
+            const replayEvent = replayEvents[0]
+            const rrwebEvents = replayEvent.events || []
 
-        // 压缩处理（如果启用）
-        if (this.options.compress) {
-            try {
-                // 序列化为 JSON 字符串
-                const jsonString = JSON.stringify(events)
-                originalSize = jsonString.length
+            let eventsData: any = rrwebEvents
+            let compressed = false
+            let originalSize = 0
+            let compressedSize = 0
 
-                // 使用 pako 进行 gzip 压缩
-                const compressedData = pako.gzip(jsonString)
+            // 压缩处理（如果启用）
+            if (this.options.compress) {
+                try {
+                    // 序列化为 JSON 字符串
+                    const jsonString = JSON.stringify(rrwebEvents)
+                    originalSize = jsonString.length
 
-                // 转换为 Base64 字符串（方便 JSON 传输）
-                const base64String = this.arrayBufferToBase64(compressedData)
-                compressedSize = base64String.length
+                    // 使用 pako 进行 gzip 压缩
+                    const compressedData = pako.gzip(jsonString)
 
-                eventsData = base64String
-                compressed = true
+                    // 转换为 Base64 字符串（方便 JSON 传输）
+                    const base64String = this.arrayBufferToBase64(compressedData)
+                    compressedSize = base64String.length
 
-                // 记录压缩率
-                const compressionRatio = ((1 - compressedSize / originalSize) * 100).toFixed(2)
-                console.log(`[SessionReplay] Compressed ${originalSize} bytes → ${compressedSize} bytes (${compressionRatio}% reduction)`)
-            } catch (error) {
-                // 使用 console.warn 而不是 console.error，避免触发错误监听
-                console.warn('[SessionReplay] Compression failed, sending uncompressed:', error)
-                eventsData = events
-                compressed = false
+                    eventsData = base64String
+                    compressed = true
+                } catch (error) {
+                    eventsData = rrwebEvents
+                    compressed = false
+                }
             }
+
+            const payload = {
+                replayId: replayEvent.replayId || `replay_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
+                events: eventsData,
+                metadata: {
+                    ...replayEvent.metadata,
+                    compressed,
+                    originalSize: compressed ? originalSize : replayEvent.metadata?.originalSize || 0,
+                    compressedSize: compressed ? compressedSize : 0,
+                },
+                trigger: replayEvent.trigger || 'manual',
+                timestamp: replayEvent.timestamp || new Date().toISOString(),
+            }
+
+            return payload
         }
 
-        // 提取第一个事件的数据（如果存在）
-        const firstEvent = events[0] || {}
-        const replayId = firstEvent.replayId || `replay_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
-        const trigger = firstEvent.trigger || 'manual'
-
-        // 计算 duration（最后一个事件的时间戳 - 第一个事件的时间戳）
-        let duration = 0
-        if (events.length > 0) {
-            const firstTimestamp = firstEvent.events?.[0]?.timestamp || Date.now()
-            const lastEvent = events[events.length - 1]
-            const lastEventData = lastEvent.events || []
-            const lastTimestamp = lastEventData[lastEventData.length - 1]?.timestamp || firstTimestamp
-            duration = Math.max(0, lastTimestamp - firstTimestamp)
-        }
-
-        const payload = {
-            replayId,
-            events: eventsData,
-            metadata: {
-                eventCount: events.length,
-                duration,
-                timestamp: new Date().toISOString(),
-                compressed,
-                originalSize,
-                compressedSize,
-            },
-            trigger,
-        }
-
-        return payload
+        // 如果是多个 replay 事件（批量），合并处理
+        // 这种情况比较少见，暂时简单处理：只发送第一个
+        console.warn('[SessionReplayTransport] Multiple replay events in buffer, only sending first one')
+        return this.preparePayload([replayEvents[0]])
     }
 
     /**
@@ -207,7 +198,9 @@ export class SessionReplayTransport implements Transport {
             })
 
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+                // 不抛出错误,只记录日志
+                console.error(`[SessionReplayTransport] HTTP ${response.status}: ${response.statusText}`)
+                return
             }
         } catch (error) {
             if (retries < (this.options.maxRetries ?? 3)) {
@@ -216,7 +209,10 @@ export class SessionReplayTransport implements Transport {
                 await new Promise(resolve => setTimeout(resolve, delay))
                 return this.uploadWithRetry(payload, retries + 1)
             }
-            throw error
+
+            // 重试次数用尽,不抛出错误,只记录日志
+            console.error('[SessionReplayTransport] Upload failed after retries:', error)
+            return
         }
     }
 

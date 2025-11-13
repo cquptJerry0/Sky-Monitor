@@ -1,4 +1,4 @@
-import { Body, Controller, Headers, Param, Post } from '@nestjs/common'
+import { Body, Controller, Get, Headers, Param, Post, Query } from '@nestjs/common'
 import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger'
 
 import { MonitoringEventDto } from './monitoring.dto'
@@ -77,5 +77,33 @@ export class MonitoringController {
 
         // Session Replay 需要特殊处理（压缩、存储到 S3 等）
         return await this.monitoringService.receiveSessionReplay(appId, replayData, userAgent)
+    }
+
+    /**
+     * 获取 Session Replay 数据
+     * GET /api/monitoring/:appId/replay
+     */
+    @Get(':appId/replay')
+    @ApiOperation({ summary: '获取 Session Replay 数据' })
+    @ApiParam({ name: 'appId', description: '应用ID' })
+    async getSessionReplays(@Param('appId') appId: string, @Query('limit') limit?: string) {
+        await this.monitoringService.validateAppId(appId)
+
+        const parsedLimit = limit ? parseInt(limit) : 10
+        return await this.monitoringService.getSessionReplays(appId, parsedLimit)
+    }
+
+    /**
+     * 获取错误事件
+     * GET /api/monitoring/:appId/errors
+     */
+    @Get(':appId/errors')
+    @ApiOperation({ summary: '获取错误事件' })
+    @ApiParam({ name: 'appId', description: '应用ID' })
+    async getErrors(@Param('appId') appId: string, @Query('limit') limit?: string) {
+        await this.monitoringService.validateAppId(appId)
+
+        const parsedLimit = limit ? parseInt(limit) : 10
+        return await this.monitoringService.getErrors(appId, parsedLimit)
     }
 }
