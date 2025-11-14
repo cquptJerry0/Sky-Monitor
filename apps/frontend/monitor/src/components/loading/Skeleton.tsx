@@ -9,7 +9,7 @@ interface SkeletonProps {
 }
 
 export function Skeleton({ className }: SkeletonProps) {
-    return <div className={cn('animate-pulse bg-[var(--bg-hover)] rounded', className)} />
+    return <div className={cn('animate-pulse bg-muted rounded', className)} />
 }
 
 /**
@@ -17,7 +17,7 @@ export function Skeleton({ className }: SkeletonProps) {
  */
 export function SkeletonCard() {
     return (
-        <div className="p-6 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-lg space-y-4">
+        <div className="p-6 bg-card border border-border rounded-lg space-y-4">
             <Skeleton className="h-4 w-1/4" />
             <Skeleton className="h-8 w-1/2" />
             <Skeleton className="h-4 w-3/4" />

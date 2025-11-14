@@ -7,58 +7,58 @@
 
 @layer base {
     :root {
-        /* GitHub 风格配色系统 */
+        /* GitHub Dark 配色系统 */
 
-        /* 背景色 */
-        --background: 0 0% 100%;
-        --foreground: 210 12% 16%;
+        /* 背景色 - #0d1117 */
+        --background: 220 13% 9%;
+        --foreground: 213 31% 91%;
 
-        /* 卡片 */
-        --card: 0 0% 100%;
-        --card-foreground: 210 12% 16%;
+        /* 卡片 - #161b22 */
+        --card: 215 14% 12%;
+        --card-foreground: 213 31% 91%;
 
         /* 弹出层 */
-        --popover: 0 0% 100%;
-        --popover-foreground: 210 12% 16%;
+        --popover: 215 14% 12%;
+        --popover-foreground: 213 31% 91%;
 
-        /* 主色调 - GitHub 蓝 #0969da */
-        --primary: 212 92% 43%;
-        --primary-foreground: 0 0% 100%;
+        /* 主色调 - GitHub 蓝 #58a6ff */
+        --primary: 213 92% 68%;
+        --primary-foreground: 220 13% 9%;
 
-        /* 次要色 */
-        --secondary: 210 16% 93%;
-        --secondary-foreground: 210 12% 16%;
+        /* 次要色 - #21262d */
+        --secondary: 213 12% 15%;
+        --secondary-foreground: 213 31% 91%;
 
         /* 弱化色 */
-        --muted: 210 16% 93%;
-        --muted-foreground: 215 14% 48%;
+        --muted: 213 12% 15%;
+        --muted-foreground: 217 10% 65%;
 
-        /* 强调色 */
-        --accent: 212 100% 96%;
-        --accent-foreground: 212 92% 43%;
+        /* 强调色 - #30363d */
+        --accent: 213 12% 21%;
+        --accent-foreground: 213 31% 91%;
 
-        /* 成功色 - GitHub 绿 #1a7f37 */
-        --success: 140 44% 32%;
-        --success-foreground: 0 0% 100%;
+        /* 成功色 - GitHub 绿 #3fb950 */
+        --success: 137 55% 48%;
+        --success-foreground: 220 13% 9%;
 
-        /* 危险色 - GitHub 红 #cf222e */
-        --destructive: 356 75% 47%;
-        --destructive-foreground: 0 0% 100%;
+        /* 危险色 - GitHub 红 #f85149 */
+        --destructive: 3 90% 64%;
+        --destructive-foreground: 220 13% 9%;
 
-        /* 警告色 - GitHub 橙 #bf8700 */
-        --warning: 41 100% 38%;
-        --warning-foreground: 0 0% 100%;
+        /* 警告色 - GitHub 橙 #d29922 */
+        --warning: 41 69% 48%;
+        --warning-foreground: 220 13% 9%;
 
-        /* 边框 */
-        --border: 214 20% 82%;
-        --input: 214 20% 82%;
-        --ring: 212 92% 43%;
+        /* 边框 - #21262d 更柔和 */
+        --border: 213 12% 15%;
+        --input: 213 12% 15%;
+        --ring: 213 92% 68%;
 
-        /* 图表颜色 - GitHub 风格 */
-        --chart-1: 212 92% 43%;
-        --chart-2: 140 44% 32%;
-        --chart-3: 356 75% 47%;
-        --chart-4: 41 100% 38%;
+        /* 图表颜色 - GitHub Dark 风格 */
+        --chart-1: 213 92% 68%;
+        --chart-2: 137 55% 48%;
+        --chart-3: 3 90% 64%;
+        --chart-4: 41 69% 48%;
         --chart-5: 262 52% 47%;
 
         --radius: 0.375rem;
@@ -70,5 +70,70 @@
     }
     body {
         @apply bg-background text-foreground;
+    }
+
+    main {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    main::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+@layer components {
+    .react-grid-item {
+        transition: all 200ms ease;
+        transition-property: left, top, width, height;
+    }
+
+    .react-grid-item.resizing {
+        transition: none;
+        z-index: 100;
+        will-change: width, height;
+    }
+
+    .react-grid-item.react-draggable-dragging {
+        transition: none;
+        z-index: 100;
+        will-change: transform;
+    }
+
+    .react-resizable-handle {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+    }
+
+    .react-resizable-handle-se {
+        bottom: 0;
+        right: 0;
+        cursor: se-resize;
+    }
+
+    .react-resizable-handle-se::after {
+        content: '';
+        position: absolute;
+        right: 3px;
+        bottom: 3px;
+        width: 8px;
+        height: 8px;
+        border-right: 2px solid hsl(var(--muted-foreground) / 0.5);
+        border-bottom: 2px solid hsl(var(--muted-foreground) / 0.5);
+    }
+
+    .react-grid-item:hover .react-resizable-handle-se::after {
+        border-right-color: hsl(var(--primary));
+        border-bottom-color: hsl(var(--primary));
+    }
+
+    .widget-content {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .widget-content::-webkit-scrollbar {
+        display: none;
     }
 }

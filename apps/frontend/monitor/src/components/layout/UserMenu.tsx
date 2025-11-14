@@ -47,26 +47,23 @@ export function UserMenu() {
         <>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
                         <User className="w-5 h-5" />
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 bg-[var(--bg-tertiary)] border-[var(--border-primary)]">
-                    <DropdownMenuLabel className="text-[var(--text-primary)]">
+                <DropdownMenuContent align="end" className="w-56 bg-popover border-border">
+                    <DropdownMenuLabel className="text-foreground">
                         <div className="flex flex-col space-y-1">
                             <p className="text-sm font-medium">{user.username}</p>
-                            {user.email && <p className="text-xs text-[var(--text-secondary)]">{user.email}</p>}
+                            {user.email && <p className="text-xs text-muted-foreground">{user.email}</p>}
                         </div>
                     </DropdownMenuLabel>
-                    <DropdownMenuSeparator className="bg-[var(--border-primary)]" />
-                    <DropdownMenuItem
-                        onClick={() => navigate(ROUTES.PROFILE)}
-                        className="text-[var(--text-primary)] focus:bg-[var(--bg-hover)]"
-                    >
+                    <DropdownMenuSeparator className="bg-border" />
+                    <DropdownMenuItem onClick={() => navigate(ROUTES.PROFILE)} className="text-foreground focus:bg-accent">
                         <User className="mr-2 h-4 w-4" />
                         <span>个人资料</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="text-[var(--text-primary)] focus:bg-[var(--bg-hover)]">
+                    <DropdownMenuItem className="text-foreground focus:bg-accent">
                         <Settings className="mr-2 h-4 w-4" />
                         <span>设置</span>
                     </DropdownMenuItem>

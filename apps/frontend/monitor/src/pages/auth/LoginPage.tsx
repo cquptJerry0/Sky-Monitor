@@ -14,6 +14,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { ROUTES } from '@/utils/constants'
 import { Loader2, Eye, EyeOff } from 'lucide-react'
 import { RegisterModal } from '@/components/auth/RegisterModal'
+import { ForgotPasswordModal } from '@/components/auth/ForgotPasswordModal'
 
 const REMEMBER_ME_KEY = 'sky-monitor-remember-username'
 
@@ -25,6 +26,7 @@ export default function LoginPage() {
     const [rememberMe, setRememberMe] = useState(false)
     const [errors, setErrors] = useState<{ username?: string; password?: string }>({})
     const [showRegisterModal, setShowRegisterModal] = useState(false)
+    const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false)
     const navigate = useNavigate()
     const { toast } = useToast()
     const { setAccessToken, setUser } = useAuthStore()
@@ -117,21 +119,21 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)]">
-            <div className="w-full max-w-md p-8 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-lg shadow-lg">
+        <div className="min-h-screen flex items-center justify-center bg-background">
+            <div className="w-full max-w-md p-8 bg-card border border-border rounded-lg shadow-lg">
                 {/* Logo 和标题 */}
                 <div className="text-center mb-8">
                     <div className="flex justify-center mb-4">
                         <img src="/logo-with-text.svg" alt="Sky Monitor" className="h-16" />
                     </div>
-                    <p className="text-[var(--text-secondary)]">前端监控平台</p>
+                    <p className="text-muted-foreground">前端监控平台</p>
                 </div>
 
                 {/* 登录表单 */}
                 <form onSubmit={handleLogin} className="space-y-6">
                     {/* 用户名 */}
                     <div className="space-y-2">
-                        <Label htmlFor="username" className="text-[var(--text-primary)]">
+                        <Label htmlFor="username" className="text-foreground">
                             用户名
                         </Label>
                         <Input
@@ -146,9 +148,9 @@ export default function LoginPage() {
                             }}
                             placeholder="请输入用户名"
                             disabled={isLoading}
-                            className={`bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-primary)] ${errors.username ? 'border-red-500' : ''}`}
+                            className={`bg-card border-border text-foreground ${errors.username ? 'border-destructive' : ''}`}
                         />
-                        {errors.username && <p className="text-xs text-red-500">{errors.username}</p>}
+                        {errors.username && <p className="text-xs text-destructive">{errors.username}</p>}
                     </div>
 
                     {/* 密码 */}
@@ -159,7 +161,7 @@ export default function LoginPage() {
                             </Label>
                             <button
                                 type="button"
-                                onClick={() => toast({ title: '提示', description: '密码重置功能即将上线' })}
+                                onClick={() => setShowForgotPasswordModal(true)}
                                 className="text-xs text-primary hover:underline"
                             >
                                 忘记密码?
@@ -178,7 +180,7 @@ export default function LoginPage() {
                                 }}
                                 placeholder="请输入密码"
                                 disabled={isLoading}
-                                className={`bg-background border-input text-foreground pr-10 ${errors.password ? 'border-red-500' : ''}`}
+                                className={`bg-card border-border text-foreground pr-10 ${errors.password ? 'border-destructive' : ''}`}
                             />
                             <button
                                 type="button"
@@ -188,7 +190,7 @@ export default function LoginPage() {
                                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                             </button>
                         </div>
-                        {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
+                        {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
                     </div>
 
                     {/* 记住我 */}
@@ -223,16 +225,19 @@ export default function LoginPage() {
 
                 {/* 测试提示 (仅开发环境) */}
                 {import.meta.env.MODE === 'development' && (
-                    <div className="mt-6 p-4 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded">
-                        <p className="text-xs text-[var(--text-secondary)] mb-2">测试账号:</p>
-                        <p className="text-xs text-[var(--text-primary)]">用户名: admin</p>
-                        <p className="text-xs text-[var(--text-primary)]">密码: admin123</p>
+                    <div className="mt-6 p-4 bg-secondary border border-border rounded">
+                        <p className="text-xs text-muted-foreground mb-2">测试账号:</p>
+                        <p className="text-xs text-foreground">用户名: admin</p>
+                        <p className="text-xs text-foreground">密码: admin123</p>
                     </div>
                 )}
             </div>
 
             {/* 注册弹窗 */}
             <RegisterModal open={showRegisterModal} onOpenChange={setShowRegisterModal} />
+
+            {/* 忘记密码弹窗 */}
+            <ForgotPasswordModal open={showForgotPasswordModal} onOpenChange={setShowForgotPasswordModal} />
         </div>
     )
 }

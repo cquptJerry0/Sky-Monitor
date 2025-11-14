@@ -1,10 +1,8 @@
-import { Calendar, Clock } from 'lucide-react'
+import { Clock } from 'lucide-react'
 import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
-import { Calendar as CalendarComponent } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { cn } from '@/lib/utils'
 import { type TimeRangePreset, useDashboardStore } from '@/stores/dashboard.store'
 
@@ -35,21 +33,12 @@ function formatTimeRange(preset: TimeRangePreset): string {
  * 时间范围选择器组件
  */
 export function TimeRangePicker() {
-    const { timeRange, timeRangePreset, setTimeRange, setTimeRangePreset } = useDashboardStore()
+    const { timeRangePreset, setTimeRangePreset } = useDashboardStore()
     const [open, setOpen] = useState(false)
-    const [customStart, setCustomStart] = useState<Date | undefined>(timeRange.start)
-    const [customEnd, setCustomEnd] = useState<Date | undefined>(timeRange.end)
 
     const handlePresetClick = (preset: TimeRangePreset) => {
         setTimeRangePreset(preset)
         setOpen(false)
-    }
-
-    const handleCustomApply = () => {
-        if (customStart && customEnd) {
-            setTimeRange({ start: customStart, end: customEnd }, 'custom')
-            setOpen(false)
-        }
     }
 
     return (
@@ -61,44 +50,20 @@ export function TimeRangePicker() {
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
-                <Tabs defaultValue="preset" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="preset">快捷选项</TabsTrigger>
-                        <TabsTrigger value="custom">自定义</TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="preset" className="p-2">
-                        <div className="flex flex-col gap-1">
-                            {TIME_RANGE_PRESETS.map(preset => (
-                                <Button
-                                    key={preset.value}
-                                    variant={timeRangePreset === preset.value ? 'default' : 'ghost'}
-                                    className="justify-start"
-                                    onClick={() => handlePresetClick(preset.value)}
-                                >
-                                    {preset.label}
-                                </Button>
-                            ))}
-                        </div>
-                    </TabsContent>
-
-                    <TabsContent value="custom" className="p-4">
-                        <div className="space-y-4">
-                            <div>
-                                <label className="mb-2 block text-sm font-medium">开始时间</label>
-                                <CalendarComponent mode="single" selected={customStart} onSelect={setCustomStart} initialFocus />
-                            </div>
-                            <div>
-                                <label className="mb-2 block text-sm font-medium">结束时间</label>
-                                <CalendarComponent mode="single" selected={customEnd} onSelect={setCustomEnd} initialFocus />
-                            </div>
-                            <Button className="w-full" onClick={handleCustomApply} disabled={!customStart || !customEnd}>
-                                <Calendar className="mr-2 h-4 w-4" />
-                                应用
+                <div className="p-2">
+                    <div className="flex flex-col gap-1">
+                        {TIME_RANGE_PRESETS.map(preset => (
+                            <Button
+                                key={preset.value}
+                                variant={timeRangePreset === preset.value ? 'default' : 'ghost'}
+                                className="justify-start"
+                                onClick={() => handlePresetClick(preset.value)}
+                            >
+                                {preset.label}
                             </Button>
-                        </div>
-                    </TabsContent>
-                </Tabs>
+                        ))}
+                    </div>
+                </div>
             </PopoverContent>
         </Popover>
     )

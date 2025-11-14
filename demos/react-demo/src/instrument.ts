@@ -18,7 +18,7 @@ if (typeof window !== 'undefined') {
 }
 
 // 应用配置
-const APP_ID = 'reactddthD9'
+const APP_ID = 'vanillaozmVSp'
 const DSN = `http://localhost:8080/api/monitoring/${APP_ID}`
 
 // 获取 release 版本（构建时注入，开发环境使用默认值）

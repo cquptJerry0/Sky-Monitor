@@ -202,7 +202,7 @@ export default function ProjectsPage() {
             <div className="flex items-center justify-between mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-foreground">应用列表</h1>
-                    <p className="text-sm text-muted-foreground mt-1">管理你的监控应用</p>
+                    <p className="mt-1 text-muted-foreground">管理你的监控应用</p>
                 </div>
 
                 <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>

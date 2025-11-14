@@ -124,17 +124,17 @@ export function RegisterModal({ open, onOpenChange, onSuccess }: RegisterModalPr
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="bg-[var(--bg-tertiary)] border-[var(--border-primary)] max-w-md">
+            <DialogContent className="bg-popover border-border max-w-md">
                 <DialogHeader>
-                    <DialogTitle className="text-[var(--text-primary)]">注册新账号</DialogTitle>
-                    <DialogDescription className="text-[var(--text-secondary)]">填写以下信息创建您的账号</DialogDescription>
+                    <DialogTitle className="text-foreground">注册新账号</DialogTitle>
+                    <DialogDescription className="text-muted-foreground">填写以下信息创建您的账号</DialogDescription>
                 </DialogHeader>
 
                 <form onSubmit={handleRegister} className="space-y-4 mt-4">
                     {/* 用户名 */}
                     <div className="space-y-2">
-                        <Label htmlFor="register-username" className="text-[var(--text-primary)]">
-                            用户名 <span className="text-red-500">*</span>
+                        <Label htmlFor="register-username" className="text-foreground">
+                            用户名 <span className="text-destructive">*</span>
                         </Label>
                         <Input
                             id="register-username"
@@ -148,15 +148,15 @@ export function RegisterModal({ open, onOpenChange, onSuccess }: RegisterModalPr
                             }}
                             placeholder="请输入用户名"
                             disabled={isLoading}
-                            className={`bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-primary)] ${errors.username ? 'border-red-500' : ''}`}
+                            className={`bg-card border-border text-foreground ${errors.username ? 'border-destructive' : ''}`}
                         />
-                        {errors.username && <p className="text-xs text-red-500">{errors.username}</p>}
+                        {errors.username && <p className="text-xs text-destructive">{errors.username}</p>}
                     </div>
 
                     {/* 密码 */}
                     <div className="space-y-2">
-                        <Label htmlFor="register-password" className="text-[var(--text-primary)]">
-                            密码 <span className="text-red-500">*</span>
+                        <Label htmlFor="register-password" className="text-foreground">
+                            密码 <span className="text-destructive">*</span>
                         </Label>
                         <div className="relative">
                             <Input
@@ -171,23 +171,23 @@ export function RegisterModal({ open, onOpenChange, onSuccess }: RegisterModalPr
                                 }}
                                 placeholder="请输入密码"
                                 disabled={isLoading}
-                                className={`bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-primary)] pr-10 ${errors.password ? 'border-red-500' : ''}`}
+                                className={`bg-card border-border text-foreground pr-10 ${errors.password ? 'border-destructive' : ''}`}
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                             >
                                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                             </button>
                         </div>
-                        {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
+                        {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
                     </div>
 
                     {/* 确认密码 */}
                     <div className="space-y-2">
-                        <Label htmlFor="register-confirm-password" className="text-[var(--text-primary)]">
-                            确认密码 <span className="text-red-500">*</span>
+                        <Label htmlFor="register-confirm-password" className="text-foreground">
+                            确认密码 <span className="text-destructive">*</span>
                         </Label>
                         <div className="relative">
                             <Input
@@ -202,22 +202,22 @@ export function RegisterModal({ open, onOpenChange, onSuccess }: RegisterModalPr
                                 }}
                                 placeholder="请再次输入密码"
                                 disabled={isLoading}
-                                className={`bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-primary)] pr-10 ${errors.confirmPassword ? 'border-red-500' : ''}`}
+                                className={`bg-card border-border text-foreground pr-10 ${errors.confirmPassword ? 'border-destructive' : ''}`}
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                             >
                                 {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                             </button>
                         </div>
-                        {errors.confirmPassword && <p className="text-xs text-red-500">{errors.confirmPassword}</p>}
+                        {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword}</p>}
                     </div>
 
                     {/* 邮箱 (可选) */}
                     <div className="space-y-2">
-                        <Label htmlFor="register-email" className="text-[var(--text-primary)]">
+                        <Label htmlFor="register-email" className="text-foreground">
                             邮箱
                         </Label>
                         <Input
@@ -232,14 +232,14 @@ export function RegisterModal({ open, onOpenChange, onSuccess }: RegisterModalPr
                             }}
                             placeholder="请输入邮箱 (可选)"
                             disabled={isLoading}
-                            className={`bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-primary)] ${errors.email ? 'border-red-500' : ''}`}
+                            className={`bg-card border-border text-foreground ${errors.email ? 'border-destructive' : ''}`}
                         />
-                        {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
+                        {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
                     </div>
 
                     {/* 手机号 (可选) */}
                     <div className="space-y-2">
-                        <Label htmlFor="register-phone" className="text-[var(--text-primary)]">
+                        <Label htmlFor="register-phone" className="text-foreground">
                             手机号
                         </Label>
                         <Input
@@ -254,9 +254,9 @@ export function RegisterModal({ open, onOpenChange, onSuccess }: RegisterModalPr
                             }}
                             placeholder="请输入手机号 (可选)"
                             disabled={isLoading}
-                            className={`bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-primary)] ${errors.phone ? 'border-red-500' : ''}`}
+                            className={`bg-card border-border text-foreground ${errors.phone ? 'border-destructive' : ''}`}
                         />
-                        {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
+                        {errors.phone && <p className="text-xs text-destructive">{errors.phone}</p>}
                     </div>
 
                     {/* 提交按钮 */}

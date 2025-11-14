@@ -132,16 +132,25 @@ export function DashboardGrid({ dashboardId, widgets }: DashboardGridProps) {
             rowHeight={80}
             onLayoutChange={handleLayoutChange}
             draggableHandle=".widget-drag-handle"
+            resizeHandle={<div className="react-resizable-handle react-resizable-handle-se" />}
+            compactType={null}
+            preventCollision={false}
             isDraggable
             isResizable
         >
             {widgets.map(widget => (
-                <div key={widget.id} className="rounded-lg border bg-card shadow-sm">
-                    <div className="widget-drag-handle cursor-move rounded-t-lg border-b bg-muted/50 px-4 py-2">
+                <div key={widget.id} className="relative flex flex-col rounded-lg border bg-card shadow-sm overflow-hidden h-full">
+                    <div className="widget-drag-handle cursor-move rounded-t-lg border-b bg-muted/50 px-4 py-2 flex-shrink-0">
                         <h3 className="text-sm font-semibold">{widget.title}</h3>
                     </div>
-                    <div className="widget-content p-4">
-                        <WidgetPreview widgetType={widget.widgetType} title={widget.title} data={undefined} isLoading={false} />
+                    <div className="widget-content flex-1 overflow-auto">
+                        <WidgetPreview
+                            widgetType={widget.widgetType}
+                            title={widget.title}
+                            data={undefined}
+                            isLoading={false}
+                            showCard={false}
+                        />
                     </div>
                 </div>
             ))}
