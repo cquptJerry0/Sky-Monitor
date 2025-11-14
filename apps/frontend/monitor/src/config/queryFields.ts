@@ -121,10 +121,11 @@ export const QUERY_FIELDS: FieldConfig[] = [
  */
 export const FIELDS_BY_CATEGORY = QUERY_FIELDS.reduce(
     (acc, field) => {
-        if (!acc[field.category]) {
-            acc[field.category] = []
+        const category = field.category
+        if (!acc[category]) {
+            acc[category] = []
         }
-        acc[field.category].push(field)
+        acc[category]?.push(field)
         return acc
     },
     {} as Record<string, FieldConfig[]>

@@ -10,12 +10,14 @@ import { AdvancedTab } from '../tabs/AdvancedTab'
 import { BatchTab } from '../tabs/BatchTab'
 import { OfflineTab } from '../tabs/OfflineTab'
 import { E2ETab } from '../tabs/E2ETab'
+import { ReactTab } from '../tabs/ReactTab'
 import { type Tab, type TabId } from '../types'
 import { useApp } from '../contexts/AppContext'
 
 const tabs: Tab[] = [
     { id: 'overview', name: 'Overview', description: 'SDK 状态概览' },
     { id: 'e2e', name: 'E2E Test', description: 'E2E 综合测试' },
+    { id: 'react', name: 'React Test', description: 'React 组件测试' },
     { id: 'errors', name: 'Errors', description: '错误捕获测试' },
     { id: 'breadcrumbs', name: 'Breadcrumbs', description: '用户行为轨迹' },
     { id: 'replay', name: 'Session Replay', description: '会话录制' },
@@ -36,6 +38,8 @@ export const AppContent = () => {
         switch (activeTab) {
             case 'e2e':
                 return <E2ETab />
+            case 'react':
+                return <ReactTab />
             case 'errors':
                 return <ErrorsTab />
             case 'breadcrumbs':

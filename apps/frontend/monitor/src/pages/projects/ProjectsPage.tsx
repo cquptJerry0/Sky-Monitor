@@ -91,15 +91,11 @@ export default function ProjectsPage() {
             return
         }
 
-        console.log('[创建应用] 开始创建', { name: newAppName, type: newAppType })
-
         try {
             const result = await createMutation.mutateAsync({
                 name: newAppName,
                 type: newAppType,
             })
-
-            console.log('[创建应用] 创建成功', result)
 
             toast({
                 title: '创建成功',

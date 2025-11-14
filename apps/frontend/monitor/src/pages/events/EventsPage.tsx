@@ -38,7 +38,7 @@ export default function EventsPage() {
         refetchInterval: 5000, // 每 5 秒自动刷新
     })
 
-    // 确保 loading 至少显示 0.4 秒
+    // 确保 loading
     useEffect(() => {
         if (isLoading) {
             setShowLoading(true)

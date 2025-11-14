@@ -11,10 +11,6 @@ export function AppSelector() {
     const currentAppId = useCurrentAppId()
     const setCurrentAppId = useSetCurrentApp()
 
-    console.log('[AppSelector] 应用列表:', applications)
-    console.log('[AppSelector] 应用数量:', applications.length)
-    console.log('[AppSelector] 当前应用ID:', currentAppId)
-
     if (isLoading) {
         return <div className="w-[200px] h-10 bg-[var(--bg-hover)] animate-pulse rounded-md" />
     }

@@ -48,7 +48,10 @@ coverage
 *.lcov
 .nyc_output
 
-.cursor/ 
+.cursor/
 .windsurf/
 docs
 
+# React 和 Vue 包暂时不提交
+packages/react/
+packages/vue/

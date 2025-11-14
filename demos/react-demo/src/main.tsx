@@ -7,7 +7,7 @@
  */
 
 // Sky Monitor SDK initialization should be imported first!
-import './instrument'
+import './instrument.ts'
 
 import { createRoot } from 'react-dom/client'
 import './index.css'
