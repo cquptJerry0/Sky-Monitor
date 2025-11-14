@@ -10,6 +10,7 @@ import { RedisModule } from './fundamentals/redis'
 import { AlertsModule } from './modules/alerts/alerts.module'
 import { ApplicationModule } from './modules/application/application.module'
 import { AuthModule } from './modules/auth/auth.module'
+import { DashboardModule } from './modules/dashboard/dashboard.module'
 import { ErrorAnalyticsModule } from './modules/error-analytics/error-analytics.module'
 import { EventsModule } from './modules/events/events.module'
 import { HealthModule } from './modules/health/health.module'
@@ -52,6 +53,7 @@ import { VersionModule } from './modules/version/version.module'
         ApplicationModule,
         SourceMapModule,
         AlertsModule,
+        DashboardModule,
     ],
     providers: [],
 })

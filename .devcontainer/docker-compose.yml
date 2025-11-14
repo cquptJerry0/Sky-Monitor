@@ -28,6 +28,10 @@ services:
         ports:
             - '5432:5432'
         environment:
+            - TZ=Asia/Shanghai # 容器时区
+            - PGTZ=Asia/Shanghai # PostgreSQL 时区
+            - POSTGRESQL_TIMEZONE=Asia/Shanghai # Bitnami PostgreSQL 时区配置
+            - POSTGRESQL_LOG_TIMEZONE=Asia/Shanghai # 日志时区
             - POSTGRESQL_USERNAME=postgres
             - ALLOW_EMPTY_PASSWORD=yes
             - POSTGRESQL_DATABASE=postgres
