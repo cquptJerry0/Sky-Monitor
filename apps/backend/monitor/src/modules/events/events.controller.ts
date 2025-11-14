@@ -65,6 +65,21 @@ export class EventsController {
     }
 
     /**
+     * 根据 replayId 查询所有关联的错误事件
+     * GET /api/events/replays/:replayId/errors
+     */
+    @Get('replays/:replayId/errors')
+    @ApiOperation({ summary: '根据 replayId 查询所有关联的错误事件' })
+    async getErrorsByReplayId(@Param('replayId') replayId: string) {
+        const errors = await this.eventsService.getErrorsByReplayId(replayId)
+
+        return {
+            success: true,
+            data: errors,
+        }
+    }
+
+    /**
      * 获取事件详情
      * GET /api/events/:id
      */

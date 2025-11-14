@@ -183,6 +183,8 @@ export class EventsService {
      * @returns 事件详情，包含 parsedStack 和 sourceMapStatus
      */
     async getEventById(id: string) {
+        this.logger.log(`[DEBUG] getEventById called with id: ${id}`)
+
         try {
             const query = `
                 SELECT *
@@ -197,33 +199,116 @@ export class EventsService {
             })
             const data = await result.json()
 
+            this.logger.log(`[DEBUG] ClickHouse query result: ${data.data ? data.data.length : 0} rows`)
+
             if (!data.data || data.data.length === 0) {
                 return null
             }
 
             const event = data.data[0] as any
+            this.logger.log(`[DEBUG] Event found, event_data length: ${event.event_data ? event.event_data.length : 0}`)
 
-            // 解析 event_data JSON 字段，提取 SourceMap 相关信息
+            // 解析 event_data JSON 字段
             let parsedStack = null
             let originalStack = null
-            let sourceMapStatus: 'parsed' | 'parsing' | 'not_available' | 'failed' = 'not_available'
+            let release = null
+            let sessionId = event.session_id || null
+            let breadcrumbs = null
+            let replayId = null
+            let environment = event.environment || null
 
             if (event.event_data) {
+                this.logger.log(`[DEBUG] Processing event_data for event ${id}, length: ${event.event_data.length}`)
+
                 try {
+                    // 使用更宽松的 JSON 解析
                     const eventData = JSON.parse(event.event_data)
                     parsedStack = eventData.parsedStack || null
                     originalStack = eventData.originalStack || null
+                    release = eventData.release || null
+                    sessionId = eventData.sessionId || sessionId
+                    breadcrumbs = eventData.breadcrumbs || null
+                    replayId = eventData.replayId || null
+                    environment = eventData.environment || environment
 
-                    // 判断 SourceMap 状态
-                    if (parsedStack) {
-                        sourceMapStatus = 'parsed'
-                    } else if (event.error_stack && event.release && this.isErrorEvent(event.event_type)) {
-                        // 有堆栈、有 release、是错误事件 → 应该被解析但还没完成
-                        sourceMapStatus = 'parsing'
-                    }
+                    this.logger.log(`[DEBUG] JSON parse succeeded for event ${id}`)
+                    this.logger.log(`[DEBUG] parsedStack: ${parsedStack ? 'found' : 'null'}`)
+                    this.logger.log(`[DEBUG] originalStack: ${originalStack ? 'found' : 'null'}`)
+                    this.logger.log(`[DEBUG] release: ${release || 'null'}`)
+                    this.logger.log(`[DEBUG] sessionId: ${sessionId || 'null'}`)
+                    this.logger.log(`[DEBUG] replayId: ${replayId || 'null'}`)
+                    this.logger.log(`[DEBUG] environment: ${environment || 'null'}`)
                 } catch (error: any) {
-                    this.logger.error(`Failed to parse event_data JSON for event ${id}: ${error.message}`)
+                    // 如果 JSON 解析失败，尝试使用正则提取关键字段
+                    this.logger.warn(`Failed to parse event_data JSON for event ${id}, trying regex extraction: ${error.message}`)
+
+                    try {
+                        const parsedStackMatch = event.event_data.match(/"parsedStack":"([^"]+)"/)
+                        if (parsedStackMatch) {
+                            parsedStack = parsedStackMatch[1].replace(/\\n/g, '\n').replace(/\\\\/g, '\\')
+                            this.logger.log(`[DEBUG] Regex extracted parsedStack: ${parsedStack.substring(0, 50)}...`)
+                        }
+
+                        const originalStackMatch = event.event_data.match(/"originalStack":"([^"]*(?:\\.[^"]*)*)"/)
+                        if (originalStackMatch) {
+                            originalStack = originalStackMatch[1].replace(/\\n/g, '\n').replace(/\\\\/g, '\\')
+                            this.logger.log(`[DEBUG] Regex extracted originalStack: ${originalStack.substring(0, 50)}...`)
+                        }
+
+                        const releaseMatch = event.event_data.match(/"release":"([^"]+)"/)
+                        if (releaseMatch) {
+                            release = releaseMatch[1]
+                            this.logger.log(`[DEBUG] Regex extracted release: ${release}`)
+                        }
+
+                        const sessionIdMatch = event.event_data.match(/"sessionId":"([^"]+)"/)
+                        if (sessionIdMatch) {
+                            sessionId = sessionIdMatch[1]
+                            this.logger.log(`[DEBUG] Regex extracted sessionId: ${sessionId}`)
+                        }
+
+                        const replayIdMatch = event.event_data.match(/"replayId":"([^"]+)"/)
+                        if (replayIdMatch) {
+                            replayId = replayIdMatch[1]
+                            this.logger.log(`[DEBUG] Regex extracted replayId: ${replayId}`)
+                        }
+
+                        const environmentMatch = event.event_data.match(/"environment":"([^"]+)"/)
+                        if (environmentMatch) {
+                            environment = environmentMatch[1]
+                            this.logger.log(`[DEBUG] Regex extracted environment: ${environment}`)
+                        }
+                    } catch (regexError: any) {
+                        this.logger.error(`Regex extraction also failed for event ${id}: ${regexError.message}`)
+                    }
                 }
+            }
+
+            // 判断 SourceMap 状态
+            let sourceMapStatus: 'parsed' | 'parsing' | 'not_available' | 'failed' = 'not_available'
+            if (parsedStack) {
+                sourceMapStatus = 'parsed'
+            } else if (event.error_stack && release && this.isErrorEvent(event.event_type)) {
+                // 有堆栈、有 release、是错误事件 → 应该被解析但还没完成
+                sourceMapStatus = 'parsing'
+            }
+
+            // 如果是错误事件且没有 replayId，尝试从 replay 事件中查找
+            if (this.isErrorEvent(event.event_type) && !replayId && sessionId) {
+                replayId = await this.findReplayIdBySession(sessionId, event.timestamp)
+            }
+
+            // 如果有 replayId，查询所有关联的错误事件
+            let relatedErrors: Array<{ id: string; message: string; timestamp: string }> = []
+            if (replayId) {
+                const errors = await this.getErrorsByReplayId(replayId)
+                // 只返回必要的字段，不包含 stack（减少数据量）
+                relatedErrors = errors.map(error => ({
+                    id: error.id,
+                    message: error.message,
+                    timestamp: error.timestamp,
+                }))
+                this.logger.log(`Found ${relatedErrors.length} related errors for replayId: ${replayId}`)
             }
 
             // 映射数据库字段到前端格式
@@ -235,6 +320,11 @@ export class EventsService {
                 parsedStack,
                 originalStack,
                 sourceMapStatus,
+                session_id: sessionId,
+                breadcrumbs,
+                replayId,
+                environment,
+                relatedErrors,
             }
         } catch (error) {
             this.logger.error(`Failed to get event by id: ${error.message}`, error.stack)
@@ -247,6 +337,176 @@ export class EventsService {
      */
     private isErrorEvent(eventType: string): boolean {
         return ['error', 'exception', 'unhandledrejection'].includes(eventType)
+    }
+
+    /**
+     * 根据 replayId 查询所有关联的错误事件
+     *
+     * @param replayId - Replay ID
+     * @returns 错误事件列表，包含 id, message, timestamp, errorType
+     */
+    async getErrorsByReplayId(replayId: string): Promise<Array<{ id: string; message: string; timestamp: string; errorType: string }>> {
+        try {
+            const query = `
+                SELECT
+                    id,
+                    event_type,
+                    error_message,
+                    timestamp,
+                    event_data,
+                    http_url,
+                    http_status,
+                    resource_url,
+                    resource_type
+                FROM monitor_events
+                WHERE JSONExtractString(event_data, 'replayId') = {replayId:String}
+                  AND event_type IN ('error', 'unhandledrejection')
+                ORDER BY timestamp ASC
+            `
+
+            const result = await this.clickhouseClient.query({
+                query,
+                query_params: { replayId },
+            })
+
+            const data = (await result.json()) as any
+
+            if (!data.data || data.data.length === 0) {
+                this.logger.log(`No errors found for replayId: ${replayId}`)
+                return []
+            }
+
+            this.logger.log(`Found ${data.data.length} errors for replayId: ${replayId}`)
+
+            // 解析错误数据并区分错误类型
+            const errors = data.data.map((row: any) => {
+                let message = row.error_message || ''
+                let errorType = 'error' // 默认为 JavaScript 错误
+
+                // 尝试从 event_data 中提取更详细的信息
+                if (row.event_data) {
+                    try {
+                        const eventData = JSON.parse(row.event_data)
+                        message = eventData.message || message
+                    } catch (error) {
+                        // JSON 解析失败，使用 error_message
+                    }
+                }
+
+                // 区分错误类型
+                if (row.event_type === 'unhandledrejection') {
+                    errorType = 'unhandledrejection'
+                } else if (row.http_url && row.http_status) {
+                    // HTTP 错误：有 http_url 和 http_status
+                    errorType = 'httpError'
+                    message = `HTTP ${row.http_status} - ${row.http_url}`
+                } else if (row.resource_url) {
+                    // 资源错误：有 resource_url
+                    errorType = 'resourceError'
+                    message = `资源加载失败 (${row.resource_type || 'unknown'}) - ${row.resource_url}`
+                }
+
+                // 时间戳转换为 ISO 格式（ClickHouse 返回的是 UTC+8）
+                const timestamp = new Date(row.timestamp).toISOString()
+
+                return {
+                    id: row.id,
+                    message,
+                    timestamp,
+                    errorType,
+                }
+            })
+
+            return errors
+        } catch (error) {
+            this.logger.error(`Failed to get errors by replayId ${replayId}: ${error.message}`)
+            return []
+        }
+    }
+
+    /**
+     * 根据 appId 和错误时间查找对应的 replayId
+     *
+     * Session Replay 在错误发生后 10 秒才上报，所以需要查找：
+     * - 同一个 appId
+     * - 时间最接近错误发生后 10 秒的 replay 事件
+     * - trigger = 'error'
+     */
+    private async findReplayIdBySession(sessionId: string, errorTimestamp: string): Promise<string | null> {
+        try {
+            // 从 monitor_events 表中获取 app_id
+            const appIdQuery = `
+                SELECT app_id
+                FROM monitor_events
+                WHERE session_id = {sessionId:String}
+                LIMIT 1
+            `
+
+            const appIdResult = await this.clickhouseClient.query({
+                query: appIdQuery,
+                query_params: { sessionId },
+            })
+
+            const appIdData = (await appIdResult.json()) as any
+            if (!appIdData.data || appIdData.data.length === 0) {
+                this.logger.log(`[DEBUG] No app_id found for session ${sessionId}`)
+                return null
+            }
+
+            const appId = appIdData.data[0].app_id
+
+            // 从 session_replays 表中查找最接近的 replayId
+            // 使用 abs(timestamp - errorTime - 10s) 找到最接近的 replay
+            const query = `
+                SELECT
+                    replay_id,
+                    timestamp,
+                    abs(toUnixTimestamp(timestamp) - {errorUnixTime:UInt32} - 10) as time_diff
+                FROM session_replays
+                WHERE app_id = {appId:String}
+                  AND trigger = 'error'
+                  AND timestamp >= toDateTime({startTime:String}, 'UTC')
+                  AND timestamp <= toDateTime({endTime:String}, 'UTC')
+                ORDER BY time_diff ASC
+                LIMIT 1
+            `
+
+            // 计算时间范围：错误发生后 5-20 秒（允许更大的误差范围）
+            // ClickHouse DateTime 格式：'YYYY-MM-DD HH:MM:SS'
+            const errorTime = new Date(errorTimestamp)
+            const errorUnixTime = Math.floor(errorTime.getTime() / 1000)
+            const startTime = new Date(errorTime.getTime() + 5000).toISOString().replace('T', ' ').substring(0, 19)
+            const endTime = new Date(errorTime.getTime() + 20000).toISOString().replace('T', ' ').substring(0, 19)
+
+            this.logger.log(
+                `[DEBUG] Searching replayId for appId ${appId}, error time: ${errorTimestamp}, range: ${startTime} - ${endTime}`
+            )
+
+            const result = await this.clickhouseClient.query({
+                query,
+                query_params: {
+                    appId,
+                    errorUnixTime,
+                    startTime,
+                    endTime,
+                },
+            })
+
+            const data = (await result.json()) as any
+
+            if (data.data && data.data.length > 0 && data.data[0].replay_id) {
+                this.logger.log(
+                    `[DEBUG] Found replayId for session ${sessionId}: ${data.data[0].replay_id}, time_diff: ${data.data[0].time_diff}s`
+                )
+                return data.data[0].replay_id
+            }
+
+            this.logger.log(`[DEBUG] No replayId found for session ${sessionId}`)
+            return null
+        } catch (error) {
+            this.logger.error(`Failed to find replayId for session ${sessionId}: ${error.message}`)
+            return null
+        }
     }
 
     /**

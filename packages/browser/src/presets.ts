@@ -69,7 +69,19 @@ export function createMonitoringConfig(options: MonitoringPresetOptions) {
 
     const integrations: Integration[] = []
 
-    // 1. Errors Integration - 只捕获运行时错误
+    // 1. SessionReplayIntegration - 会话录制（必须在 ErrorsIntegration 之前，以便生成 replayId）
+    if (features.enableReplay !== false) {
+        integrations.push(
+            new SessionReplayIntegration({
+                mode: 'onError',
+                bufferDuration: 60,
+                afterErrorDuration: 10,
+                maskAllInputs: true,
+            })
+        )
+    }
+
+    // 2. Errors Integration - 只捕获运行时错误
     if (features.captureErrors !== false) {
         integrations.push(
             new Errors({
@@ -80,7 +92,7 @@ export function createMonitoringConfig(options: MonitoringPresetOptions) {
         )
     }
 
-    // 2. ResourceErrorIntegration - 专门捕获资源错误
+    // 3. ResourceErrorIntegration - 专门捕获资源错误
     if (features.captureResourceErrors !== false) {
         integrations.push(
             new ResourceErrorIntegration({
@@ -90,23 +102,23 @@ export function createMonitoringConfig(options: MonitoringPresetOptions) {
         )
     }
 
-    // 3. HttpErrorIntegration - 捕获HTTP错误
+    // 4. HttpErrorIntegration - 捕获HTTP错误
     if (features.captureHttpErrors !== false) {
         integrations.push(
             new HttpErrorIntegration({
                 captureSuccessfulRequests: false,
                 captureHeaders: true,
-                captureBody: false,
+                captureBody: true,
             })
         )
     }
 
-    // 4. Metrics - Core Web Vitals
+    // 5. Metrics - Core Web Vitals
     if (features.enableMetrics !== false) {
         integrations.push(new Metrics())
     }
 
-    // 5. BreadcrumbIntegration - 用户行为轨迹
+    // 6. BreadcrumbIntegration - 用户行为轨迹
     if (features.enableBreadcrumbs !== false) {
         integrations.push(
             new BreadcrumbIntegration({
@@ -115,18 +127,6 @@ export function createMonitoringConfig(options: MonitoringPresetOptions) {
                 fetch: true,
                 history: true,
                 xhr: true,
-            })
-        )
-    }
-
-    // 6. SessionReplayIntegration - 会话录制
-    if (features.enableReplay !== false) {
-        integrations.push(
-            new SessionReplayIntegration({
-                mode: 'onError',
-                bufferDuration: 60,
-                afterErrorDuration: 10,
-                maskAllInputs: true,
             })
         )
     }

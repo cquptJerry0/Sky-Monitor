@@ -545,6 +545,9 @@ importers:
       '@sky-monitor/monitor-sdk-browser':
         specifier: workspace:*
         version: link:../../packages/browser
+      '@sky-monitor/vite-plugin':
+        specifier: workspace:*
+        version: link:../../packages/vite-plugin
       react:
         specifier: ^19.2.0
         version: 19.2.0
@@ -606,16 +609,6 @@ importers:
       vite:
         specifier: ^7.2.2
         version: 7.2.2(@types/node@24.10.1)(jiti@1.21.6)(terser@5.34.1)(yaml@2.5.1)
-
-  demos/minimal-demo:
-    dependencies:
-      '@sky-monitor/monitor-sdk-browser':
-        specifier: workspace:*
-        version: link:../../packages/browser
-    devDependencies:
-      vite:
-        specifier: ^5.0.0
-        version: 5.4.9(@types/node@24.10.1)(terser@5.34.1)
 
   packages/browser:
     dependencies:

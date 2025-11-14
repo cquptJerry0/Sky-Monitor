@@ -207,20 +207,27 @@ export class Errors implements Integration {
         // 获取当前客户端实例
         const client = getCurrentClient()
         if (!client) {
+            console.warn('[ErrorsIntegration] No client found')
             return event
         }
 
         // 获取 SessionReplayIntegration
         const replayIntegration = client.getIntegration<SessionReplayIntegration>('SessionReplay')
         if (!replayIntegration) {
+            console.warn('[ErrorsIntegration] No SessionReplayIntegration found')
             return event
         }
 
         // 获取当前的 replayId
         const replayId = replayIntegration.getReplayId()
+        console.log('[ErrorsIntegration] beforeSend - replayId:', replayId)
+
         if (replayId) {
             // 附加 replayId 到错误事件
             ;(event as any).replayId = replayId
+            console.log('[ErrorsIntegration] Attached replayId to error event:', replayId)
+        } else {
+            console.warn('[ErrorsIntegration] No replayId available')
         }
 
         return event

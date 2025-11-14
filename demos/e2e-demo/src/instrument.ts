@@ -9,6 +9,9 @@
 import { init, createMonitoringConfig } from '@sky-monitor/monitor-sdk-browser'
 import { setSDKClient } from './sdk'
 
+// 声明全局变量（由 Vite 注入）
+declare const __RELEASE__: string
+
 // 启用开发模式调试
 if (typeof window !== 'undefined') {
     ;(window as any).__DEV__ = true
@@ -18,11 +21,14 @@ if (typeof window !== 'undefined') {
 const APP_ID = 'reactddthD9'
 const DSN = `http://localhost:8080/api/monitoring/${APP_ID}`
 
+// 获取 release 版本（构建时注入，开发环境使用默认值）
+const RELEASE = typeof __RELEASE__ !== 'undefined' ? __RELEASE__ : '1.0.0-e2e-dev'
+
 // 初始化 Sky Monitor SDK
 const config = createMonitoringConfig({
     dsn: DSN,
     appId: APP_ID,
-    release: '1.0.0-e2e',
+    release: RELEASE,
     environment: 'development',
     features: {
         captureErrors: true,

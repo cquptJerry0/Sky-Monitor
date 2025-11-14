@@ -87,7 +87,7 @@ export const OfflineTab: React.FC = () => {
             addResult('info', '步骤 2: 在离线状态下发送消息...')
 
             // 发送消息
-            captureMessage('离线状态下的测试消息', 'info')
+            captureMessage('离线状态下的测试消息')
 
             addResult('success', '消息已发送,应该被缓存到离线队列')
             updateQueueSize()
@@ -260,7 +260,7 @@ export const OfflineTab: React.FC = () => {
                                         <p className="font-medium">{result.message}</p>
                                         {result.details && (
                                             <pre className="mt-2 text-xs bg-white p-2 rounded overflow-x-auto">
-                                                {JSON.stringify(result.details, null, 2)}
+                                                {JSON.stringify(result.details as any, null, 2)}
                                             </pre>
                                         )}
                                     </div>

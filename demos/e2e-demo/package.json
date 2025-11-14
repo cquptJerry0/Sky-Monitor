@@ -11,6 +11,7 @@
     },
     "dependencies": {
         "@sky-monitor/monitor-sdk-browser": "workspace:*",
+        "@sky-monitor/vite-plugin": "workspace:*",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
         "react-router-dom": "6.27.0",

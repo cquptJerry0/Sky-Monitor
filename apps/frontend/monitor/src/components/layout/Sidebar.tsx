@@ -19,6 +19,11 @@ const menuItems = [
         icon: LayoutDashboard,
     },
     {
+        path: ROUTES.EVENTS,
+        label: '事件',
+        icon: Layers,
+    },
+    {
         path: ROUTES.ERRORS,
         label: '错误',
         icon: AlertCircle,
@@ -60,9 +65,9 @@ export function Sidebar({ collapsed }: SidebarProps) {
             )}
         >
             {/* Logo */}
-            <div className="h-16 flex items-center px-4 border-b border-[var(--border-primary)]">
+            <div className="h-16 flex items-center gap-3 px-4 border-b border-[var(--border-primary)]">
+                <img src="/logo.svg" alt="Sky Monitor" className="h-8 w-8 flex-shrink-0" />
                 {!collapsed && <span className="text-xl font-bold text-[var(--text-primary)]">Sky Monitor</span>}
-                {collapsed && <span className="text-xl font-bold text-[var(--color-primary)]">SM</span>}
             </div>
 
             {/* 菜单 */}

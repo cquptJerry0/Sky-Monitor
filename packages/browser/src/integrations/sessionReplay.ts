@@ -458,25 +458,34 @@ export class SessionReplayIntegration implements Integration {
      * 处理错误事件
      *
      * 执行流程（修复后）：
-     * 1. 生成唯一的 replayId
-     * 2. 标记错误已发生,记录错误时间
-     * 3. 不立即上报,继续录制 afterErrorDuration 时长
+     * 1. 如果没有 replayId，生成新的 replayId
+     * 2. 如果已有 replayId（说明在10秒内有多个错误），复用同一个 replayId
+     * 3. 重置定时器，延长录制时间
      * 4. afterErrorDuration 后一次性上报完整数据（错误前60秒 + 错误后10秒）
      *
      * 改进：
-     * - 只上报1次 replay 事件（而不是2次）
-     * - 上报的数据包含完整的"错误前60秒 + 错误后10秒"
-     * - 允许多次触发 Replay，每次错误都生成新的 replayId
+     * - 多个错误共用同一个 replayId（在10秒内）
+     * - 只上报1次 replay 事件
+     * - 上报的数据包含所有错误的完整上下文
      */
     private handleError(): void {
-        // 如果正在处理错误，清除之前的定时器
-        if (this.errorTimer) {
-            clearTimeout(this.errorTimer)
+        // 如果没有 replayId，生成新的（第一个错误）
+        // 如果已有 replayId，复用（后续错误）
+        if (!this.currentReplayId) {
+            this.currentReplayId = this.generateReplayId()
+            console.log('[SessionReplay] First error occurred, generated replayId:', this.currentReplayId)
+        } else {
+            console.log('[SessionReplay] Additional error occurred, reusing replayId:', this.currentReplayId)
         }
 
-        // 生成唯一的 Replay ID（每次错误都生成新的）
-        this.currentReplayId = this.generateReplayId()
         this.errorOccurred = true
+
+        // 如果正在处理错误，清除之前的定时器，重新计时
+        // 这样可以确保最后一个错误发生后还能录制10秒
+        if (this.errorTimer) {
+            clearTimeout(this.errorTimer)
+            console.log('[SessionReplay] Reset timer for additional error')
+        }
 
         // 开发环境：打印错误触发信息
         if (typeof window !== 'undefined' && (window as any).__DEV__) {

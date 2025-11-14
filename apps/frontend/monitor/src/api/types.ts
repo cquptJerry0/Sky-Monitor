@@ -146,6 +146,24 @@ export interface Event {
     originalStack?: string
     sourceMapStatus?: SourceMapStatus
 
+    // Session Replay 相关字段
+    replayId?: string
+    breadcrumbs?: Array<{
+        timestamp: number
+        category: string
+        message: string
+        level?: string
+        data?: Record<string, unknown>
+    }>
+
+    // 关联错误列表（同一个 replayId 的所有错误）
+    relatedErrors?: Array<{
+        id: string
+        message: string
+        timestamp: string
+        errorType: 'error' | 'httpError' | 'resourceError' | 'unhandledrejection'
+    }>
+
     // 采样相关
     sample_rate?: number
     is_sampled?: boolean
