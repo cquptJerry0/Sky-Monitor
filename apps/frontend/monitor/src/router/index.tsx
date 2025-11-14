@@ -14,15 +14,6 @@ const LoginPage = lazy(() => import('@/pages/auth/LoginPage'))
 const ProjectsPage = lazy(() => import('@/pages/projects/ProjectsPage'))
 const DashboardPage = lazy(() => import('@/pages/dashboard/DashboardPage'))
 const EventsPage = lazy(() => import('@/pages/events/EventsPage'))
-const EventDetailPage = lazy(() => import('@/pages/events/EventDetailPage'))
-const ErrorsPage = lazy(() => import('@/pages/errors/ErrorsPage'))
-const ErrorDetailPage = lazy(() => import('@/pages/errors/ErrorDetailPage'))
-const PerformancePage = lazy(() => import('@/pages/performance/PerformancePage'))
-const SessionsPage = lazy(() => import('@/pages/sessions/SessionsPage'))
-const SessionDetailPage = lazy(() => import('@/pages/sessions/SessionDetailPage'))
-const SessionReplayPage = lazy(() => import('@/pages/sessions/SessionReplayPage'))
-const MessagesPage = lazy(() => import('@/pages/messages/MessagesPage'))
-const UserProfilePage = lazy(() => import('@/pages/profile/UserProfilePage'))
 
 /**
  * 懒加载包装组件
@@ -88,88 +79,6 @@ export const router: ReturnType<typeof createBrowserRouter> = createBrowserRoute
                 element: (
                     <LazyPage>
                         <EventsPage />
-                    </LazyPage>
-                ),
-            },
-            {
-                path: ROUTES.EVENT_DETAIL,
-                element: (
-                    <LazyPage>
-                        <EventDetailPage />
-                    </LazyPage>
-                ),
-            },
-
-            // 错误监控
-            {
-                path: ROUTES.ERRORS,
-                element: (
-                    <LazyPage>
-                        <ErrorsPage />
-                    </LazyPage>
-                ),
-            },
-            {
-                path: ROUTES.ERROR_DETAIL,
-                element: (
-                    <LazyPage>
-                        <ErrorDetailPage />
-                    </LazyPage>
-                ),
-            },
-
-            // 性能监控
-            {
-                path: ROUTES.PERFORMANCE,
-                element: (
-                    <LazyPage>
-                        <PerformancePage />
-                    </LazyPage>
-                ),
-            },
-
-            // 会话
-            {
-                path: ROUTES.SESSIONS,
-                element: (
-                    <LazyPage>
-                        <SessionsPage />
-                    </LazyPage>
-                ),
-            },
-            {
-                path: ROUTES.SESSION_DETAIL,
-                element: (
-                    <LazyPage>
-                        <SessionDetailPage />
-                    </LazyPage>
-                ),
-            },
-            {
-                path: ROUTES.SESSION_REPLAY,
-                element: (
-                    <LazyPage>
-                        <SessionReplayPage />
-                    </LazyPage>
-                ),
-            },
-
-            // 消息
-            {
-                path: ROUTES.MESSAGES,
-                element: (
-                    <LazyPage>
-                        <MessagesPage />
-                    </LazyPage>
-                ),
-            },
-
-            // 用户资料
-            {
-                path: ROUTES.PROFILE,
-                element: (
-                    <LazyPage>
-                        <UserProfilePage />
                     </LazyPage>
                 ),
             },

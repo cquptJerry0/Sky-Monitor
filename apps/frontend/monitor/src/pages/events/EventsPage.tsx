@@ -1,13 +1,13 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useCurrentApp } from '@/hooks/useCurrentApp'
 import { useEvents } from '@/hooks/useEventQuery'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { EventDetailDrawer } from '@/components/events/EventDetailDrawer'
 import { EventFilters, type EventFiltersState } from '@/components/events/EventFilters'
 import { EventListRow } from '@/components/events/EventListRow'
+import { EventListSkeleton } from '@/components/events/EventListSkeleton'
 import { EventStats } from '@/components/events/EventStats'
 import { PAGINATION } from '@/utils/constants'
 import { AlertCircle, RefreshCw } from 'lucide-react'
@@ -19,6 +19,7 @@ export default function EventsPage() {
     const [pageSize] = useState(PAGINATION.DEFAULT_PAGE_SIZE)
     const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
     const [drawerOpen, setDrawerOpen] = useState(false)
+    const [showLoading, setShowLoading] = useState(false)
 
     const [filters, setFilters] = useState<EventFiltersState>({
         eventType: 'all',
@@ -36,6 +37,20 @@ export default function EventsPage() {
         offset: page * pageSize,
         refetchInterval: 5000, // 每 5 秒自动刷新
     })
+
+    // 确保 loading 至少显示 0.4 秒
+    useEffect(() => {
+        if (isLoading) {
+            setShowLoading(true)
+            return
+        }
+
+        const timer = setTimeout(() => {
+            setShowLoading(false)
+        }, 400)
+
+        return () => clearTimeout(timer)
+    }, [isLoading])
 
     const events = data?.data || []
     const total = data?.total || 0
@@ -118,12 +133,8 @@ export default function EventsPage() {
                     <CardTitle>事件列表（共 {total} 条）</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    {isLoading ? (
-                        <div className="space-y-3">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                                <Skeleton key={i} className="h-16 w-full" />
-                            ))}
-                        </div>
+                    {showLoading ? (
+                        <EventListSkeleton rows={10} />
                     ) : filteredEvents.length === 0 ? (
                         <div className="py-12 text-center">
                             <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground" />
