@@ -96,7 +96,9 @@ export default function LoginPage() {
             <div className="w-full max-w-md p-8 bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded-lg shadow-lg">
                 {/* Logo 和标题 */}
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-[var(--text-primary)] mb-2">Sky Monitor</h1>
+                    <div className="flex justify-center mb-4">
+                        <img src="/logo-with-text.svg" alt="Sky Monitor" className="h-16" />
+                    </div>
                     <p className="text-[var(--text-secondary)]">前端监控平台</p>
                 </div>
 
@@ -148,9 +150,23 @@ export default function LoginPage() {
                     </Button>
                 </form>
 
+                {/* 注册链接 */}
+                <div className="mt-4 text-center">
+                    <p className="text-sm text-[var(--text-secondary)]">
+                        还没有账号?{' '}
+                        <button
+                            type="button"
+                            onClick={() => toast({ title: '提示', description: '注册功能即将上线' })}
+                            className="text-[var(--color-primary)] hover:underline"
+                        >
+                            立即注册
+                        </button>
+                    </p>
+                </div>
+
                 {/* 测试提示 */}
                 <div className="mt-6 p-4 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded">
-                    <p className="text-xs text-[var(--text-secondary)] mb-2">测试账号：</p>
+                    <p className="text-xs text-[var(--text-secondary)] mb-2">测试账号:</p>
                     <p className="text-xs text-[var(--text-primary)]">用户名: admin</p>
                     <p className="text-xs text-[var(--text-primary)]">密码: admin123</p>
                 </div>

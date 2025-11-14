@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/badge'
+import { TruncatedText } from '@/components/ui/truncated-text'
 import { formatDuration, formatEventTime } from '@/utils/eventUtils'
 import type { FieldType } from './eventFieldSchema'
 
@@ -14,7 +15,7 @@ export function FieldRenderer({ type, value }: FieldRendererProps) {
 
     switch (type) {
         case 'text':
-            return <span className="text-sm">{String(value)}</span>
+            return <TruncatedText text={String(value)} maxWidth="max-w-2xl" className="text-sm" />
 
         case 'number':
             return <span className="text-sm font-mono">{String(value)}</span>
@@ -39,7 +40,8 @@ export function FieldRenderer({ type, value }: FieldRendererProps) {
                     href={String(value)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-primary underline-offset-4 hover:underline"
+                    className="text-sm text-primary underline-offset-4 hover:underline truncate block max-w-2xl"
+                    title={String(value)}
                 >
                     {String(value)}
                 </a>
@@ -62,6 +64,6 @@ export function FieldRenderer({ type, value }: FieldRendererProps) {
             )
 
         default:
-            return <span className="text-sm">{String(value)}</span>
+            return <TruncatedText text={String(value)} maxWidth="max-w-2xl" className="text-sm" />
     }
 }

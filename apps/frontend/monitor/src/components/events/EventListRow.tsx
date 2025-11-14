@@ -1,6 +1,7 @@
 import type { Event } from '@/api/types'
 import { Badge } from '@/components/ui/badge'
 import { TableCell, TableRow } from '@/components/ui/table'
+import { TruncatedText } from '@/components/ui/truncated-text'
 import { formatEventTime, getEventTypeBadgeVariant } from '@/utils/eventUtils'
 import { extractEventMessage } from './eventDisplaySchema'
 
@@ -20,13 +21,21 @@ export function EventListRow({ event, onClick }: EventListRowProps) {
             </TableCell>
             <TableCell>
                 <div className="space-y-1">
-                    <div className="text-sm font-medium">{message.primary}</div>
-                    {message.secondary && <div className="text-xs text-muted-foreground">{message.secondary}</div>}
+                    <TruncatedText text={message.primary} maxWidth="max-w-md" className="text-sm font-medium" />
+                    {message.secondary && (
+                        <TruncatedText text={message.secondary} maxWidth="max-w-md" className="text-xs text-muted-foreground" />
+                    )}
                 </div>
             </TableCell>
-            <TableCell className="text-xs text-muted-foreground">{event.path || '-'}</TableCell>
-            <TableCell className="text-xs text-muted-foreground">{event.user_id || event.user_email || '-'}</TableCell>
-            <TableCell className="text-xs text-muted-foreground">{event.session_id ? event.session_id.slice(0, 8) : '-'}</TableCell>
+            <TableCell className="text-xs text-muted-foreground">
+                <TruncatedText text={event.path || ''} maxWidth="max-w-xs" />
+            </TableCell>
+            <TableCell className="text-xs text-muted-foreground">
+                <TruncatedText text={event.user_id || event.user_email || ''} maxWidth="max-w-[120px]" />
+            </TableCell>
+            <TableCell className="text-xs text-muted-foreground">
+                <TruncatedText text={event.session_id || ''} maxWidth="max-w-[100px]" />
+            </TableCell>
         </TableRow>
     )
 }
