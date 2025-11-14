@@ -1,7 +1,8 @@
 import { Plus } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 import { TimeRangePicker } from '@/components/dashboard/TimeRangePicker'
+import { WidgetBuilder } from '@/components/dashboard/WidgetBuilder'
 import { AppSelector } from '@/components/layout/AppSelector'
 import { Button } from '@/components/ui/button'
 import { useCurrentApp } from '@/hooks/useCurrentApp'
@@ -15,6 +16,9 @@ import { useDashboardStore } from '@/stores/dashboard.store'
 export default function NewDashboardPage() {
     const { currentApp } = useCurrentApp()
     const { selectedAppId, setSelectedAppId, currentDashboardId, setCurrentDashboardId } = useDashboardStore()
+
+    // Widget Builder 弹窗状态
+    const [widgetBuilderOpen, setWidgetBuilderOpen] = useState(false)
 
     // 获取 Dashboard 列表
     const { data: dashboards, isLoading: isDashboardsLoading } = useDashboards()
@@ -88,12 +92,17 @@ export default function NewDashboardPage() {
                     <TimeRangePicker />
 
                     {/* 添加 Widget 按钮 */}
-                    <Button>
+                    <Button onClick={() => setWidgetBuilderOpen(true)}>
                         <Plus className="mr-2 h-4 w-4" />
                         添加 Widget
                     </Button>
                 </div>
             </div>
+
+            {/* Widget Builder 弹窗 */}
+            {currentDashboardId && (
+                <WidgetBuilder dashboardId={currentDashboardId} open={widgetBuilderOpen} onOpenChange={setWidgetBuilderOpen} />
+            )}
 
             {/* Dashboard Grid */}
             {isDashboardLoading ? (
@@ -124,7 +133,7 @@ export default function NewDashboardPage() {
                         <h3 className="text-lg font-semibold mb-2">暂无 Widget</h3>
                         <p className="text-muted-foreground">点击"添加 Widget"按钮开始创建</p>
                     </div>
-                    <Button>
+                    <Button onClick={() => setWidgetBuilderOpen(true)}>
                         <Plus className="mr-2 h-4 w-4" />
                         添加 Widget
                     </Button>
