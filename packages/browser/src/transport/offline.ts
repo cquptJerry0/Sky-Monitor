@@ -1,16 +1,22 @@
 import { Transport } from '@sky-monitor/monitor-sdk-core'
+import { IndexedDBStorage, QueueItem, isIndexedDBSupported } from '../storage/indexedDB'
 
 /**
  * 离线传输配置
  */
 export interface OfflineTransportOptions {
     /**
-     * LocalStorage 存储key，默认 'sky-monitor-offline'
+     * IndexedDB 数据库名，默认 'sky-monitor-offline'
      */
-    storageKey?: string
+    dbName?: string
 
     /**
-     * 最大缓存事件数，默认50
+     * IndexedDB 对象存储名，默认 'queue'
+     */
+    storeName?: string
+
+    /**
+     * 最大缓存事件数，默认30
      */
     maxQueueSize?: number
 
@@ -18,64 +24,66 @@ export interface OfflineTransportOptions {
      * 重试间隔（毫秒），默认10000ms
      */
     retryInterval?: number
-}
 
-interface QueueItem {
-    data: Record<string, unknown>
-    timestamp: number
-    retryCount: number
+    /**
+     * 启动时是否立即发送队列，默认 true
+     */
+    flushAtStartup?: boolean
 }
 
 /**
  * 离线传输包装器
- * 网络失败时缓存到 LocalStorage，恢复后自动重试
+ * 使用 IndexedDB 存储离线事件，网络恢复后自动重试
  *
  * 改进的保存机制：
- * 1. 检测到离线状态时立即保存
- * 2. 发送失败时保存
- * 3. 页面卸载前保存未发送的数据
- * 4. 监听 online/offline 事件
+ * 1. 检测到发送失败时立即保存到 IndexedDB
+ * 2. 监听 online/offline 事件
+ * 3. 定时重试发送队列中的事件
+ * 4. 启动时自动发送队列中的事件
  */
 export class OfflineTransport implements Transport {
-    private readonly storageKey: string
-    private readonly maxQueueSize: number
+    private storage: IndexedDBStorage | null = null
     private readonly retryInterval: number
+    private readonly flushAtStartup: boolean
     private retryTimer: number | null = null
     private isSending = false
-    private pendingQueue: QueueItem[] = [] // 内存中的待发送队列
 
     constructor(
         private innerTransport: Transport,
         options: OfflineTransportOptions = {}
     ) {
-        this.storageKey = options.storageKey ?? 'sky-monitor-offline'
-        this.maxQueueSize = options.maxQueueSize ?? 50
         this.retryInterval = options.retryInterval ?? 10000
+        this.flushAtStartup = options.flushAtStartup ?? true
+
+        // 检查 IndexedDB 支持
+        if (isIndexedDBSupported()) {
+            this.storage = new IndexedDBStorage({
+                dbName: options.dbName,
+                storeName: options.storeName,
+                maxQueueSize: options.maxQueueSize,
+            })
+        } else {
+            console.warn('[OfflineTransport] IndexedDB not supported, offline caching disabled')
+        }
 
         this.setupNetworkListener()
-        this.setupBeforeUnloadListener()
         this.startRetryTimer()
 
         // 初始化时尝试发送队列中的数据
-        this.processQueue()
+        if (this.flushAtStartup) {
+            this.processQueue()
+        }
     }
 
     /**
      * 发送数据
      */
     send(data: Record<string, unknown>): void {
-        const item: QueueItem = {
-            data,
-            timestamp: Date.now(),
-            retryCount: 0,
-        }
-
         if (this.isOnline()) {
-            // 在线状态：先加入内存队列，然后尝试发送
-            this.pendingQueue.push(item)
+            // 在线状态：尝试发送
             this.trySend(data)
         } else {
-            // 离线状态：直接保存到 LocalStorage
+            // 离线状态：直接保存到 IndexedDB
             this.saveToStorage(data)
         }
     }
@@ -91,97 +99,79 @@ export class OfflineTransport implements Transport {
     /**
      * 尝试发送（带错误处理）
      */
-    private trySend(data: Record<string, unknown>): void {
+    private async trySend(data: Record<string, unknown>): Promise<void> {
         try {
-            // 尝试使用内部传输发送
-            this.innerTransport.send(data)
+            // 调用 innerTransport.send()
+            await this.innerTransport.send(data)
 
-            // 发送成功，从内存队列中移除
-            this.pendingQueue = this.pendingQueue.filter(item => item.data !== data)
-
-            // 如果 LocalStorage 中有数据，尝试处理
-            if (this.getQueue().length > 0) {
-                this.processQueue()
+            // 发送成功，尝试处理队列中的数据
+            if (this.storage) {
+                const queue = await this.storage.getAll()
+                if (queue.length > 0) {
+                    this.processQueue()
+                }
             }
         } catch (error) {
-            // 发送失败，保存到 LocalStorage
-            this.saveToStorage(data)
-            // 从内存队列中移除（已保存到 LocalStorage）
-            this.pendingQueue = this.pendingQueue.filter(item => item.data !== data)
+            // innerTransport 抛出异常，保存到 IndexedDB
+            await this.saveToStorage(data)
         }
     }
 
     /**
-     * 保存到 LocalStorage
+     * 保存到 IndexedDB
      */
-    private saveToStorage(data: Record<string, unknown>): void {
+    private async saveToStorage(data: Record<string, unknown>): Promise<void> {
+        if (!this.storage) {
+            console.warn('[OfflineTransport] IndexedDB not available, cannot save event')
+            return
+        }
+
         try {
-            const queue = this.getQueue()
-
-            // 容量检查
-            if (queue.length >= this.maxQueueSize) {
-                queue.shift() // 删除最旧的
-            }
-
-            queue.push({
+            const item: QueueItem = {
+                id: `${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
                 data,
                 timestamp: Date.now(),
                 retryCount: 0,
-            })
+            }
 
-            localStorage.setItem(this.storageKey, JSON.stringify(queue))
+            await this.storage.store(item)
+            console.log('[OfflineTransport] Event saved to IndexedDB:', item.id)
         } catch (error) {
-            // LocalStorage 满了或被禁用，静默失败
-        }
-    }
-
-    /**
-     * 获取队列
-     */
-    private getQueue(): QueueItem[] {
-        try {
-            const data = localStorage.getItem(this.storageKey)
-            return data ? JSON.parse(data) : []
-        } catch {
-            return []
+            console.error('[OfflineTransport] Failed to save to IndexedDB:', error)
         }
     }
 
     /**
      * 处理队列（重试发送）
      */
-    private processQueue(): void {
-        if (!this.isOnline() || this.isSending) return
+    private async processQueue(): Promise<void> {
+        if (!this.isOnline() || this.isSending || !this.storage) return
 
-        const queue = this.getQueue()
+        const queue = await this.storage.getAll()
         if (queue.length === 0) return
 
+        console.log(`[OfflineTransport] Processing queue: ${queue.length} items`)
         this.isSending = true
-        const failed: QueueItem[] = []
 
         // 逐个尝试发送
         for (const item of queue) {
             try {
-                this.innerTransport.send(item.data)
-                // 发送成功，不加入失败列表
+                await this.innerTransport.send(item.data)
+
+                // 发送成功，从 IndexedDB 中删除
+                await this.storage.remove(item.id)
+                console.log('[OfflineTransport] Event sent successfully, removed from queue:', item.id)
             } catch (error) {
+                // 发送失败，增加重试次数
+                console.error('[OfflineTransport] Error processing queue item:', error)
                 item.retryCount++
+
                 // 最多重试3次
-                if (item.retryCount < 3) {
-                    failed.push(item)
+                if (item.retryCount >= 3) {
+                    await this.storage.remove(item.id)
+                    console.log('[OfflineTransport] Max retries reached, removed from queue:', item.id)
                 }
             }
-        }
-
-        // 更新队列
-        try {
-            if (failed.length > 0) {
-                localStorage.setItem(this.storageKey, JSON.stringify(failed))
-            } else {
-                localStorage.removeItem(this.storageKey)
-            }
-        } catch (error) {
-            console.warn('Failed to update LocalStorage queue:', error)
         }
 
         this.isSending = false
@@ -202,13 +192,13 @@ export class OfflineTransport implements Transport {
 
         // 监听网络恢复
         window.addEventListener('online', () => {
+            console.log('[OfflineTransport] Network online, processing queue')
             this.processQueue()
         })
 
         // 监听网络断开
         window.addEventListener('offline', () => {
-            // 网络断开时，将内存队列中的数据保存到 LocalStorage
-            this.savePendingQueue()
+            console.log('[OfflineTransport] Network offline')
         })
 
         // 页面可见性变化时也尝试发送
@@ -217,44 +207,6 @@ export class OfflineTransport implements Transport {
                 this.processQueue()
             }
         })
-    }
-
-    /**
-     * 监听页面卸载事件
-     * 在页面关闭前保存未发送的数据
-     */
-    private setupBeforeUnloadListener(): void {
-        if (typeof window === 'undefined') return
-
-        window.addEventListener('beforeunload', () => {
-            // 保存内存队列中的数据
-            this.savePendingQueue()
-
-            // 如果内部传输有 flush 方法，尝试刷新
-            if (this.innerTransport.flush) {
-                this.innerTransport.flush()
-            }
-        })
-    }
-
-    /**
-     * 保存内存队列到 LocalStorage
-     */
-    private savePendingQueue(): void {
-        if (this.pendingQueue.length === 0) return
-
-        try {
-            const existingQueue = this.getQueue()
-            const combinedQueue = [...existingQueue, ...this.pendingQueue]
-
-            // 容量检查
-            const finalQueue = combinedQueue.slice(-this.maxQueueSize)
-
-            localStorage.setItem(this.storageKey, JSON.stringify(finalQueue))
-            this.pendingQueue = []
-        } catch (error) {
-            console.warn('[OfflineTransport] Failed to save pending queue:', error)
-        }
     }
 
     /**

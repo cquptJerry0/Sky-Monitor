@@ -61,15 +61,8 @@ export class SessionReplayTransport implements Transport {
      */
     private async uploadImmediately(data: Record<string, unknown>): Promise<void> {
         const payload = this.preparePayload([data])
-
-        try {
-            await this.uploadWithRetry(payload)
-        } catch (error) {
-            // 使用 console.warn 而不是 console.error，避免触发错误监听
-            console.warn('[SessionReplay] Failed to upload immediately:', error)
-            // 失败后加入缓冲区，等待下次上报
-            this.buffer.push(data)
-        }
+        await this.uploadWithRetry(payload)
+        // 不再捕获异常，让异常向上传播到 OfflineTransport
     }
 
     /**
@@ -198,9 +191,10 @@ export class SessionReplayTransport implements Transport {
             })
 
             if (!response.ok) {
-                // 不抛出错误,只记录日志
-                console.error(`[SessionReplayTransport] HTTP ${response.status}: ${response.statusText}`)
-                return
+                // HTTP 错误，抛出异常
+                const error = new Error(`HTTP ${response.status}: ${response.statusText}`)
+                console.error(`[SessionReplayTransport] HTTP error:`, error)
+                throw error
             }
         } catch (error) {
             if (retries < (this.options.maxRetries ?? 3)) {
@@ -210,9 +204,9 @@ export class SessionReplayTransport implements Transport {
                 return this.uploadWithRetry(payload, retries + 1)
             }
 
-            // 重试次数用尽,不抛出错误,只记录日志
+            // 重试次数用尽，抛出异常（让 OfflineTransport 捕获并保存到 IndexedDB）
             console.error('[SessionReplayTransport] Upload failed after retries:', error)
-            return
+            throw error
         }
     }
 

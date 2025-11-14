@@ -1,6 +1,15 @@
 // packages/monitor-sdk-browser/src/transport.ts
 import { BaseTransport, TransportCallbacks } from '@sky-monitor/monitor-sdk-core'
 
+/**
+ * Transport 发送结果
+ */
+export interface TransportResponse {
+    success: boolean
+    statusCode?: number
+    error?: Error
+}
+
 export class BrowserTransport extends BaseTransport {
     private maxRetries = 3
 
@@ -24,11 +33,12 @@ export class BrowserTransport extends BaseTransport {
             })
 
             if (!response.ok) {
-                // 不抛出错误,只记录日志和触发回调
-                // 这样可以防止 Transport 错误被 ErrorsIntegration 捕获,导致无限循环
+                // HTTP 错误，触发错误回调并抛出异常
+                // 这样 OfflineTransport 可以捕获异常并存储到 IndexedDB
+                const error = new Error(`HTTP error! status: ${response.status}`)
                 console.error(`[BrowserTransport] HTTP error! status: ${response.status}`)
-                this.triggerError(new Error(`HTTP error! status: ${response.status}`))
-                return
+                this.triggerError(error)
+                throw error
             }
 
             this.triggerSuccess()
@@ -43,12 +53,11 @@ export class BrowserTransport extends BaseTransport {
                 return this.send(data, retries + 1)
             }
 
-            // 重试次数用尽,不抛出错误,只记录日志和触发回调
-            // 原则: Transport 层的职责是发送数据,失败时应该静默处理,而不是抛出错误
-            // 这样可以防止无限循环: Transport 错误 → ErrorsIntegration 捕获 → 再次上报 → 再次失败
+            // 重试次数用尽，触发错误回调并抛出异常
+            // 这样 OfflineTransport 可以捕获异常并存储到 IndexedDB
             console.error('[BrowserTransport] Request failed after retries:', error)
             this.triggerError(error)
-            return
+            throw error
         }
     }
 }
