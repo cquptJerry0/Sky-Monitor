@@ -7,9 +7,6 @@ import { useState } from 'react'
 
 export interface EventFiltersState {
     eventType: string
-    level: string
-    userId: string
-    url: string
     timeRange: string
 }
 
@@ -30,17 +27,13 @@ export function EventFilters({ filters, onFiltersChange }: EventFiltersProps) {
     const handleReset = () => {
         const resetFilters: EventFiltersState = {
             eventType: 'all',
-            level: 'all',
-            userId: '',
-            url: '',
             timeRange: '1h',
         }
         setLocalFilters(resetFilters)
         onFiltersChange(resetFilters)
     }
 
-    const hasActiveFilters =
-        localFilters.eventType !== 'all' || localFilters.level !== 'all' || localFilters.userId !== '' || localFilters.url !== ''
+    const hasActiveFilters = localFilters.eventType !== 'all'
 
     return (
         <div className="space-y-4 rounded-lg border bg-card p-4">
@@ -54,7 +47,7 @@ export function EventFilters({ filters, onFiltersChange }: EventFiltersProps) {
                 )}
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                     <Label htmlFor="eventType">事件类型</Label>
                     <Select value={localFilters.eventType} onValueChange={value => handleFilterChange('eventType', value)}>
@@ -78,22 +71,6 @@ export function EventFilters({ filters, onFiltersChange }: EventFiltersProps) {
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="level">事件级别</Label>
-                    <Select value={localFilters.level} onValueChange={value => handleFilterChange('level', value)}>
-                        <SelectTrigger id="level">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">全部</SelectItem>
-                            <SelectItem value="info">info</SelectItem>
-                            <SelectItem value="warning">warning</SelectItem>
-                            <SelectItem value="error">error</SelectItem>
-                            <SelectItem value="fatal">fatal</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-
-                <div className="space-y-2">
                     <Label htmlFor="timeRange">时间范围</Label>
                     <Select value={localFilters.timeRange} onValueChange={value => handleFilterChange('timeRange', value)}>
                         <SelectTrigger id="timeRange">
@@ -108,26 +85,6 @@ export function EventFilters({ filters, onFiltersChange }: EventFiltersProps) {
                             <SelectItem value="30d">最近 30 天</SelectItem>
                         </SelectContent>
                     </Select>
-                </div>
-
-                <div className="space-y-2">
-                    <Label htmlFor="userId">用户ID</Label>
-                    <Input
-                        id="userId"
-                        placeholder="搜索用户ID..."
-                        value={localFilters.userId}
-                        onChange={e => handleFilterChange('userId', e.target.value)}
-                    />
-                </div>
-
-                <div className="space-y-2">
-                    <Label htmlFor="url">URL</Label>
-                    <Input
-                        id="url"
-                        placeholder="搜索URL..."
-                        value={localFilters.url}
-                        onChange={e => handleFilterChange('url', e.target.value)}
-                    />
                 </div>
             </div>
         </div>

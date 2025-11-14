@@ -23,16 +23,49 @@ export default function EventsPage() {
 
     const [filters, setFilters] = useState<EventFiltersState>({
         eventType: 'all',
-        level: 'all',
-        userId: '',
-        url: '',
         timeRange: '1h',
     })
+
+    // 将 timeRange 转换为 startTime 和 endTime
+    const getTimeRange = (timeRange: string) => {
+        const now = new Date()
+        const end = now.toISOString()
+        let start: string
+
+        switch (timeRange) {
+            case '15m':
+                start = new Date(now.getTime() - 15 * 60 * 1000).toISOString()
+                break
+            case '1h':
+                start = new Date(now.getTime() - 60 * 60 * 1000).toISOString()
+                break
+            case '6h':
+                start = new Date(now.getTime() - 6 * 60 * 60 * 1000).toISOString()
+                break
+            case '24h':
+                start = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
+                break
+            case '7d':
+                start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
+                break
+            case '30d':
+                start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString()
+                break
+            default:
+                start = new Date(now.getTime() - 60 * 60 * 1000).toISOString()
+        }
+
+        return { startTime: start, endTime: end }
+    }
+
+    const timeRange = getTimeRange(filters.timeRange)
 
     // 使用 React Query 轮询,每 5 秒自动刷新
     const { data, isLoading, refetch } = useEvents({
         appId: currentApp?.appId || '',
         eventType: filters.eventType === 'all' ? undefined : filters.eventType,
+        startTime: timeRange.startTime,
+        endTime: timeRange.endTime,
         limit: pageSize,
         offset: page * pageSize,
         refetchInterval: 5000, // 每 5 秒自动刷新
@@ -56,21 +89,8 @@ export default function EventsPage() {
     const total = data?.total || 0
     const totalPages = Math.ceil(total / pageSize)
 
-    // 前端筛选
-    const filteredEvents = useMemo(() => {
-        return events.filter(event => {
-            if (filters.url && !event.url?.toLowerCase().includes(filters.url.toLowerCase())) {
-                return false
-            }
-            if (filters.userId && !event.user_id?.toLowerCase().includes(filters.userId.toLowerCase())) {
-                return false
-            }
-            if (filters.level !== 'all' && event.event_level !== filters.level) {
-                return false
-            }
-            return true
-        })
-    }, [events, filters])
+    // 不需要前端筛选了,直接使用后端返回的数据
+    const filteredEvents = events
 
     // 统计数据
     const stats = useMemo(() => {
@@ -97,9 +117,6 @@ export default function EventsPage() {
     const handleReset = () => {
         setFilters({
             eventType: 'all',
-            level: 'all',
-            userId: '',
-            url: '',
             timeRange: '1h',
         })
         setPage(0)

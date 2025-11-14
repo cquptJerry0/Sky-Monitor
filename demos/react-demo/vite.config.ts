@@ -11,7 +11,7 @@ export default defineConfig({
             uploadUrl: 'http://localhost:8081/api/sourcemaps/upload',
             authToken: process.env.SKY_MONITOR_TOKEN || 'dev-token',
             release: process.env.RELEASE_VERSION || 'dev',
-            appId: 'reactddthD9',
+            appId: 'vanilla1bhOoq',
             urlPrefix: '~/assets/',
             deleteAfterUpload: false, // 保留 map 文件方便调试
         }),

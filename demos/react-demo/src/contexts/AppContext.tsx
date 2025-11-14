@@ -8,7 +8,7 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined)
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [appId, setAppId] = useState('vanillaozmVSp')
+    const [appId, setAppId] = useState('vanilla1bhOoq')
 
     return <AppContext.Provider value={{ appId, setAppId }}>{children}</AppContext.Provider>
 }
