@@ -2,7 +2,7 @@ import type { Event } from '@/api/types'
 import { Badge } from '@/components/ui/badge'
 import { TableCell, TableRow } from '@/components/ui/table'
 import { formatEventTime, getEventTypeBadgeVariant } from '@/utils/eventUtils'
-import { extractEventMessage } from './eventMessageExtractor'
+import { extractEventMessage } from './eventDisplaySchema'
 
 interface EventListRowProps {
     event: Event

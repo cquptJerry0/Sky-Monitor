@@ -12,7 +12,7 @@ import {
     userFields,
     webVitalFields,
     type DetailField,
-} from './eventDetailFields'
+} from './eventFieldSchema'
 
 interface EventDetailCardProps {
     event: Event

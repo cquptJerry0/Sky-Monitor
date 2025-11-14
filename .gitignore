@@ -51,5 +51,4 @@ coverage
 .cursor/ 
 .windsurf/
 docs
-.devcontainer/data
-.devcontainer/postgresql_data
+.devcontainer/

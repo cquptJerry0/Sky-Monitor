@@ -1,8 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useCurrentApp } from '@/hooks/useCurrentApp'
 import { useEvents } from '@/hooks/useEventQuery'
-import { useSSEStream } from '@/api/sse/hooks'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -30,23 +28,20 @@ export default function EventsPage() {
         timeRange: '1h',
     })
 
+    // 使用 React Query 轮询,每 5 秒自动刷新
     const { data, isLoading, refetch } = useEvents({
         appId: currentApp?.appId || '',
         eventType: filters.eventType === 'all' ? undefined : filters.eventType,
         limit: pageSize,
         offset: page * pageSize,
+        refetchInterval: 5000, // 每 5 秒自动刷新
     })
-
-    const { items: realtimeEvents, clear: clearRealtimeEvents } = useSSEStream<Event>(
-        `/events/stream/events?appId=${currentApp?.appId || ''}&type=${filters.eventType === 'all' ? '' : filters.eventType}`,
-        !!currentApp?.appId,
-        50
-    )
 
     const events = data?.data || []
     const total = data?.total || 0
     const totalPages = Math.ceil(total / pageSize)
 
+    // 前端筛选
     const filteredEvents = useMemo(() => {
         return events.filter(event => {
             if (filters.url && !event.url?.toLowerCase().includes(filters.url.toLowerCase())) {
@@ -62,25 +57,17 @@ export default function EventsPage() {
         })
     }, [events, filters])
 
-    const allEvents = useMemo(() => {
-        return [...realtimeEvents, ...filteredEvents].reduce((acc, event) => {
-            if (!acc.find(e => e.id === event.id)) {
-                acc.push(event)
-            }
-            return acc
-        }, [] as Event[])
-    }, [realtimeEvents, filteredEvents])
-
+    // 统计数据
     const stats = useMemo(() => {
         const errorTypes = ['error', 'exception', 'unhandledrejection']
         return {
-            total: allEvents.length,
-            errors: allEvents.filter(e => errorTypes.includes(e.event_type)).length,
-            performance: allEvents.filter(e => e.event_type === 'performance').length,
-            sessions: allEvents.filter(e => e.event_type === 'session').length,
-            webVitals: allEvents.filter(e => e.event_type === 'webVital').length,
+            total: filteredEvents.length,
+            errors: filteredEvents.filter(e => errorTypes.includes(e.event_type)).length,
+            performance: filteredEvents.filter(e => e.event_type === 'performance').length,
+            sessions: filteredEvents.filter(e => e.event_type === 'session').length,
+            webVitals: filteredEvents.filter(e => e.event_type === 'webVital').length,
         }
-    }, [allEvents])
+    }, [filteredEvents])
 
     const handleEventClick = (event: Event) => {
         setSelectedEvent(event)
@@ -101,7 +88,6 @@ export default function EventsPage() {
             timeRange: '1h',
         })
         setPage(0)
-        clearRealtimeEvents()
     }
 
     return (
@@ -111,18 +97,10 @@ export default function EventsPage() {
                     <h1 className="text-2xl font-bold">事件列表</h1>
                     <p className="mt-1 text-muted-foreground">查看所有监控事件</p>
                 </div>
-                <div className="flex items-center gap-2">
-                    {realtimeEvents.length > 0 && (
-                        <Badge variant="secondary">
-                            <AlertCircle className="mr-1 h-3 w-3" />
-                            {realtimeEvents.length} 条新事件
-                        </Badge>
-                    )}
-                    <Button variant="outline" size="sm" onClick={() => refetch()}>
-                        <RefreshCw className="mr-2 h-4 w-4" />
-                        刷新
-                    </Button>
-                </div>
+                <Button variant="outline" size="sm" onClick={() => refetch()}>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    刷新
+                </Button>
             </div>
 
             <EventStats
@@ -146,7 +124,7 @@ export default function EventsPage() {
                                 <Skeleton key={i} className="h-16 w-full" />
                             ))}
                         </div>
-                    ) : allEvents.length === 0 ? (
+                    ) : filteredEvents.length === 0 ? (
                         <div className="py-12 text-center">
                             <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground" />
                             <p className="mt-4 text-muted-foreground">暂无事件</p>
@@ -168,7 +146,7 @@ export default function EventsPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {allEvents.map(event => (
+                                    {filteredEvents.map(event => (
                                         <EventListRow key={event.id} event={event} onClick={handleEventClick} />
                                     ))}
                                 </TableBody>

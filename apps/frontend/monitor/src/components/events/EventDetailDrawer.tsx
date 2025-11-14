@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { X } from 'lucide-react'
 import { EventDetailCard } from './EventDetailCard'
-import { extractEventMessage } from './eventMessageExtractor'
+import { extractEventMessage } from './eventDisplaySchema'
 
 interface EventDetailDrawerProps {
     event: Event | null

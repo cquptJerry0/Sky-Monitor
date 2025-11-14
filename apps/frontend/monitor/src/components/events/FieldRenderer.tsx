@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge'
 import { formatDuration, formatEventTime } from '@/utils/eventUtils'
-import type { FieldType } from './eventDetailFields'
+import type { FieldType } from './eventFieldSchema'
 
 interface FieldRendererProps {
     type: FieldType

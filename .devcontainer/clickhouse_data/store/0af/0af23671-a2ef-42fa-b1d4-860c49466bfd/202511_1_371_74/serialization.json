@@ -1,8 +1,0 @@
-{
-    "columns": [
-        { "kind": "Default", "name": "event_date", "num_defaults": 0, "num_rows": 2177976 },
-        { "kind": "Default", "name": "event_time", "num_defaults": 0, "num_rows": 2177976 },
-        { "kind": "Default", "name": "value", "num_defaults": 1871336, "num_rows": 2177976 }
-    ],
-    "version": 0
-}

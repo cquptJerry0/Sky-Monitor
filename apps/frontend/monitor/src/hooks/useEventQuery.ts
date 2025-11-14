@@ -9,14 +9,16 @@ import { QUERY_CONFIG } from '@/utils/constants'
 /**
  * 查询事件列表
  */
-export function useEvents(params: Parameters<typeof eventsAPI.list>[0]) {
+export function useEvents(params: Parameters<typeof eventsAPI.list>[0] & { refetchInterval?: number }) {
+    const { refetchInterval, ...apiParams } = params
     return useQuery({
-        queryKey: ['events', params],
-        queryFn: () => eventsAPI.list(params),
-        enabled: !!params.appId,
+        queryKey: ['events', apiParams],
+        queryFn: () => eventsAPI.list(apiParams),
+        enabled: !!apiParams.appId,
         staleTime: QUERY_CONFIG.STALE_TIME,
         gcTime: QUERY_CONFIG.GC_TIME,
         retry: QUERY_CONFIG.RETRY,
+        refetchInterval: refetchInterval,
     })
 }
 
