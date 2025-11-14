@@ -17,7 +17,7 @@ import { useApp } from '../contexts/AppContext'
 const tabs: Tab[] = [
     { id: 'overview', name: 'Overview', description: 'SDK 状态概览' },
     { id: 'e2e', name: 'E2E Test', description: 'E2E 综合测试' },
-    { id: 'react', name: 'React Test', description: 'React 组件测试' },
+    // { id: 'react', name: 'React Test', description: 'React 组件测试' },
     { id: 'errors', name: 'Errors', description: '错误捕获测试' },
     { id: 'breadcrumbs', name: 'Breadcrumbs', description: '用户行为轨迹' },
     { id: 'replay', name: 'Session Replay', description: '会话录制' },
