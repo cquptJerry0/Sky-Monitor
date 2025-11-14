@@ -2,73 +2,98 @@
  * 登录页
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 import { useToast } from '@/hooks/use-toast'
 import { authAPI } from '@/api'
 import { useAuthStore } from '@/stores/auth.store'
 import { ROUTES } from '@/utils/constants'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Eye, EyeOff } from 'lucide-react'
+
+const REMEMBER_ME_KEY = 'sky-monitor-remember-username'
 
 export default function LoginPage() {
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
     const [isLoading, setIsLoading] = useState(false)
+    const [showPassword, setShowPassword] = useState(false)
+    const [rememberMe, setRememberMe] = useState(false)
+    const [errors, setErrors] = useState<{ username?: string; password?: string }>({})
     const navigate = useNavigate()
     const { toast } = useToast()
     const { setAccessToken, setUser } = useAuthStore()
 
+    // 页面加载时,从 localStorage 读取用户名
+    useEffect(() => {
+        const savedUsername = localStorage.getItem(REMEMBER_ME_KEY)
+        if (savedUsername) {
+            setUsername(savedUsername)
+            setRememberMe(true)
+        }
+    }, [])
+
+    // 表单验证
+    const validateForm = (): boolean => {
+        const newErrors: { username?: string; password?: string } = {}
+
+        // 用户名验证
+        if (!username) {
+            newErrors.username = '请输入用户名'
+        } else if (username.length < 3 || username.length > 20) {
+            newErrors.username = '用户名长度为 3-20 个字符'
+        }
+
+        // 密码验证
+        if (!password) {
+            newErrors.password = '请输入密码'
+        } else if (password.length < 6 || password.length > 50) {
+            newErrors.password = '密码长度为 6-50 个字符'
+        }
+
+        setErrors(newErrors)
+        return Object.keys(newErrors).length === 0
+    }
+
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault()
 
-        if (!username || !password) {
-            toast({
-                title: '错误',
-                description: '请输入用户名和密码',
-                variant: 'destructive',
-            })
+        // 表单验证
+        if (!validateForm()) {
             return
         }
 
         setIsLoading(true)
-        console.log('[登录] 步骤 1: 发送登录请求', { username })
 
         try {
             // 调用登录 API
             const response = await authAPI.login(username, password)
-            console.log('[登录] 步骤 2: 收到响应', response)
 
             // 检查响应格式
             if (!response?.access_token) {
-                console.error('[登录] 错误: 响应格式不正确', response)
                 throw new Error('登录响应格式错误')
             }
 
             const { access_token } = response
-            console.log('[登录] 步骤 3: 获取到 Access Token', access_token.substring(0, 20) + '...')
 
             // 存储 Token 到 store
             setAccessToken(access_token)
-            console.log('[登录] 步骤 4: Token 已存储到 Zustand store')
-
-            // 验证 store 状态
-            const storeState = useAuthStore.getState()
-            console.log('[登录] 步骤 5: 验证 store 状态', {
-                hasToken: !!storeState.accessToken,
-                isAuthenticated: storeState.isAuthenticated,
-            })
 
             // 获取用户信息
-            console.log('[登录] 步骤 6: 获取用户信息')
             const userResponse = await authAPI.getCurrentUser()
-            console.log('[登录] 步骤 7: 用户信息', userResponse)
 
             if (userResponse) {
                 setUser(userResponse)
-                console.log('[登录] 步骤 8: 用户信息已存储')
+            }
+
+            // 处理"记住我"功能
+            if (rememberMe) {
+                localStorage.setItem(REMEMBER_ME_KEY, username)
+            } else {
+                localStorage.removeItem(REMEMBER_ME_KEY)
             }
 
             toast({
@@ -76,10 +101,8 @@ export default function LoginPage() {
                 description: `欢迎回来，${userResponse?.username || username}！`,
             })
 
-            console.log('[登录] 步骤 9: 跳转到应用列表页')
             navigate(ROUTES.PROJECTS)
         } catch (error) {
-            console.error('[登录] 错误:', error)
             const errorMessage = error instanceof Error ? error.message : '用户名或密码错误'
             toast({
                 title: '登录失败',
@@ -104,6 +127,7 @@ export default function LoginPage() {
 
                 {/* 登录表单 */}
                 <form onSubmit={handleLogin} className="space-y-6">
+                    {/* 用户名 */}
                     <div className="space-y-2">
                         <Label htmlFor="username" className="text-[var(--text-primary)]">
                             用户名
@@ -112,26 +136,65 @@ export default function LoginPage() {
                             id="username"
                             type="text"
                             value={username}
-                            onChange={e => setUsername(e.target.value)}
+                            onChange={e => {
+                                setUsername(e.target.value)
+                                if (errors.username) {
+                                    setErrors({ ...errors, username: undefined })
+                                }
+                            }}
                             placeholder="请输入用户名"
                             disabled={isLoading}
-                            className="bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-primary)]"
+                            className={`bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-primary)] ${errors.username ? 'border-red-500' : ''}`}
                         />
+                        {errors.username && <p className="text-xs text-red-500">{errors.username}</p>}
                     </div>
 
+                    {/* 密码 */}
                     <div className="space-y-2">
-                        <Label htmlFor="password" className="text-[var(--text-primary)]">
-                            密码
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="password" className="text-[var(--text-primary)]">
+                                密码
+                            </Label>
+                            <button
+                                type="button"
+                                onClick={() => toast({ title: '提示', description: '密码重置功能即将上线' })}
+                                className="text-xs text-[var(--color-primary)] hover:underline"
+                            >
+                                忘记密码?
+                            </button>
+                        </div>
+                        <div className="relative">
+                            <Input
+                                id="password"
+                                type={showPassword ? 'text' : 'password'}
+                                value={password}
+                                onChange={e => {
+                                    setPassword(e.target.value)
+                                    if (errors.password) {
+                                        setErrors({ ...errors, password: undefined })
+                                    }
+                                }}
+                                placeholder="请输入密码"
+                                disabled={isLoading}
+                                className={`bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-primary)] pr-10 ${errors.password ? 'border-red-500' : ''}`}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                            >
+                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                        </div>
+                        {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
+                    </div>
+
+                    {/* 记住我 */}
+                    <div className="flex items-center space-x-2">
+                        <Checkbox id="remember" checked={rememberMe} onCheckedChange={checked => setRememberMe(checked === true)} />
+                        <Label htmlFor="remember" className="text-sm text-[var(--text-secondary)] cursor-pointer">
+                            记住我
                         </Label>
-                        <Input
-                            id="password"
-                            type="password"
-                            value={password}
-                            onChange={e => setPassword(e.target.value)}
-                            placeholder="请输入密码"
-                            disabled={isLoading}
-                            className="bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-primary)]"
-                        />
                     </div>
 
                     <Button
@@ -164,12 +227,14 @@ export default function LoginPage() {
                     </p>
                 </div>
 
-                {/* 测试提示 */}
-                <div className="mt-6 p-4 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded">
-                    <p className="text-xs text-[var(--text-secondary)] mb-2">测试账号:</p>
-                    <p className="text-xs text-[var(--text-primary)]">用户名: admin</p>
-                    <p className="text-xs text-[var(--text-primary)]">密码: admin123</p>
-                </div>
+                {/* 测试提示 (仅开发环境) */}
+                {import.meta.env.MODE === 'development' && (
+                    <div className="mt-6 p-4 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded">
+                        <p className="text-xs text-[var(--text-secondary)] mb-2">测试账号:</p>
+                        <p className="text-xs text-[var(--text-primary)]">用户名: admin</p>
+                        <p className="text-xs text-[var(--text-primary)]">密码: admin123</p>
+                    </div>
+                )}
             </div>
         </div>
     )
