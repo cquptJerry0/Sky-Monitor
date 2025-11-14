@@ -60,6 +60,9 @@ export class EventFieldMapper {
 
             // 元数据
             ...this.mapMetadataFields(event),
+
+            // Release
+            release: event.release || '',
         }
     }
 
@@ -101,13 +104,26 @@ export class EventFieldMapper {
 
     private static mapHttpFields(event: MonitoringEventDto) {
         // 支持两种格式:
-        // 1. HttpErrorIntegration: event.httpError.{ url, method, status, duration }
+        // 1. HttpErrorIntegration: event.httpError.{ url, method, status, duration, headers, body }
         // 2. PerformanceIntegration: event.{ url, method, status, duration } (顶层)
         return {
             http_url: event.httpError?.url || event.url || '',
             http_method: event.httpError?.method || event.method || '',
             http_status: event.httpError?.status || event.status || 0,
+            http_status_text: event.httpError?.statusText || '',
             http_duration: event.httpError?.duration || event.duration || 0,
+            http_request_headers: event.httpError?.requestHeaders ? JSON.stringify(event.httpError.requestHeaders) : '',
+            http_response_headers: event.httpError?.responseHeaders ? JSON.stringify(event.httpError.responseHeaders) : '',
+            http_request_body: event.httpError?.requestBody
+                ? typeof event.httpError.requestBody === 'string'
+                    ? event.httpError.requestBody
+                    : JSON.stringify(event.httpError.requestBody)
+                : '',
+            http_response_body: event.httpError?.responseBody
+                ? typeof event.httpError.responseBody === 'string'
+                    ? event.httpError.responseBody
+                    : JSON.stringify(event.httpError.responseBody)
+                : '',
         }
     }
 
@@ -115,6 +131,8 @@ export class EventFieldMapper {
         return {
             resource_url: event.resourceError?.url || '',
             resource_type: event.resourceError?.resourceType || '',
+            resource_tag_name: event.resourceError?.tagName || '',
+            resource_outer_html: event.resourceError?.outerHTML || '',
         }
     }
 

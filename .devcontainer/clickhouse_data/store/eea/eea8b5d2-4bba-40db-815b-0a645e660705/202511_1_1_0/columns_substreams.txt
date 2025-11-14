@@ -1,0 +1,29 @@
+columns substreams version: 1
+13 columns:
+1 substreams for column `id`:
+	id
+1 substreams for column `app_id`:
+	app_id
+1 substreams for column `replay_id`:
+	replay_id
+2 substreams for column `error_event_id`:
+	error_event_id.sparse.idx
+	error_event_id
+1 substreams for column `events`:
+	events
+1 substreams for column `event_count`:
+	event_count
+1 substreams for column `duration`:
+	duration
+1 substreams for column `compressed`:
+	compressed
+1 substreams for column `original_size`:
+	original_size
+1 substreams for column `compressed_size`:
+	compressed_size
+1 substreams for column `trigger`:
+	trigger
+1 substreams for column `timestamp`:
+	timestamp
+1 substreams for column `created_at`:
+	created_at

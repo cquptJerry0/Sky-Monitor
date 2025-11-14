@@ -1,0 +1,24 @@
+{
+    "columns": [
+        { "kind": "Default", "name": "event_date", "num_defaults": 0, "num_rows": 191 },
+        { "kind": "Default", "name": "event_time", "num_defaults": 0, "num_rows": 191 },
+        { "kind": "Default", "name": "event_time_microseconds", "num_defaults": 0, "num_rows": 191 },
+        { "kind": "Default", "name": "level", "num_defaults": 0, "num_rows": 191 },
+        { "kind": "Default", "name": "message", "num_defaults": 0, "num_rows": 191 },
+        { "kind": "Default", "name": "query_id", "num_defaults": 40, "num_rows": 191 },
+        { "kind": "Default", "name": "revision", "num_defaults": 0, "num_rows": 191 },
+        { "kind": "Default", "name": "source_line", "num_defaults": 0, "num_rows": 191 },
+        { "kind": "Default", "name": "thread_id", "num_defaults": 0, "num_rows": 191 },
+        { "kind": "Default", "name": "value1", "num_defaults": 2, "num_rows": 191 },
+        { "kind": "Sparse", "name": "value10", "num_defaults": 191, "num_rows": 191 },
+        { "kind": "Default", "name": "value2", "num_defaults": 27, "num_rows": 191 },
+        { "kind": "Default", "name": "value3", "num_defaults": 40, "num_rows": 191 },
+        { "kind": "Default", "name": "value4", "num_defaults": 71, "num_rows": 191 },
+        { "kind": "Sparse", "name": "value5", "num_defaults": 185, "num_rows": 191 },
+        { "kind": "Sparse", "name": "value6", "num_defaults": 189, "num_rows": 191 },
+        { "kind": "Sparse", "name": "value7", "num_defaults": 189, "num_rows": 191 },
+        { "kind": "Sparse", "name": "value8", "num_defaults": 191, "num_rows": 191 },
+        { "kind": "Sparse", "name": "value9", "num_defaults": 191, "num_rows": 191 }
+    ],
+    "version": 0
+}

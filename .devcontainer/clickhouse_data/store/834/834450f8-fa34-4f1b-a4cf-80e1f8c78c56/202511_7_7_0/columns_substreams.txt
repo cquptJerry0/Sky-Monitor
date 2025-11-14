@@ -1,0 +1,52 @@
+columns substreams version: 1
+22 columns:
+3 substreams for column `hostname`:
+	hostname.dict_prefix
+	hostname.dict
+	hostname
+1 substreams for column `event_date`:
+	event_date
+1 substreams for column `event_time`:
+	event_time
+1 substreams for column `event_time_microseconds`:
+	event_time_microseconds
+1 substreams for column `id`:
+	id
+2 substreams for column `parent_ids`:
+	parent_ids.size0
+	parent_ids
+1 substreams for column `plan_step`:
+	plan_step
+1 substreams for column `plan_step_name`:
+	plan_step_name
+1 substreams for column `plan_step_description`:
+	plan_step_description
+2 substreams for column `plan_group`:
+	plan_group.sparse.idx
+	plan_group
+1 substreams for column `initial_query_id`:
+	initial_query_id
+1 substreams for column `query_id`:
+	query_id
+3 substreams for column `name`:
+	name.dict_prefix
+	name.dict
+	name
+1 substreams for column `elapsed_us`:
+	elapsed_us
+1 substreams for column `input_wait_elapsed_us`:
+	input_wait_elapsed_us
+1 substreams for column `output_wait_elapsed_us`:
+	output_wait_elapsed_us
+1 substreams for column `input_rows`:
+	input_rows
+1 substreams for column `input_bytes`:
+	input_bytes
+1 substreams for column `output_rows`:
+	output_rows
+1 substreams for column `output_bytes`:
+	output_bytes
+1 substreams for column `processor_uniq_id`:
+	processor_uniq_id
+1 substreams for column `step_uniq_id`:
+	step_uniq_id

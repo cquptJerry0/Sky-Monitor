@@ -8,7 +8,7 @@
  * 3. 压缩在 Transport 层自动处理，不需要单独通道
  */
 
-import { BaseTransport, Transport, MonitoringEvent } from '@sky-monitor/monitor-sdk-core'
+import { BaseTransport, Transport } from '@sky-monitor/monitor-sdk-core'
 import { BatchedTransport } from './batched'
 import { BrowserTransport } from './index'
 import { SessionReplayTransport } from './session-replay-transport'

@@ -1,0 +1,15 @@
+columns format version: 1
+13 columns:
+`id` UUID
+`app_id` String
+`replay_id` String
+`error_event_id` String
+`events` String
+`event_count` UInt32
+`duration` UInt32
+`compressed` UInt8
+`original_size` UInt32
+`compressed_size` UInt32
+`trigger` String
+`timestamp` DateTime
+`created_at` DateTime

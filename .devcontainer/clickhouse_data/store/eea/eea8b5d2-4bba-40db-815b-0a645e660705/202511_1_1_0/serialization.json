@@ -1,0 +1,18 @@
+{
+    "columns": [
+        { "kind": "Default", "name": "app_id", "num_defaults": 0, "num_rows": 1 },
+        { "kind": "Default", "name": "compressed", "num_defaults": 0, "num_rows": 1 },
+        { "kind": "Default", "name": "compressed_size", "num_defaults": 0, "num_rows": 1 },
+        { "kind": "Default", "name": "created_at", "num_defaults": 0, "num_rows": 1 },
+        { "kind": "Default", "name": "duration", "num_defaults": 0, "num_rows": 1 },
+        { "kind": "Sparse", "name": "error_event_id", "num_defaults": 1, "num_rows": 1 },
+        { "kind": "Default", "name": "event_count", "num_defaults": 0, "num_rows": 1 },
+        { "kind": "Default", "name": "events", "num_defaults": 0, "num_rows": 1 },
+        { "kind": "Default", "name": "id", "num_defaults": 0, "num_rows": 1 },
+        { "kind": "Default", "name": "original_size", "num_defaults": 0, "num_rows": 1 },
+        { "kind": "Default", "name": "replay_id", "num_defaults": 0, "num_rows": 1 },
+        { "kind": "Default", "name": "timestamp", "num_defaults": 0, "num_rows": 1 },
+        { "kind": "Default", "name": "trigger", "num_defaults": 0, "num_rows": 1 }
+    ],
+    "version": 0
+}

@@ -1,0 +1,66 @@
+columns substreams version: 1
+24 columns:
+3 substreams for column `hostname`:
+	hostname.dict_prefix
+	hostname.dict
+	hostname
+1 substreams for column `event_date`:
+	event_date
+1 substreams for column `event_time`:
+	event_time
+1 substreams for column `event_time_microseconds`:
+	event_time_microseconds
+3 substreams for column `thread_name`:
+	thread_name.dict_prefix
+	thread_name.dict
+	thread_name
+1 substreams for column `thread_id`:
+	thread_id
+1 substreams for column `level`:
+	level
+1 substreams for column `query_id`:
+	query_id
+3 substreams for column `logger_name`:
+	logger_name.dict_prefix
+	logger_name.dict
+	logger_name
+1 substreams for column `message`:
+	message
+1 substreams for column `revision`:
+	revision
+3 substreams for column `source_file`:
+	source_file.dict_prefix
+	source_file.dict
+	source_file
+1 substreams for column `source_line`:
+	source_line
+3 substreams for column `message_format_string`:
+	message_format_string.dict_prefix
+	message_format_string.dict
+	message_format_string
+1 substreams for column `value1`:
+	value1
+1 substreams for column `value2`:
+	value2
+1 substreams for column `value3`:
+	value3
+1 substreams for column `value4`:
+	value4
+2 substreams for column `value5`:
+	value5.sparse.idx
+	value5
+2 substreams for column `value6`:
+	value6.sparse.idx
+	value6
+2 substreams for column `value7`:
+	value7.sparse.idx
+	value7
+2 substreams for column `value8`:
+	value8.sparse.idx
+	value8
+2 substreams for column `value9`:
+	value9.sparse.idx
+	value9
+2 substreams for column `value10`:
+	value10.sparse.idx
+	value10

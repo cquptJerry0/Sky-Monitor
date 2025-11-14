@@ -42,11 +42,18 @@ interface DatabaseEvent {
     http_url: string
     http_method: string
     http_status: number
+    http_status_text: string
     http_duration: number
+    http_request_headers: string
+    http_response_headers: string
+    http_request_body: string
+    http_response_body: string
 
     // 资源错误
     resource_url: string
     resource_type: string
+    resource_tag_name: string
+    resource_outer_html: string
 
     // Session 会话
     session_id: string
@@ -83,6 +90,9 @@ interface DatabaseEvent {
     dedup_count: number
     sampling_rate: number
     sampling_sampled: number
+
+    // Release
+    release: string
 }
 
 /**
@@ -158,6 +168,9 @@ export function mapEventForFrontend(event: DatabaseEvent): any {
         dedup_count: event.dedup_count,
         sampling_rate: event.sampling_rate,
         sampling_sampled: event.sampling_sampled === 1,
+
+        // Release
+        release: event.release,
     }
 
     // 根据事件类型添加特定字段
@@ -182,13 +195,20 @@ export function mapEventForFrontend(event: DatabaseEvent): any {
             url: event.http_url,
             method: event.http_method,
             status: event.http_status,
+            statusText: event.http_status_text,
             duration: event.http_duration,
+            requestHeaders: event.http_request_headers ? parseJsonSafe(event.http_request_headers) : null,
+            responseHeaders: event.http_response_headers ? parseJsonSafe(event.http_response_headers) : null,
+            requestBody: event.http_request_body ? parseJsonSafe(event.http_request_body) : null,
+            responseBody: event.http_response_body ? parseJsonSafe(event.http_response_body) : null,
         }
     } else if (event.event_type === 'error' && event.resource_url) {
         // ResourceErrorIntegration: 资源错误
         mapped.resource = {
             url: event.resource_url,
             type: event.resource_type,
+            tagName: event.resource_tag_name,
+            outerHTML: event.resource_outer_html,
         }
     } else if (event.event_type === 'webVital') {
         // Metrics Integration: Web Vitals

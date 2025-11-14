@@ -46,7 +46,53 @@ CREATE TABLE monitor_events (
     
     -- 资源错误相关
     resource_url String DEFAULT '', -- 资源URL
-    resource_type String DEFAULT '' -- 资源类型: script, img, link, video, audio
+    resource_type String DEFAULT '', -- 资源类型: script, img, link, video, audio
+    resource_tag_name String DEFAULT '', -- 资源标签名: img, script, link, video, audio
+    resource_outer_html String DEFAULT '', -- 资源外部HTML
+
+    -- Session 相关
+    session_id String DEFAULT '', -- 会话ID
+    session_start_time UInt64 DEFAULT 0, -- 会话开始时间(时间戳)
+    session_duration UInt32 DEFAULT 0, -- 会话持续时长(ms)
+    session_event_count UInt32 DEFAULT 0, -- 会话事件数
+    session_error_count UInt32 DEFAULT 0, -- 会话错误数
+    session_page_views UInt32 DEFAULT 0, -- 会话页面浏览数
+
+    -- User 相关
+    user_id String DEFAULT '', -- 用户ID
+    user_email String DEFAULT '', -- 用户邮箱
+    user_username String DEFAULT '', -- 用户名
+    user_ip String DEFAULT '', -- 用户IP
+
+    -- Context 相关
+    tags String DEFAULT '', -- 标签(JSON)
+    extra String DEFAULT '', -- 额外信息(JSON)
+    breadcrumbs String DEFAULT '', -- 面包屑(JSON)
+    contexts String DEFAULT '', -- 上下文(JSON)
+    event_level String DEFAULT '', -- 事件级别: info, warning, error
+    environment String DEFAULT '', -- 环境: development, staging, production
+
+    -- Performance 相关
+    perf_category String DEFAULT '', -- 性能类别: http, resourceTiming
+    perf_value Float64 DEFAULT 0, -- 性能值(Web Vitals)
+    perf_is_slow UInt8 DEFAULT 0, -- 是否慢请求(0/1)
+    perf_success UInt8 DEFAULT 0, -- 是否成功(0/1)
+    perf_metrics String DEFAULT '', -- 性能指标(JSON)
+
+    -- Metadata 相关
+    dedup_count UInt32 DEFAULT 1, -- 去重计数
+    sampling_rate Float32 DEFAULT 1.0, -- 采样率
+    sampling_sampled UInt8 DEFAULT 1, -- 是否被采样(0/1)
+
+    -- HTTP 错误扩展字段
+    http_status_text String DEFAULT '', -- HTTP 状态文本
+    http_request_headers String DEFAULT '', -- 请求头(JSON)
+    http_response_headers String DEFAULT '', -- 响应头(JSON)
+    http_request_body String DEFAULT '', -- 请求体(JSON或文本)
+    http_response_body String DEFAULT '', -- 响应体(JSON或文本)
+
+    -- Release 相关(用于 SourceMap 匹配)
+    release String DEFAULT '' -- 版本号
 ) ENGINE = MergeTree ()
 PARTITION BY
     toYYYYMM (timestamp)

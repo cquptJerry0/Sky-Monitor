@@ -1,0 +1,20 @@
+columns format version: 1
+18 columns:
+`hostname` LowCardinality(String)
+`event_date` Date
+`event_time` DateTime
+`event_time_microseconds` DateTime64(6)
+`timestamp_ns` UInt64
+`revision` UInt32
+`trace_type` Enum8('Real' = 0, 'CPU' = 1, 'Memory' = 2, 'MemorySample' = 3, 'MemoryPeak' = 4, 'ProfileEvent' = 5, 'JemallocSample' = 6, 'MemoryAllocatedWithoutCheck' = 7)
+`thread_id` UInt64
+`query_id` String
+`trace` Array(UInt64)
+`size` Int64
+`ptr` UInt64
+`memory_context` Enum8('Unknown' = -1, 'Global' = 0, 'User' = 1, 'Process' = 2, 'Thread' = 3, 'Max' = 4)
+`memory_blocked_context` Enum8('Unknown' = -1, 'Global' = 0, 'User' = 1, 'Process' = 2, 'Thread' = 3, 'Max' = 4)
+`event` LowCardinality(String)
+`increment` Int64
+`symbols` Array(LowCardinality(String))
+`lines` Array(LowCardinality(String))

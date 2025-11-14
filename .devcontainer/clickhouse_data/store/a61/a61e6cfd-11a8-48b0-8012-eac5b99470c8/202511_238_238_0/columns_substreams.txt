@@ -1,0 +1,54 @@
+columns substreams version: 1
+18 columns:
+3 substreams for column `hostname`:
+	hostname.dict_prefix
+	hostname.dict
+	hostname
+1 substreams for column `event_date`:
+	event_date
+1 substreams for column `event_time`:
+	event_time
+1 substreams for column `event_time_microseconds`:
+	event_time_microseconds
+1 substreams for column `timestamp_ns`:
+	timestamp_ns
+1 substreams for column `revision`:
+	revision
+2 substreams for column `trace_type`:
+	trace_type.sparse.idx
+	trace_type
+1 substreams for column `thread_id`:
+	thread_id
+2 substreams for column `query_id`:
+	query_id.sparse.idx
+	query_id
+2 substreams for column `trace`:
+	trace.size0
+	trace
+2 substreams for column `size`:
+	size.sparse.idx
+	size
+2 substreams for column `ptr`:
+	ptr.sparse.idx
+	ptr
+1 substreams for column `memory_context`:
+	memory_context
+1 substreams for column `memory_blocked_context`:
+	memory_blocked_context
+3 substreams for column `event`:
+	event.dict_prefix
+	event.dict
+	event
+2 substreams for column `increment`:
+	increment.sparse.idx
+	increment
+4 substreams for column `symbols`:
+	symbols.dict_prefix
+	symbols.size0
+	symbols.dict
+	symbols
+4 substreams for column `lines`:
+	lines.dict_prefix
+	lines.size0
+	lines.dict
+	lines

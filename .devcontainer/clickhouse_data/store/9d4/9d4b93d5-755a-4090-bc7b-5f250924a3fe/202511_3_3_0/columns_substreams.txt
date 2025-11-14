@@ -1,0 +1,75 @@
+columns substreams version: 1
+28 columns:
+3 substreams for column `hostname`:
+	hostname.dict_prefix
+	hostname.dict
+	hostname
+2 substreams for column `query_id`:
+	query_id.sparse.idx
+	query_id
+1 substreams for column `event_type`:
+	event_type
+1 substreams for column `merge_reason`:
+	merge_reason
+2 substreams for column `merge_algorithm`:
+	merge_algorithm.sparse.idx
+	merge_algorithm
+1 substreams for column `event_date`:
+	event_date
+1 substreams for column `event_time`:
+	event_time
+1 substreams for column `event_time_microseconds`:
+	event_time_microseconds
+2 substreams for column `duration_ms`:
+	duration_ms.sparse.idx
+	duration_ms
+1 substreams for column `database`:
+	database
+1 substreams for column `table`:
+	table
+1 substreams for column `table_uuid`:
+	table_uuid
+1 substreams for column `part_name`:
+	part_name
+1 substreams for column `partition_id`:
+	partition_id
+1 substreams for column `partition`:
+	partition
+1 substreams for column `part_type`:
+	part_type
+2 substreams for column `disk_name`:
+	disk_name.sparse.idx
+	disk_name
+2 substreams for column `path_on_disk`:
+	path_on_disk.sparse.idx
+	path_on_disk
+1 substreams for column `rows`:
+	rows
+1 substreams for column `size_in_bytes`:
+	size_in_bytes
+2 substreams for column `merged_from`:
+	merged_from.size0
+	merged_from
+1 substreams for column `bytes_uncompressed`:
+	bytes_uncompressed
+2 substreams for column `read_rows`:
+	read_rows.sparse.idx
+	read_rows
+2 substreams for column `read_bytes`:
+	read_bytes.sparse.idx
+	read_bytes
+2 substreams for column `peak_memory_usage`:
+	peak_memory_usage.sparse.idx
+	peak_memory_usage
+2 substreams for column `error`:
+	error.sparse.idx
+	error
+2 substreams for column `exception`:
+	exception.sparse.idx
+	exception
+5 substreams for column `ProfileEvents`:
+	ProfileEvents%2Ekeys.dict_prefix
+	ProfileEvents.size0
+	ProfileEvents%2Ekeys.dict
+	ProfileEvents%2Ekeys
+	ProfileEvents%2Evalues

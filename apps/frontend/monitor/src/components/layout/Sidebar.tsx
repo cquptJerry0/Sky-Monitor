@@ -4,7 +4,7 @@
 
 import { Link, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
-import { LayoutDashboard, AlertCircle, Gauge, Users, Bell, FolderKanban, Layers, MessageSquare } from 'lucide-react'
+import { LayoutDashboard, AlertCircle, Gauge, Users, FolderKanban, Layers, MessageSquare } from 'lucide-react'
 import { ROUTES } from '@/utils/constants'
 
 const menuItems = [
@@ -42,11 +42,6 @@ const menuItems = [
         path: ROUTES.MESSAGES,
         label: '消息',
         icon: MessageSquare,
-    },
-    {
-        path: ROUTES.ALERTS,
-        label: '告警',
-        icon: Bell,
     },
 ]
 

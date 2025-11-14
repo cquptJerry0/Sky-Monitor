@@ -1,0 +1,83 @@
+columns substreams version: 1
+33 columns:
+1 substreams for column `id`:
+	id
+1 substreams for column `app_id`:
+	app_id
+1 substreams for column `event_type`:
+	event_type
+2 substreams for column `event_name`:
+	event_name.sparse.idx
+	event_name
+1 substreams for column `event_data`:
+	event_data
+2 substreams for column `path`:
+	path.sparse.idx
+	path
+1 substreams for column `user_agent`:
+	user_agent
+1 substreams for column `timestamp`:
+	timestamp
+1 substreams for column `created_at`:
+	created_at
+1 substreams for column `error_message`:
+	error_message
+1 substreams for column `error_stack`:
+	error_stack
+2 substreams for column `error_lineno`:
+	error_lineno.sparse.idx
+	error_lineno
+2 substreams for column `error_colno`:
+	error_colno.sparse.idx
+	error_colno
+1 substreams for column `error_fingerprint`:
+	error_fingerprint
+1 substreams for column `device_browser`:
+	device_browser
+1 substreams for column `device_browser_version`:
+	device_browser_version
+1 substreams for column `device_os`:
+	device_os
+1 substreams for column `device_os_version`:
+	device_os_version
+1 substreams for column `device_type`:
+	device_type
+1 substreams for column `device_screen`:
+	device_screen
+1 substreams for column `network_type`:
+	network_type
+1 substreams for column `network_rtt`:
+	network_rtt
+2 substreams for column `framework`:
+	framework.sparse.idx
+	framework
+2 substreams for column `component_name`:
+	component_name.sparse.idx
+	component_name
+2 substreams for column `component_stack`:
+	component_stack.sparse.idx
+	component_stack
+2 substreams for column `http_url`:
+	http_url.sparse.idx
+	http_url
+2 substreams for column `http_method`:
+	http_method.sparse.idx
+	http_method
+2 substreams for column `http_status`:
+	http_status.sparse.idx
+	http_status
+2 substreams for column `http_duration`:
+	http_duration.sparse.idx
+	http_duration
+2 substreams for column `resource_url`:
+	resource_url.sparse.idx
+	resource_url
+2 substreams for column `resource_type`:
+	resource_type.sparse.idx
+	resource_type
+2 substreams for column `session_replay_events`:
+	session_replay_events.sparse.idx
+	session_replay_events
+2 substreams for column `session_replay_size`:
+	session_replay_size.sparse.idx
+	session_replay_size
