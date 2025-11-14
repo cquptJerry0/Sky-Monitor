@@ -1,0 +1,24 @@
+{
+    "columns": [
+        { "kind": "Default", "name": "event_date", "num_defaults": 0, "num_rows": 22246 },
+        { "kind": "Default", "name": "event_time", "num_defaults": 0, "num_rows": 22246 },
+        { "kind": "Default", "name": "event_time_microseconds", "num_defaults": 0, "num_rows": 22246 },
+        { "kind": "Default", "name": "level", "num_defaults": 0, "num_rows": 22246 },
+        { "kind": "Default", "name": "message", "num_defaults": 0, "num_rows": 22246 },
+        { "kind": "Default", "name": "query_id", "num_defaults": 15452, "num_rows": 22246 },
+        { "kind": "Default", "name": "revision", "num_defaults": 0, "num_rows": 22246 },
+        { "kind": "Default", "name": "source_line", "num_defaults": 0, "num_rows": 22246 },
+        { "kind": "Default", "name": "thread_id", "num_defaults": 0, "num_rows": 22246 },
+        { "kind": "Default", "name": "value1", "num_defaults": 536, "num_rows": 22246 },
+        { "kind": "Sparse", "name": "value10", "num_defaults": 22246, "num_rows": 22246 },
+        { "kind": "Default", "name": "value2", "num_defaults": 7847, "num_rows": 22246 },
+        { "kind": "Default", "name": "value3", "num_defaults": 12300, "num_rows": 22246 },
+        { "kind": "Default", "name": "value4", "num_defaults": 19866, "num_rows": 22246 },
+        { "kind": "Sparse", "name": "value5", "num_defaults": 21410, "num_rows": 22246 },
+        { "kind": "Sparse", "name": "value6", "num_defaults": 21988, "num_rows": 22246 },
+        { "kind": "Sparse", "name": "value7", "num_defaults": 21778, "num_rows": 22246 },
+        { "kind": "Sparse", "name": "value8", "num_defaults": 22023, "num_rows": 22246 },
+        { "kind": "Sparse", "name": "value9", "num_defaults": 22246, "num_rows": 22246 }
+    ],
+    "version": 0
+}
