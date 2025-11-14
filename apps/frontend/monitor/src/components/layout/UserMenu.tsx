@@ -70,17 +70,11 @@ export function UserMenu() {
                         <Settings className="mr-2 h-4 w-4" />
                         <span>设置</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem
-                        onClick={() => setShowLogoutAllDialog(true)}
-                        className="text-[var(--text-primary)] focus:bg-[var(--bg-hover)]"
-                    >
+                    <DropdownMenuItem onClick={() => setShowLogoutAllDialog(true)} className="text-foreground focus:bg-accent">
                         <Shield className="mr-2 h-4 w-4" />
                         <span>登出所有设备</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem
-                        onClick={() => logout()}
-                        className="text-[var(--color-error)] focus:bg-[var(--bg-hover)] focus:text-[var(--color-error)]"
-                    >
+                    <DropdownMenuItem onClick={() => logout()} className="text-destructive focus:bg-accent focus:text-destructive">
                         <LogOut className="mr-2 h-4 w-4" />
                         <span>退出登录</span>
                     </DropdownMenuItem>

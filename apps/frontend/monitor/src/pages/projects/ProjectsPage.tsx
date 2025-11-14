@@ -182,7 +182,7 @@ export default function ProjectsPage() {
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-64">
-                <Loader2 className="h-8 w-8 animate-spin text-[var(--color-primary)]" />
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
         )
     }
@@ -201,25 +201,25 @@ export default function ProjectsPage() {
             {/* 页面标题和创建按钮 */}
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-[var(--text-primary)]">应用列表</h1>
-                    <p className="text-sm text-[var(--text-secondary)] mt-1">管理你的监控应用</p>
+                    <h1 className="text-2xl font-bold text-foreground">应用列表</h1>
+                    <p className="text-sm text-muted-foreground mt-1">管理你的监控应用</p>
                 </div>
 
                 <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)]">
+                        <Button>
                             <Plus className="h-4 w-4 mr-2" />
                             创建应用
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="bg-[var(--bg-tertiary)] border-[var(--border-primary)] max-w-2xl">
+                    <DialogContent className="bg-card border-border max-w-2xl">
                         <DialogHeader>
-                            <DialogTitle className="text-[var(--text-primary)]">创建新应用</DialogTitle>
+                            <DialogTitle className="text-foreground">创建新应用</DialogTitle>
                         </DialogHeader>
                         <div className="space-y-6 mt-4">
                             {/* 应用名称 */}
                             <div className="space-y-2">
-                                <Label htmlFor="app-name" className="text-[var(--text-primary)]">
+                                <Label htmlFor="app-name" className="text-foreground">
                                     应用名称
                                 </Label>
                                 <Input
@@ -227,13 +227,13 @@ export default function ProjectsPage() {
                                     value={newAppName}
                                     onChange={e => setNewAppName(e.target.value)}
                                     placeholder="例如：我的网站"
-                                    className="bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-primary)]"
+                                    className="bg-background border-input text-foreground"
                                 />
                             </div>
 
                             {/* 应用类型选择 - 使用卡片 */}
                             <div className="space-y-3">
-                                <Label className="text-[var(--text-primary)]">应用类型</Label>
+                                <Label className="text-foreground">应用类型</Label>
                                 <div className="grid grid-cols-3 gap-3">
                                     {APP_TYPE_OPTIONS.map(option => {
                                         const Icon = option.icon
@@ -247,20 +247,16 @@ export default function ProjectsPage() {
                                                     p-4 rounded-lg border-2 transition-all
                                                     ${
                                                         isSelected
-                                                            ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10'
-                                                            : 'border-[var(--border-primary)] bg-[var(--bg-secondary)] hover:border-[var(--color-primary)]/50'
+                                                            ? 'border-primary bg-primary/10'
+                                                            : 'border-border bg-secondary hover:border-primary/50'
                                                     }
                                                 `}
                                             >
                                                 <div className="flex flex-col items-center gap-2">
                                                     <Icon className="h-10 w-10" style={{ color: option.color }} />
                                                     <div className="text-center">
-                                                        <div className="text-sm font-semibold text-[var(--text-primary)]">
-                                                            {option.label}
-                                                        </div>
-                                                        <div className="text-xs text-[var(--text-secondary)] mt-0.5">
-                                                            {option.description}
-                                                        </div>
+                                                        <div className="text-sm font-semibold text-foreground">{option.label}</div>
+                                                        <div className="text-xs text-muted-foreground mt-0.5">{option.description}</div>
                                                     </div>
                                                 </div>
                                             </button>
@@ -270,11 +266,7 @@ export default function ProjectsPage() {
                             </div>
 
                             {/* 创建按钮 */}
-                            <Button
-                                onClick={handleCreateApp}
-                                disabled={createMutation.isPending}
-                                className="w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)]"
-                            >
+                            <Button onClick={handleCreateApp} disabled={createMutation.isPending} className="w-full">
                                 {createMutation.isPending ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -291,12 +283,9 @@ export default function ProjectsPage() {
 
             {/* 应用列表 */}
             {applications.length === 0 ? (
-                <div className="text-center py-12 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-lg">
-                    <p className="text-[var(--text-secondary)] mb-4">还没有应用，创建一个开始监控吧</p>
-                    <Button
-                        onClick={() => setIsCreateDialogOpen(true)}
-                        className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)]"
-                    >
+                <div className="text-center py-12 bg-secondary border border-border rounded-lg">
+                    <p className="text-muted-foreground mb-4">还没有应用，创建一个开始监控吧</p>
+                    <Button onClick={() => setIsCreateDialogOpen(true)}>
                         <Plus className="h-4 w-4 mr-2" />
                         创建第一个应用
                     </Button>
@@ -314,13 +303,13 @@ export default function ProjectsPage() {
                             <div
                                 key={app.id}
                                 onClick={() => handleSelectApp(app)}
-                                className="p-6 bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-lg hover:border-[var(--color-primary)] cursor-pointer transition-colors group"
+                                className="p-6 bg-card border border-border rounded-lg hover:border-primary cursor-pointer transition-colors group"
                             >
                                 <div className="flex items-start justify-between mb-4">
                                     <div className="flex-1">
-                                        <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-1">{app.name}</h3>
+                                        <h3 className="text-lg font-semibold text-foreground mb-1">{app.name}</h3>
                                         <div className="flex items-center gap-2">
-                                            <p className="text-sm text-[var(--text-secondary)]">{app.appId}</p>
+                                            <p className="text-sm text-muted-foreground">{app.appId}</p>
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
@@ -344,11 +333,11 @@ export default function ProjectsPage() {
                                 </div>
 
                                 <div className="flex items-center gap-2">
-                                    <span className="px-2 py-1 text-xs bg-[var(--bg-tertiary)] border border-[var(--border-primary)] rounded text-[var(--text-secondary)] flex items-center gap-1.5">
+                                    <span className="px-2 py-1 text-xs bg-secondary border border-border rounded text-muted-foreground flex items-center gap-1.5">
                                         <TypeIcon className="h-3.5 w-3.5" style={{ color: typeColor }} />
                                         {typeLabel}
                                     </span>
-                                    <span className="text-xs text-[var(--text-secondary)]">
+                                    <span className="text-xs text-muted-foreground">
                                         创建于 {format(new Date(app.createdAt), 'yyyy/MM/dd', { locale: zhCN })}
                                     </span>
                                 </div>

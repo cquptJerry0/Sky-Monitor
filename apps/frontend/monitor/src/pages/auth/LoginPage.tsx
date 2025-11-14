@@ -154,13 +154,13 @@ export default function LoginPage() {
                     {/* 密码 */}
                     <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                            <Label htmlFor="password" className="text-[var(--text-primary)]">
+                            <Label htmlFor="password" className="text-foreground">
                                 密码
                             </Label>
                             <button
                                 type="button"
                                 onClick={() => toast({ title: '提示', description: '密码重置功能即将上线' })}
-                                className="text-xs text-[var(--color-primary)] hover:underline"
+                                className="text-xs text-primary hover:underline"
                             >
                                 忘记密码?
                             </button>
@@ -178,12 +178,12 @@ export default function LoginPage() {
                                 }}
                                 placeholder="请输入密码"
                                 disabled={isLoading}
-                                className={`bg-[var(--bg-secondary)] border-[var(--border-primary)] text-[var(--text-primary)] pr-10 ${errors.password ? 'border-red-500' : ''}`}
+                                className={`bg-background border-input text-foreground pr-10 ${errors.password ? 'border-red-500' : ''}`}
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                             >
                                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                             </button>
@@ -194,16 +194,12 @@ export default function LoginPage() {
                     {/* 记住我 */}
                     <div className="flex items-center space-x-2">
                         <Checkbox id="remember" checked={rememberMe} onCheckedChange={checked => setRememberMe(checked === true)} />
-                        <Label htmlFor="remember" className="text-sm text-[var(--text-secondary)] cursor-pointer">
+                        <Label htmlFor="remember" className="text-sm text-muted-foreground cursor-pointer">
                             记住我
                         </Label>
                     </div>
 
-                    <Button
-                        type="submit"
-                        disabled={isLoading}
-                        className="w-full bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white"
-                    >
+                    <Button type="submit" disabled={isLoading} className="w-full">
                         {isLoading ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -217,13 +213,9 @@ export default function LoginPage() {
 
                 {/* 注册链接 */}
                 <div className="mt-4 text-center">
-                    <p className="text-sm text-[var(--text-secondary)]">
+                    <p className="text-sm text-muted-foreground">
                         还没有账号?{' '}
-                        <button
-                            type="button"
-                            onClick={() => setShowRegisterModal(true)}
-                            className="text-[var(--color-primary)] hover:underline"
-                        >
+                        <button type="button" onClick={() => setShowRegisterModal(true)} className="text-primary hover:underline">
                             立即注册
                         </button>
                     </p>

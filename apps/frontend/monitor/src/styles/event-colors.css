@@ -1,50 +1,52 @@
 :root {
-    /* 错误事件 */
+    /* GitHub 风格事件颜色 */
+
+    /* 错误事件 - GitHub 红 */
     --event-error: hsl(var(--destructive));
     --event-error-foreground: hsl(var(--destructive-foreground));
-    --event-error-light: hsl(0 84% 95%);
+    --event-error-light: hsl(356 75% 95%);
 
-    /* 性能事件 */
-    --event-performance: hsl(221 83% 53%);
-    --event-performance-foreground: hsl(0 0% 100%);
-    --event-performance-light: hsl(221 83% 95%);
+    /* 性能事件 - GitHub 蓝 */
+    --event-performance: hsl(var(--primary));
+    --event-performance-foreground: hsl(var(--primary-foreground));
+    --event-performance-light: hsl(212 92% 95%);
 
-    /* Web Vitals - 良好 */
-    --event-webvital-good: hsl(142 76% 36%);
-    --event-webvital-good-foreground: hsl(0 0% 100%);
-    --event-webvital-good-light: hsl(142 76% 95%);
+    /* Web Vitals - 良好 - GitHub 绿 */
+    --event-webvital-good: hsl(var(--success));
+    --event-webvital-good-foreground: hsl(var(--success-foreground));
+    --event-webvital-good-light: hsl(140 44% 95%);
 
-    /* Web Vitals - 需改进 */
-    --event-webvital-needs-improvement: hsl(45 93% 47%);
-    --event-webvital-needs-improvement-foreground: hsl(0 0% 100%);
-    --event-webvital-needs-improvement-light: hsl(45 93% 95%);
+    /* Web Vitals - 需改进 - GitHub 橙 */
+    --event-webvital-needs-improvement: hsl(var(--warning));
+    --event-webvital-needs-improvement-foreground: hsl(var(--warning-foreground));
+    --event-webvital-needs-improvement-light: hsl(41 100% 95%);
 
-    /* Web Vitals - 差 */
-    --event-webvital-poor: hsl(0 84% 60%);
-    --event-webvital-poor-foreground: hsl(0 0% 100%);
-    --event-webvital-poor-light: hsl(0 84% 95%);
+    /* Web Vitals - 差 - GitHub 红 */
+    --event-webvital-poor: hsl(var(--destructive));
+    --event-webvital-poor-foreground: hsl(var(--destructive-foreground));
+    --event-webvital-poor-light: hsl(356 75% 95%);
 
-    /* 会话事件 */
+    /* 会话事件 - 灰色 */
     --event-session: hsl(var(--muted));
     --event-session-foreground: hsl(var(--muted-foreground));
     --event-session-light: hsl(var(--muted));
 
-    /* 消息事件 */
-    --event-message: hsl(262 83% 58%);
+    /* 消息事件 - 紫色 */
+    --event-message: hsl(262 52% 47%);
     --event-message-foreground: hsl(0 0% 100%);
-    --event-message-light: hsl(262 83% 95%);
+    --event-message-light: hsl(262 52% 95%);
 
-    /* Replay 事件 */
-    --event-replay: hsl(280 65% 60%);
+    /* Replay 事件 - 深紫 */
+    --event-replay: hsl(280 50% 50%);
     --event-replay-foreground: hsl(0 0% 100%);
-    --event-replay-light: hsl(280 65% 95%);
+    --event-replay-light: hsl(280 50% 95%);
 
-    /* Transaction 事件 */
-    --event-transaction: hsl(200 70% 50%);
+    /* Transaction 事件 - 青色 */
+    --event-transaction: hsl(200 60% 45%);
     --event-transaction-foreground: hsl(0 0% 100%);
-    --event-transaction-light: hsl(200 70% 95%);
+    --event-transaction-light: hsl(200 60% 95%);
 
-    /* Custom 事件 */
+    /* Custom 事件 - 强调色 */
     --event-custom: hsl(var(--accent));
     --event-custom-foreground: hsl(var(--accent-foreground));
     --event-custom-light: hsl(var(--accent));

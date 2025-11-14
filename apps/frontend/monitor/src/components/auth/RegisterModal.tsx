@@ -261,20 +261,10 @@ export function RegisterModal({ open, onOpenChange, onSuccess }: RegisterModalPr
 
                     {/* 提交按钮 */}
                     <div className="flex gap-3 pt-4">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => onOpenChange(false)}
-                            disabled={isLoading}
-                            className="flex-1 border-[var(--border-primary)] text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
-                        >
+                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading} className="flex-1">
                             取消
                         </Button>
-                        <Button
-                            type="submit"
-                            disabled={isLoading}
-                            className="flex-1 bg-[var(--color-primary)] hover:bg-[var(--color-primary-hover)] text-white"
-                        >
+                        <Button type="submit" disabled={isLoading} className="flex-1">
                             {isLoading ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

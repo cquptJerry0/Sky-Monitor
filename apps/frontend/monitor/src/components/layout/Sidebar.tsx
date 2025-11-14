@@ -23,26 +23,6 @@ const menuItems = [
         label: '事件',
         icon: Layers,
     },
-    {
-        path: ROUTES.ERRORS,
-        label: '错误',
-        icon: AlertCircle,
-    },
-    {
-        path: ROUTES.PERFORMANCE,
-        label: '性能',
-        icon: Gauge,
-    },
-    {
-        path: ROUTES.SESSIONS,
-        label: '会话',
-        icon: Users,
-    },
-    {
-        path: ROUTES.MESSAGES,
-        label: '消息',
-        icon: MessageSquare,
-    },
 ]
 
 interface SidebarProps {
@@ -78,8 +58,8 @@ export function Sidebar({ collapsed }: SidebarProps) {
                             className={cn(
                                 'flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors',
                                 isActive
-                                    ? 'bg-[var(--color-primary)] text-white'
-                                    : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]'
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                             )}
                             title={collapsed ? item.label : undefined}
                         >
