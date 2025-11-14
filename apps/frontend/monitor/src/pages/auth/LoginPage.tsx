@@ -13,6 +13,7 @@ import { authAPI } from '@/api'
 import { useAuthStore } from '@/stores/auth.store'
 import { ROUTES } from '@/utils/constants'
 import { Loader2, Eye, EyeOff } from 'lucide-react'
+import { RegisterModal } from '@/components/auth/RegisterModal'
 
 const REMEMBER_ME_KEY = 'sky-monitor-remember-username'
 
@@ -23,6 +24,7 @@ export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false)
     const [rememberMe, setRememberMe] = useState(false)
     const [errors, setErrors] = useState<{ username?: string; password?: string }>({})
+    const [showRegisterModal, setShowRegisterModal] = useState(false)
     const navigate = useNavigate()
     const { toast } = useToast()
     const { setAccessToken, setUser } = useAuthStore()
@@ -219,7 +221,7 @@ export default function LoginPage() {
                         还没有账号?{' '}
                         <button
                             type="button"
-                            onClick={() => toast({ title: '提示', description: '注册功能即将上线' })}
+                            onClick={() => setShowRegisterModal(true)}
                             className="text-[var(--color-primary)] hover:underline"
                         >
                             立即注册
@@ -236,6 +238,9 @@ export default function LoginPage() {
                     </div>
                 )}
             </div>
+
+            {/* 注册弹窗 */}
+            <RegisterModal open={showRegisterModal} onOpenChange={setShowRegisterModal} />
         </div>
     )
 }

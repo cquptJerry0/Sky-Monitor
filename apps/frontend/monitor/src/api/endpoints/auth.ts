@@ -51,4 +51,11 @@ export const authAPI = {
      * 响应拦截器解包后: User
      */
     getProfile: () => client.get<User>('/me'),
+
+    /**
+     * 注册
+     * 后端返回: { success: true, data: User }
+     * 响应拦截器解包后: User
+     */
+    register: (data: { username: string; password: string; email?: string; phone?: string }) => client.post<User>('/admin/register', data),
 }
