@@ -12,7 +12,7 @@ import { ROUTES } from '@/utils/constants'
 // 懒加载页面组件
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'))
 const ProjectsPage = lazy(() => import('@/pages/projects/ProjectsPage'))
-const DashboardPage = lazy(() => import('@/pages/dashboard/DashboardPage'))
+const DashboardPage = lazy(() => import('@/pages/dashboard/NewDashboardPage'))
 const EventsPage = lazy(() => import('@/pages/events/EventsPage'))
 
 /**

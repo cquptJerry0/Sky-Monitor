@@ -1,6 +1,7 @@
 import { Plus } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
+import { DashboardGrid } from '@/components/dashboard/DashboardGrid'
 import { TimeRangePicker } from '@/components/dashboard/TimeRangePicker'
 import { WidgetBuilder } from '@/components/dashboard/WidgetBuilder'
 import { AppSelector } from '@/components/layout/AppSelector'
@@ -110,23 +111,7 @@ export default function NewDashboardPage() {
                     <div className="text-muted-foreground">加载中...</div>
                 </div>
             ) : currentDashboard?.widgets && currentDashboard.widgets.length > 0 ? (
-                <div className="grid grid-cols-12 gap-4">
-                    {currentDashboard.widgets.map(widget => (
-                        <div
-                            key={widget.id}
-                            className="col-span-12 md:col-span-6 lg:col-span-4"
-                            style={{
-                                gridColumn: `span ${widget.layout.w}`,
-                                gridRow: `span ${widget.layout.h}`,
-                            }}
-                        >
-                            <div className="border rounded-lg p-4 h-full">
-                                <h3 className="font-semibold mb-2">{widget.title}</h3>
-                                <div className="text-sm text-muted-foreground">Widget 类型: {widget.widgetType}</div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                <DashboardGrid dashboardId={currentDashboard.id} widgets={currentDashboard.widgets} />
             ) : (
                 <div className="flex flex-col items-center justify-center h-96 space-y-4 border-2 border-dashed rounded-lg">
                     <div className="text-center">

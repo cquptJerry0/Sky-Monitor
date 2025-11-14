@@ -3,6 +3,8 @@
 @tailwind utilities;
 
 @import './styles/event-colors.css';
+@import 'react-grid-layout/css/styles.css';
+@import 'react-resizable/css/styles.css';
 
 @layer base {
     :root {
