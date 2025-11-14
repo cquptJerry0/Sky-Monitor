@@ -36,11 +36,11 @@ export class EventsService {
                 queryParams.eventType = eventType
             }
             if (startTime) {
-                whereConditions.push(`timestamp >= {startTime:String}`)
+                whereConditions.push(`timestamp >= parseDateTime64BestEffort({startTime:String})`)
                 queryParams.startTime = startTime
             }
             if (endTime) {
-                whereConditions.push(`timestamp <= {endTime:String}`)
+                whereConditions.push(`timestamp <= parseDateTime64BestEffort({endTime:String})`)
                 queryParams.endTime = endTime
             }
 
