@@ -11,10 +11,36 @@ import { useCreateDashboard, useDashboard, useDashboards } from '@/hooks/useDash
 import { useDashboardStore } from '@/stores/dashboard.store'
 
 /**
- * 新版 Dashboard 页面
- * 支持自定义 Widget 和拖拽布局
+ * Dashboard 页面
+ *
+ * ## 核心功能
+ * 1. **Dashboard 管理**: 创建和管理多个自定义仪表盘
+ * 2. **Widget 系统**: 支持 5 种图表类型 (折线图、柱状图、面积图、表格、大数字)
+ * 3. **拖拽布局**: 使用 react-grid-layout 实现拖拽和调整大小
+ * 4. **自定义查询**: 支持 ClickHouse SQL 查询和可视化配置
+ * 5. **时间范围选择**: 支持快捷时间范围和自定义时间范围
+ *
+ * ## 数据流
+ * 1. **Dashboard 列表**: useDashboards() -> 获取所有 Dashboard
+ * 2. **Dashboard 详情**: useDashboard(id) -> 获取当前 Dashboard 和 Widgets
+ * 3. **Widget 查询**: useExecuteQuery() -> 执行 ClickHouse 查询获取数据
+ * 4. **图表渲染**: ChartRenderer -> 根据 Widget 类型渲染对应图表
+ *
+ * ## 状态管理
+ * - **全局状态** (useDashboardStore):
+ *   - selectedAppId: 当前选中的应用 ID
+ *   - currentDashboardId: 当前选中的 Dashboard ID
+ *   - timeRange: 时间范围 (start, end)
+ *   - timeRangePreset: 时间范围预设 (1h, 24h, 7d, 30d, custom)
+ * - **本地状态**:
+ *   - widgetBuilderOpen: Widget 构建器弹窗状态
+ *
+ * ## 关键逻辑
+ * - **自动同步应用**: 当 currentApp 变化时，自动更新 selectedAppId
+ * - **自动选择 Dashboard**: 当 Dashboard 列表加载完成且没有选中 Dashboard 时，自动选择第一个
+ * - **空状态处理**: 没有 Dashboard 时显示创建提示，没有 Widget 时显示添加提示
  */
-export default function NewDashboardPage() {
+export default function DashboardPage() {
     const { currentApp } = useCurrentApp()
     const { selectedAppId, setSelectedAppId, currentDashboardId, setCurrentDashboardId } = useDashboardStore()
 
@@ -24,27 +50,54 @@ export default function NewDashboardPage() {
     // 获取 Dashboard 列表
     const { data: dashboards, isLoading: isDashboardsLoading } = useDashboards()
 
-    // 获取当前 Dashboard 详情
+    // 获取当前 Dashboard 详情 (包含 Widgets)
     const { data: currentDashboard, isLoading: isDashboardLoading } = useDashboard(currentDashboardId)
 
-    // 创建 Dashboard
+    // 创建 Dashboard mutation
     const createDashboard = useCreateDashboard()
 
-    // 同步当前应用
+    /**
+     * 同步当前应用到 Dashboard Store
+     *
+     * ## 为什么需要同步?
+     * - currentApp 来自全局应用选择器 (AppSelector)
+     * - Dashboard Store 需要知道当前应用 ID 来过滤 Widget 查询
+     * - 确保 Dashboard 和应用选择器状态一致
+     */
     useEffect(() => {
         if (currentApp?.appId && currentApp.appId !== selectedAppId) {
             setSelectedAppId(currentApp.appId)
         }
     }, [currentApp, selectedAppId, setSelectedAppId])
 
-    // 自动选择第一个 Dashboard
+    /**
+     * 自动选择第一个 Dashboard
+     *
+     * ## 触发条件
+     * - Dashboard 列表加载完成
+     * - 当前没有选中任何 Dashboard
+     * - Dashboard 列表不为空
+     *
+     * ## 为什么需要自动选择?
+     * - 避免用户进入页面时看到空白
+     * - 提供更好的用户体验
+     */
     useEffect(() => {
         if (dashboards && dashboards.length > 0 && !currentDashboardId) {
-            setCurrentDashboardId(dashboards[0].id)
+            const firstDashboard = dashboards[0]
+            if (firstDashboard) {
+                setCurrentDashboardId(firstDashboard.id)
+            }
         }
     }, [dashboards, currentDashboardId, setCurrentDashboardId])
 
-    // 创建默认 Dashboard
+    /**
+     * 创建默认 Dashboard
+     *
+     * ## 使用场景
+     * - 用户首次进入 Dashboard 页面
+     * - 没有任何 Dashboard 时显示创建按钮
+     */
     const handleCreateDashboard = async () => {
         await createDashboard.mutateAsync({
             name: '我的仪表盘',

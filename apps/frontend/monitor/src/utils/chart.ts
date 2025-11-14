@@ -4,7 +4,7 @@
 
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
-import type { ErrorTrend } from '@/api/types'
+import type { ErrorTrend } from '@/types'
 
 /**
  * 转换错误趋势数据为图表数据
@@ -40,7 +40,7 @@ export function transformCompareTrendData(trendsMap: Record<string, ErrorTrend[]
 
     // 构建图表数据
     return sortedTimestamps.map(timestamp => {
-        const dataPoint: any = {
+        const dataPoint: Record<string, string | number> = {
             time: timestamp,
             label: format(new Date(timestamp), 'HH:mm', { locale: zhCN }),
         }

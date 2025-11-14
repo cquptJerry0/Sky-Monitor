@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useCreateWidget } from '@/hooks/useDashboard'
 import { useDashboardStore } from '@/stores/dashboard.store'
-import type { CreateWidgetDto, QueryConfig, WidgetType } from '@/types/dashboard'
+import type { CreateWidgetDto, QueryConfig, WidgetType } from '@/components/dashboard/types'
 
 interface WidgetBuilderProps {
     dashboardId: string

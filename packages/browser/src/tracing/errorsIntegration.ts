@@ -220,14 +220,10 @@ export class Errors implements Integration {
 
         // 获取当前的 replayId
         const replayId = replayIntegration.getReplayId()
-        console.log('[ErrorsIntegration] beforeSend - replayId:', replayId)
 
         if (replayId) {
             // 附加 replayId 到错误事件
             ;(event as any).replayId = replayId
-            console.log('[ErrorsIntegration] Attached replayId to error event:', replayId)
-        } else {
-            console.warn('[ErrorsIntegration] No replayId available')
         }
 
         return event

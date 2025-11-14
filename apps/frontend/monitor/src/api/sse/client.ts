@@ -102,7 +102,7 @@ export function createSSEConnection(endpoint: string, options: SSEOptions) {
 /**
  * 构建 SSE 端点 URL（带查询参数）
  */
-export function buildSSEUrl(path: string, params: Record<string, any>): string {
+export function buildSSEUrl(path: string, params: Record<string, string | number | boolean | null | undefined>): string {
     const searchParams = new URLSearchParams()
     Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {

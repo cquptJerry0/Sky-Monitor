@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AGGREGATION_FUNCTIONS, OPERATORS, QUERY_FIELDS, TIME_GROUP_FUNCTIONS } from '@/config/queryFields'
-import type { QueryCondition, QueryConfig } from '@/types/dashboard'
+import type { QueryCondition, QueryConfig } from '@/components/dashboard/types'
 
 interface QueryBuilderProps {
     query: QueryConfig
@@ -50,8 +50,11 @@ export function QueryBuilder({ query, onChange }: QueryBuilderProps) {
     // 更新条件
     const handleUpdateCondition = (index: number, updates: Partial<QueryCondition>) => {
         const newConditions = [...(query.conditions || [])]
-        newConditions[index] = { ...newConditions[index], ...updates }
-        onChange({ ...query, conditions: newConditions })
+        const existingCondition = newConditions[index]
+        if (existingCondition) {
+            newConditions[index] = { ...existingCondition, ...updates }
+            onChange({ ...query, conditions: newConditions })
+        }
     }
 
     // 删除条件

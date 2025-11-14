@@ -16,11 +16,11 @@ import { API_BASE_URL } from '@/utils/constants'
  * 由于响应拦截器返回 response.data，所以类型应该是 T 而不是 AxiosResponse<T>
  */
 interface CustomAxiosInstance {
-    get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>
-    post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
-    put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
-    delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>
-    patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>
+    get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T>
+    post<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T>
+    put<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T>
+    delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T>
+    patch<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T>
 }
 
 /**

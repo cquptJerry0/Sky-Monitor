@@ -92,7 +92,8 @@ export function useSSEStream<T>(endpoint: string, enabled: boolean = true, maxIt
                 // 后端发送的是完整的数据对象，包含 data 数组
                 // 例如: { data: [...], total: 10, page: 1 }
                 if (newData && typeof newData === 'object' && 'data' in newData) {
-                    const dataArray = (newData as any).data
+                    const dataObj = newData as { data: unknown }
+                    const dataArray = dataObj.data
                     if (Array.isArray(dataArray)) {
                         // 直接替换数据，限制最大条数
                         setItems(dataArray.slice(0, maxItems) as T[])

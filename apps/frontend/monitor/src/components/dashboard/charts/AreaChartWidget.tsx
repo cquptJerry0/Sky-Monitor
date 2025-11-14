@@ -1,6 +1,6 @@
 import { Area, AreaChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
-import type { ExecuteQueryResponse } from '@/types/dashboard'
+import type { ExecuteQueryResponse, QueryResultDataPoint } from '@/types'
 
 interface AreaChartWidgetProps {
     data: ExecuteQueryResponse
@@ -53,7 +53,7 @@ export function AreaChartWidget({ data }: AreaChartWidgetProps) {
 /**
  * 转换数据格式
  */
-function transformData(data: ExecuteQueryResponse): Record<string, any>[] {
+function transformData(data: ExecuteQueryResponse): QueryResultDataPoint[] {
     if (!data.results || data.results.length === 0) {
         return []
     }
@@ -61,10 +61,14 @@ function transformData(data: ExecuteQueryResponse): Record<string, any>[] {
     // 如果只有一个系列
     if (data.results.length === 1) {
         const result = data.results[0]
+        if (!result) return []
+
         return result.data.map(row => {
             const keys = Object.keys(row)
             const xKey = keys[0]
             const yKey = keys[1] || keys[0]
+
+            if (!xKey || !yKey) return { name: '' }
 
             return {
                 name: String(row[xKey]),
@@ -74,23 +78,30 @@ function transformData(data: ExecuteQueryResponse): Record<string, any>[] {
     }
 
     // 多个系列: 需要合并数据
-    const mergedData = new Map<string, Record<string, any>>()
+    const mergedData = new Map<string, QueryResultDataPoint>()
 
     data.results.forEach(result => {
+        if (!result) return
+
         const seriesName = result.legend || result.queryId
 
         result.data.forEach(row => {
             const keys = Object.keys(row)
             const xKey = keys[0]
             const yKey = keys[1] || keys[0]
+
+            if (!xKey || !yKey) return
+
             const xValue = String(row[xKey])
 
             if (!mergedData.has(xValue)) {
                 mergedData.set(xValue, { name: xValue })
             }
 
-            const point = mergedData.get(xValue)!
-            point[seriesName] = row[yKey]
+            const point = mergedData.get(xValue)
+            if (point) {
+                point[seriesName] = row[yKey]
+            }
         })
     })
 

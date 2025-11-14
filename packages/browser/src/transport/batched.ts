@@ -55,12 +55,10 @@ export class BatchedTransport extends BaseTransport {
      */
     async flush(): Promise<void> {
         if (this.queue.length === 0) {
-            console.log('[BatchedTransport] Flush called but queue is empty')
             return
         }
 
         if (this.isFlushing) {
-            console.log('[BatchedTransport] Already flushing, skipping...')
             return
         }
 
@@ -71,9 +69,6 @@ export class BatchedTransport extends BaseTransport {
             while (this.queue.length > 0) {
                 // 取出当前批次的事件（最多 batchSize 个）
                 const eventsToSend = this.queue.splice(0, this.batchSize)
-                const batchSize = eventsToSend.length
-
-                console.log(`[BatchedTransport] Flushing ${batchSize} events to server... (${this.queue.length} remaining in queue)`)
 
                 try {
                     await this.innerTransport.send({

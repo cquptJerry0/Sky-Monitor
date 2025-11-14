@@ -135,7 +135,6 @@ export class OfflineTransport implements Transport {
             }
 
             await this.storage.store(item)
-            console.log('[OfflineTransport] Event saved to IndexedDB:', item.id)
         } catch (error) {
             console.error('[OfflineTransport] Failed to save to IndexedDB:', error)
         }
@@ -150,7 +149,6 @@ export class OfflineTransport implements Transport {
         const queue = await this.storage.getAll()
         if (queue.length === 0) return
 
-        console.log(`[OfflineTransport] Processing queue: ${queue.length} items`)
         this.isSending = true
 
         // 逐个尝试发送
@@ -160,7 +158,6 @@ export class OfflineTransport implements Transport {
 
                 // 发送成功，从 IndexedDB 中删除
                 await this.storage.remove(item.id)
-                console.log('[OfflineTransport] Event sent successfully, removed from queue:', item.id)
             } catch (error) {
                 // 发送失败，增加重试次数
                 console.error('[OfflineTransport] Error processing queue item:', error)
@@ -169,7 +166,6 @@ export class OfflineTransport implements Transport {
                 // 最多重试3次
                 if (item.retryCount >= 3) {
                     await this.storage.remove(item.id)
-                    console.log('[OfflineTransport] Max retries reached, removed from queue:', item.id)
                 }
             }
         }
@@ -192,13 +188,12 @@ export class OfflineTransport implements Transport {
 
         // 监听网络恢复
         window.addEventListener('online', () => {
-            console.log('[OfflineTransport] Network online, processing queue')
             this.processQueue()
         })
 
-        // 监听网络断开
+        // 监听网络断开（无需处理，只是标记状态）
         window.addEventListener('offline', () => {
-            console.log('[OfflineTransport] Network offline')
+            // Network offline
         })
 
         // 页面可见性变化时也尝试发送

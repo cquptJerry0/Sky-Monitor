@@ -1,6 +1,6 @@
 import { TrendingDown, TrendingUp } from 'lucide-react'
 
-import type { ExecuteQueryResponse } from '@/types/dashboard'
+import type { ExecuteQueryResponse } from '@/components/dashboard/types'
 
 interface BigNumberWidgetProps {
     data: ExecuteQueryResponse
@@ -24,6 +24,15 @@ export function BigNumberWidget({ data }: BigNumberWidgetProps) {
     // 获取数值 (第一个字段或第二个字段)
     const keys = Object.keys(firstRow)
     const valueKey = keys.length > 1 ? keys[1] : keys[0]
+
+    if (!valueKey) {
+        return (
+            <div className="flex h-full items-center justify-center text-muted-foreground">
+                <p>数据格式错误</p>
+            </div>
+        )
+    }
+
     const value = firstRow[valueKey]
 
     // 格式化数字
@@ -34,7 +43,7 @@ export function BigNumberWidget({ data }: BigNumberWidgetProps) {
     let trend: 'up' | 'down' | null = null
     let trendPercent = 0
 
-    if (secondRow) {
+    if (secondRow && valueKey) {
         const prevValue = secondRow[valueKey]
         if (typeof value === 'number' && typeof prevValue === 'number' && prevValue !== 0) {
             const change = ((value - prevValue) / prevValue) * 100
@@ -63,7 +72,7 @@ export function BigNumberWidget({ data }: BigNumberWidgetProps) {
 /**
  * 格式化数字
  */
-function formatNumber(value: any): string {
+function formatNumber(value: unknown): string {
     if (typeof value !== 'number') {
         return String(value)
     }

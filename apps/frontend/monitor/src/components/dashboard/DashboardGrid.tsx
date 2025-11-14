@@ -4,7 +4,7 @@ import type { Layouts } from 'react-grid-layout'
 
 import { WidgetPreview } from './WidgetPreview'
 import { useUpdateWidgetsLayout } from '@/hooks/useDashboard'
-import type { DashboardWidget } from '@/types/dashboard'
+import type { DashboardWidget } from '@/components/dashboard/types'
 
 const ResponsiveGridLayout = WidthProvider(Responsive)
 
@@ -19,33 +19,92 @@ interface DashboardGridProps {
 
 /**
  * Dashboard Grid 组件
- * 支持拖拽和调整大小
+ *
+ * ## 核心功能
+ * - 使用 react-grid-layout 实现拖拽和调整大小
+ * - 支持响应式布局 (5 个断点: lg, md, sm, xs, xxs)
+ * - 自动保存布局变化到后端
+ * - 支持拖拽手柄 (只能通过标题栏拖拽)
+ *
+ * ## 布局系统
+ * - **网格系统**: 12 列网格 (lg), 10 列 (md), 6 列 (sm), 4 列 (xs), 2 列 (xxs)
+ * - **单位**: 每个 Widget 占据 w 列宽度, h 行高度
+ * - **行高**: 80px (rowHeight)
+ * - **最小尺寸**: minW: 2, minH: 2 (避免 Widget 太小)
+ *
+ * ## 响应式策略
+ * - lg (>1200px): 使用原始布局
+ * - md (996-1200px): 宽度限制为 10 列
+ * - sm (768-996px): 宽度限制为 6 列
+ * - xs (480-768px): 宽度固定为 4 列
+ * - xxs (<480px): 宽度固定为 2 列
+ *
+ * ## 布局保存
+ * - 只保存 lg 断点的布局 (其他断点自动计算)
+ * - 拖拽或调整大小后自动触发保存
+ * - 使用 mutation 更新后端数据
+ *
+ * ## 拖拽手柄
+ * - 使用 `.widget-drag-handle` 类名标记拖拽区域
+ * - 只能通过标题栏拖拽，避免误操作
  */
 export function DashboardGrid({ dashboardId, widgets }: DashboardGridProps) {
     const updateWidgetsLayout = useUpdateWidgetsLayout()
 
-    // 转换为 react-grid-layout 的 Layouts 格式 (支持多断点)
+    /**
+     * 转换为 react-grid-layout 的 Layouts 格式
+     *
+     * ## 多断点布局
+     * - lg: 原始布局 (12 列)
+     * - md: 宽度限制为 10 列
+     * - sm: 宽度限制为 6 列
+     * - xs: 宽度固定为 4 列
+     * - xxs: 宽度固定为 2 列
+     *
+     * ## 为什么需要多断点?
+     * - 不同屏幕尺寸下，Widget 宽度需要自适应
+     * - 避免小屏幕下 Widget 太窄或重叠
+     * - 提供更好的移动端体验
+     */
     const layouts = useMemo<Layouts>(() => {
         const baseLayouts = widgets.map(widget => ({
-            i: widget.id,
-            x: widget.layout.x,
-            y: widget.layout.y,
-            w: widget.layout.w,
-            h: widget.layout.h,
-            minW: 2,
-            minH: 2,
+            i: widget.id, // Widget ID (必须唯一)
+            x: widget.layout.x, // X 坐标 (列)
+            y: widget.layout.y, // Y 坐标 (行)
+            w: widget.layout.w, // 宽度 (列数)
+            h: widget.layout.h, // 高度 (行数)
+            minW: 2, // 最小宽度
+            minH: 2, // 最小高度
         }))
 
         return {
             lg: baseLayouts,
-            md: baseLayouts.map(l => ({ ...l, w: Math.min(l.w, 10) })),
-            sm: baseLayouts.map(l => ({ ...l, w: Math.min(l.w, 6) })),
-            xs: baseLayouts.map(l => ({ ...l, w: 4 })),
-            xxs: baseLayouts.map(l => ({ ...l, w: 2 })),
+            md: baseLayouts.map(l => ({ ...l, w: Math.min(l.w, 10) })), // 宽度不超过 10 列
+            sm: baseLayouts.map(l => ({ ...l, w: Math.min(l.w, 6) })), // 宽度不超过 6 列
+            xs: baseLayouts.map(l => ({ ...l, w: 4 })), // 宽度固定为 4 列
+            xxs: baseLayouts.map(l => ({ ...l, w: 2 })), // 宽度固定为 2 列
         }
     }, [widgets])
 
-    // 布局变化时保存 (只保存 lg 断点的布局)
+    /**
+     * 布局变化时保存
+     *
+     * ## 触发时机
+     * - 拖拽 Widget 结束
+     * - 调整 Widget 大小结束
+     *
+     * ## 保存策略
+     * - 只保存 lg 断点的布局 (其他断点自动计算)
+     * - 批量更新所有 Widget 的布局 (一次请求)
+     * - 使用 mutation 触发后端更新
+     *
+     * ## 性能优化
+     * - react-grid-layout 自带防抖，不需要额外处理
+     * - mutation 成功后自动失效 Dashboard 缓存，触发重新加载
+     *
+     * @param _currentLayout - 当前断点的布局 (未使用)
+     * @param allLayouts - 所有断点的布局
+     */
     const handleLayoutChange = (_currentLayout: Layout[], allLayouts: Layouts) => {
         const lgLayouts = allLayouts.lg || []
         const layoutUpdates = lgLayouts.map(layout => ({

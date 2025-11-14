@@ -473,9 +473,6 @@ export class SessionReplayIntegration implements Integration {
         // 如果已有 replayId，复用（后续错误）
         if (!this.currentReplayId) {
             this.currentReplayId = this.generateReplayId()
-            console.log('[SessionReplay] First error occurred, generated replayId:', this.currentReplayId)
-        } else {
-            console.log('[SessionReplay] Additional error occurred, reusing replayId:', this.currentReplayId)
         }
 
         this.errorOccurred = true
@@ -484,7 +481,6 @@ export class SessionReplayIntegration implements Integration {
         // 这样可以确保最后一个错误发生后还能录制10秒
         if (this.errorTimer) {
             clearTimeout(this.errorTimer)
-            console.log('[SessionReplay] Reset timer for additional error')
         }
 
         // 开发环境：打印错误触发信息

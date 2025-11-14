@@ -2,6 +2,9 @@ import type { Event } from '@/api/types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { FieldRenderer } from './FieldRenderer'
+import { RRWebPlayer } from '@/components/replay/RRWebPlayer'
+import { useReplayDetail } from '@/hooks/useReplayQuery'
+import { useCurrentApp } from '@/hooks/useCurrentApp'
 import {
     commonFields,
     errorFields,
@@ -19,14 +22,27 @@ interface EventDetailCardProps {
 }
 
 export function EventDetailCard({ event }: EventDetailCardProps) {
+    const { currentApp } = useCurrentApp()
+
+    // 获取 Replay 数据
+    const { data: replayDetail, isLoading: isLoadingReplay } = useReplayDetail(
+        event.replayId || null,
+        currentApp?.id ? String(currentApp.id) : null
+    )
+
     const getFieldValue = (field: DetailField, event: Event): unknown => {
         if (field.extract) {
             return field.extract(event)
         }
         const keys = field.key.split('.')
-        let value: any = event
+        // 使用 unknown 并逐步访问属性
+        let value: unknown = event
         for (const key of keys) {
-            value = value?.[key]
+            if (value && typeof value === 'object' && key in value) {
+                value = (value as Record<string, unknown>)[key]
+            } else {
+                return undefined
+            }
         }
         return value
     }
@@ -65,6 +81,24 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
             </CardHeader>
             <CardContent className="space-y-6">
                 {renderFields(commonFields, '基本信息')}
+
+                {/* Session Replay 播放器 */}
+                {event.replayId && replayDetail && !isLoadingReplay && (
+                    <>
+                        <Separator />
+                        <div className="space-y-4">
+                            <h3 className="text-sm font-semibold">会话回放</h3>
+                            <RRWebPlayer
+                                events={replayDetail.events}
+                                relatedErrors={replayDetail.relatedErrors}
+                                width={800}
+                                height={600}
+                                autoPlay={false}
+                                showController={true}
+                            />
+                        </div>
+                    </>
+                )}
 
                 {(event.event_type === 'error' || event.event_type === 'unhandledrejection') && (
                     <>
