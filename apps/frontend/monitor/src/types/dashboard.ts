@@ -72,6 +72,7 @@ export interface Dashboard {
     description?: string
     isDefault: boolean
     userId: number
+    appId?: string
     createdAt: string
     updatedAt: string
     widgets?: DashboardWidget[]
@@ -99,6 +100,7 @@ export interface CreateDashboardDto {
     name: string
     description?: string
     isDefault?: boolean
+    appId?: string
 }
 
 /**
@@ -109,6 +111,7 @@ export interface UpdateDashboardDto {
     name?: string
     description?: string
     isDefault?: boolean
+    appId?: string
 }
 
 /**

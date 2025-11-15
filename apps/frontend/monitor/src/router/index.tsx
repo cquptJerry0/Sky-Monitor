@@ -8,18 +8,24 @@ import { AuthGuard, GuestGuard } from './guards'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { PageLoading } from '@/components/loading/PageLoading'
 import { ROUTES } from '@/utils/constants'
+import ErrorBoundary from '@/components/ErrorBoundary'
 
 // 懒加载页面组件
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'))
 const ProjectsPage = lazy(() => import('@/pages/projects/ProjectsPage'))
 const DashboardPage = lazy(() => import('@/pages/dashboard/DashboardPage'))
 const EventsPage = lazy(() => import('@/pages/events/EventsPage'))
+const EventDetailPage = lazy(() => import('@/pages/events/EventDetailPage'))
 
 /**
  * 懒加载包装组件
  */
 function LazyPage({ children }: { children: React.ReactNode }) {
-    return <Suspense fallback={<PageLoading />}>{children}</Suspense>
+    return (
+        <ErrorBoundary>
+            <Suspense fallback={<PageLoading />}>{children}</Suspense>
+        </ErrorBoundary>
+    )
 }
 
 /**
@@ -79,6 +85,16 @@ export const router: ReturnType<typeof createBrowserRouter> = createBrowserRoute
                 element: (
                     <LazyPage>
                         <EventsPage />
+                    </LazyPage>
+                ),
+            },
+
+            // 事件详情
+            {
+                path: ROUTES.EVENT_DETAIL,
+                element: (
+                    <LazyPage>
+                        <EventDetailPage />
                     </LazyPage>
                 ),
             },

@@ -23,19 +23,19 @@ export class MonitoringService {
     ) {}
 
     /**
-     * 格式化时间戳为中国时区 (UTC+8)
+     * 格式化时间戳为 ClickHouse DateTime 格式
      * 格式: YYYY-MM-DD HH:mm:ss
+     *
+     * 注意: 使用本地时间而不是 UTC 时间
+     * 因为 ClickHouse DateTime 类型会按服务器本地时区解析
      */
     private formatTimestamp(date: Date): string {
-        // 转换为中国时区 (UTC+8)
-        const chinaTime = new Date(date.getTime() + 8 * 60 * 60 * 1000)
-
-        const year = chinaTime.getUTCFullYear()
-        const month = String(chinaTime.getUTCMonth() + 1).padStart(2, '0')
-        const day = String(chinaTime.getUTCDate()).padStart(2, '0')
-        const hours = String(chinaTime.getUTCHours()).padStart(2, '0')
-        const minutes = String(chinaTime.getUTCMinutes()).padStart(2, '0')
-        const seconds = String(chinaTime.getUTCSeconds()).padStart(2, '0')
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        const hours = String(date.getHours()).padStart(2, '0')
+        const minutes = String(date.getMinutes()).padStart(2, '0')
+        const seconds = String(date.getSeconds()).padStart(2, '0')
 
         return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
     }
@@ -100,8 +100,15 @@ export class MonitoringService {
                 }),
                 path: event.path || '',
                 user_agent: userAgent || event.userAgent || '',
-                timestamp: this.formatTimestamp(new Date()),
-                created_at: this.formatTimestamp(new Date()), // 显式设置 created_at 为 UTC+8
+                // 使用前端发送的 timestamp (Unix 毫秒时间戳),如果没有则使用服务器时间
+                // 前端现在发送 Date.now() (number),需要转换为 Date 对象
+                // 这样可以确保错误事件的时间戳和 rrweb 事件的时间戳在同一时间基准
+                timestamp: event.timestamp
+                    ? typeof event.timestamp === 'number'
+                        ? this.formatTimestamp(new Date(event.timestamp))
+                        : this.formatTimestamp(new Date(event.timestamp))
+                    : this.formatTimestamp(new Date()),
+                created_at: this.formatTimestamp(new Date()), // 服务器接收时间
 
                 // 错误相关字段
                 error_message: event.message || '',
@@ -144,6 +151,9 @@ export class MonitoringService {
                 session_event_count: event._session?.eventCount || 0,
                 session_error_count: event._session?.errorCount || 0,
                 session_page_views: event._session?.pageViews || 0,
+
+                // Session Replay ID (错误事件关联)
+                replay_id: (event as any).replayId || '',
 
                 // User 用户信息
                 user_id: event.user?.id || '',
@@ -509,9 +519,15 @@ export class MonitoringService {
             const eventsJson = JSON.stringify(replayEvents)
 
             // 插入到 session_replays 表
-            // 使用事件自己的 timestamp，如果没有则使用当前时间
+            // 使用 replay 中第一个事件的时间戳
             const now = this.formatTimestamp(new Date())
-            const timestamp = replayData.timestamp || now
+            let timestamp = now
+
+            // 从 replayEvents 中提取第一个事件的时间戳
+            if (replayEvents && replayEvents.length > 0 && replayEvents[0].timestamp) {
+                // replayEvents[0].timestamp 是 Unix 毫秒时间戳 (number)
+                timestamp = this.formatTimestamp(new Date(replayEvents[0].timestamp))
+            }
             const replayRecord = {
                 id: this.generateEventId(),
                 app_id: appId,

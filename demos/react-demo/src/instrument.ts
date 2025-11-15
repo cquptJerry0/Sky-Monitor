@@ -6,7 +6,7 @@
  * - 在应用入口的第一行导入
  * - 确保 SDK 在 React 渲染之前初始化
  */
-import { init, createMonitoringConfig } from '@sky-monitor/monitor-sdk-browser'
+import { init, createMonitoringConfig, setUser } from '@sky-monitor/monitor-sdk-browser'
 import { setSDKClient } from './sdk'
 
 // 声明全局变量（由 Vite 注入）
@@ -60,6 +60,14 @@ init(config)
     .then(client => {
         setSDKClient(client)
         console.log('[Sky Monitor] SDK initialized successfully')
+
+        // 设置用户信息（用于错误追踪）
+        setUser({
+            id: 'demo-user-123',
+            email: 'demo@skymonitor.com',
+            username: 'demo_user',
+        })
+        console.log('[Sky Monitor] User info set')
     })
     .catch(error => {
         console.error('[Sky Monitor] SDK initialization failed:', error)

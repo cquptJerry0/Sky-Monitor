@@ -70,9 +70,23 @@ export class Errors implements Integration {
             '[BatchedTransport]',
             '[SessionReplayTransport]',
             'Sky-Monitor', // SDK 相关的错误
+            'Failed to fetch', // fetch 失败 (可能是 SDK 上报失败)
         ]
 
         if (messagePatterns.some(pattern => errorMessage.includes(pattern))) {
+            // 额外检查: 如果是 "Failed to fetch",需要检查堆栈是否来自 SDK
+            if (errorMessage.includes('Failed to fetch')) {
+                const stackTrace = typeof error === 'string' ? stack : error instanceof Error ? error.stack : stack
+                if (stackTrace) {
+                    // 检查堆栈中是否包含 SDK 路径
+                    const sdkPathPatterns = ['/packages/browser/', '/packages/core/', '@sky-monitor/monitor-sdk']
+                    if (sdkPathPatterns.some(pattern => stackTrace.includes(pattern))) {
+                        return true
+                    }
+                }
+                // 如果堆栈中没有 SDK 路径,则不过滤 (可能是用户代码的 fetch 失败)
+                return false
+            }
             return true
         }
 
@@ -88,6 +102,8 @@ export class Errors implements Integration {
             '@sky-monitor/monitor-sdk',
             '/monitor-sdk-',
             '/sky-monitor/',
+            '/packages/browser/', // 开发环境下的 SDK 路径
+            '/packages/core/', // 开发环境下的 Core 路径
             'transport/index',
             'transport/batched',
             'transport/offline',
@@ -138,7 +154,8 @@ export class Errors implements Integration {
                 lineno,
                 colno,
                 stack: error ? enhanceStack(error) : undefined,
-                timestamp: new Date().toISOString(),
+                // 使用 Unix 毫秒时间戳,与 rrweb 事件时间戳格式一致
+                timestamp: Date.now() as any,
                 errorFingerprint: fingerprint,
                 device: this.deviceInfo,
                 network: this.networkInfo,
@@ -182,7 +199,8 @@ export class Errors implements Integration {
                 type: 'error',
                 message,
                 stack: reason?.stack || error.stack,
-                timestamp: new Date().toISOString(),
+                // 使用 Unix 毫秒时间戳,与 rrweb 事件时间戳格式一致
+                timestamp: Date.now() as any,
                 errorFingerprint: fingerprint,
                 device: this.deviceInfo,
                 network: this.networkInfo,

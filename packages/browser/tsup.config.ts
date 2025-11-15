@@ -10,9 +10,11 @@ export default defineConfig([
         clean: true,
         minify: true,
         outDir: 'build/cjs',
-        // 生产环境移除 console.log 和 debugger
+        // 开发环境保留 console.warn 用于调试
+        // 生产环境可以通过环境变量控制
         esbuildOptions(options) {
-            options.drop = ['console', 'debugger']
+            // 只移除 debugger,保留 console.warn
+            options.drop = ['debugger']
         },
     },
     {
@@ -24,9 +26,11 @@ export default defineConfig([
         clean: true,
         minify: true,
         outDir: 'build/esm',
-        // 生产环境移除 console.log 和 debugger
+        // 开发环境保留 console.warn 用于调试
+        // 生产环境可以通过环境变量控制
         esbuildOptions(options) {
-            options.drop = ['console', 'debugger']
+            // 只移除 debugger,保留 console.warn
+            options.drop = ['debugger']
         },
     },
 ])

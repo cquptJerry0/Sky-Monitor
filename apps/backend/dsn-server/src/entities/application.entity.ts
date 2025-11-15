@@ -17,7 +17,7 @@ export class ApplicationEntity {
     /**
      * 应用 ID (appId)
      */
-    @Column({ type: 'varchar', length: 80 })
+    @Column({ type: 'varchar', length: 80, unique: true })
     appId: string
 
     /**

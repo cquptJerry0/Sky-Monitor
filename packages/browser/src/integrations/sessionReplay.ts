@@ -1,11 +1,12 @@
-import { Integration, captureEvent, getChinaTimestamp } from '@sky-monitor/monitor-sdk-core'
+import { Integration, captureEvent } from '@sky-monitor/monitor-sdk-core'
 import { record } from 'rrweb'
 
 /**
  * rrweb 事件类型
+ * timestamp 是 Unix 毫秒时间戳 (number)
  */
 interface eventWithTime {
-    timestamp: number
+    timestamp: number // Unix 毫秒时间戳,例如 1763192168000
     type: number
     data: unknown
 }
@@ -144,6 +145,20 @@ export class SessionReplayIntegration implements Integration {
     private currentReplayId: string | null = null
     private lastCleanupTime = 0 // 上次清理缓冲区的时间
 
+    // ========== 新增: 录制初始化状态管理 ==========
+    private isInitialized = false // 是否已完成初始化(收集到4→2→3)
+    private initializationTimeout?: any // 初始化超时定时器
+    private readonly INIT_TIMEOUT_MS = 5000 // 初始化超时时间: 5秒
+    private baseEvents: {
+        meta: eventWithTime | null // Meta事件(type: 4)
+        fullSnapshot: eventWithTime | null // FullSnapshot事件(type: 2)
+        firstIncremental: eventWithTime | null // 第一个IncrementalSnapshot事件(type: 3)
+    } = {
+        meta: null,
+        fullSnapshot: null,
+        firstIncremental: null,
+    }
+
     // 全局静态变量: 防止多个实例重复注册事件监听器
     // 这在 React StrictMode 下很重要,因为组件会被渲染 2 次,导致 SDK 初始化 2 次
     private static globalInstance: SessionReplayIntegration | null = null
@@ -270,9 +285,10 @@ export class SessionReplayIntegration implements Integration {
             })
 
             // 开发环境下输出录制状态
-            if (typeof window !== 'undefined' && (window as any).__DEV__) {
-                console.log('[SessionReplay] Recording started')
-            }
+            console.warn('[SessionReplay] Recording started, waiting for initialization events (4→2→3)...')
+
+            // ========== 新增: 启动初始化超时定时器 ==========
+            this.startInitializationTimeout()
         } catch (error) {
             // 开发环境下输出错误信息
             if (typeof window !== 'undefined' && (window as any).__DEV__) {
@@ -283,9 +299,61 @@ export class SessionReplayIntegration implements Integration {
     }
 
     /**
+     * 启动初始化超时定时器
+     * 如果5秒内没有收集到4→2→3,强制标记为已初始化并记录警告
+     */
+    private startInitializationTimeout(): void {
+        this.initializationTimeout = window.setTimeout(() => {
+            if (!this.isInitialized) {
+                console.warn('[SessionReplay] Initialization timeout: Missing required events after 5s', {
+                    hasMeta: !!this.baseEvents.meta,
+                    hasFullSnapshot: !!this.baseEvents.fullSnapshot,
+                    hasFirstIncremental: !!this.baseEvents.firstIncremental,
+                    eventsCount: this.events.length,
+                })
+
+                // 强制标记为已初始化,允许继续录制
+                // 但在flushEvents时会验证并可能不上报
+                this.isInitialized = true
+            }
+        }, this.INIT_TIMEOUT_MS) as any
+    }
+
+    /**
+     * 检查是否完成初始化
+     * 必须收集到 Meta(4) → FullSnapshot(2) → IncrementalSnapshot(3)
+     */
+    private checkInitialization(): void {
+        if (this.isInitialized) return
+
+        const hasMeta = !!this.baseEvents.meta
+        const hasFullSnapshot = !!this.baseEvents.fullSnapshot
+        const hasFirstIncremental = !!this.baseEvents.firstIncremental
+
+        if (hasMeta && hasFullSnapshot && hasFirstIncremental) {
+            this.isInitialized = true
+
+            // 清除初始化超时定时器
+            if (this.initializationTimeout) {
+                clearTimeout(this.initializationTimeout)
+                this.initializationTimeout = undefined
+            }
+
+            // 开发环境: 打印初始化完成信息
+            console.warn('[SessionReplay] Initialization completed:', {
+                metaTimestamp: this.baseEvents.meta?.timestamp,
+                fullSnapshotTimestamp: this.baseEvents.fullSnapshot?.timestamp,
+                firstIncrementalTimestamp: this.baseEvents.firstIncremental?.timestamp,
+                totalEvents: this.events.length,
+            })
+        }
+    }
+
+    /**
      * 处理录制事件
      *
      * 管理事件缓冲区：
+     * - 初始化阶段: 收集 Meta(4) → FullSnapshot(2) → IncrementalSnapshot(3)
      * - 正常情况: 保存最近 N 秒的事件,超出的会被丢弃
      * - 错误发生后: 不清理缓冲区,继续累积事件,以便收集"错误后10秒"的数据
      * - 优化: 每 5 秒清理一次过期事件,避免频繁清理影响性能
@@ -293,13 +361,40 @@ export class SessionReplayIntegration implements Integration {
      * @param event - rrweb 录制的事件
      */
     private handleEvent(event: any): void {
-        this.events.push(event as eventWithTime)
+        const eventWithTime = event as eventWithTime
+
+        // ========== 初始化阶段: 收集基础事件 4→2→3 ==========
+        if (!this.isInitialized) {
+            // 收集 Meta 事件 (type: 4)
+            if (eventWithTime.type === 4 && !this.baseEvents.meta) {
+                this.baseEvents.meta = eventWithTime
+                console.warn('[SessionReplay] Meta event (type: 4) collected')
+            }
+
+            // 收集 FullSnapshot 事件 (type: 2)
+            if (eventWithTime.type === 2 && !this.baseEvents.fullSnapshot) {
+                this.baseEvents.fullSnapshot = eventWithTime
+                console.warn('[SessionReplay] FullSnapshot event (type: 2) collected')
+            }
+
+            // 收集第一个 IncrementalSnapshot 事件 (type: 3)
+            if (eventWithTime.type === 3 && !this.baseEvents.firstIncremental) {
+                this.baseEvents.firstIncremental = eventWithTime
+                console.warn('[SessionReplay] First IncrementalSnapshot event (type: 3) collected')
+            }
+
+            // 检查是否完成初始化
+            this.checkInitialization()
+        }
+
+        // 将事件添加到缓冲区
+        this.events.push(eventWithTime)
 
         // 开发环境：打印错误后的事件
         if (typeof window !== 'undefined' && (window as any).__DEV__ && this.errorOccurred) {
             console.log('[SessionReplay] Event after error:', {
-                type: event.type,
-                timestamp: event.timestamp,
+                type: eventWithTime.type,
+                timestamp: eventWithTime.timestamp,
                 eventsCount: this.events.length,
             })
         }
@@ -317,10 +412,7 @@ export class SessionReplayIntegration implements Integration {
          * 每 5 秒清理一次,避免频繁清理影响性能
          * 只保留 bufferDuration 时间内的事件
          *
-         * 重要：始终保留关键的初始化事件
-         * - Meta 事件（type: 4）：包含页面 URL、宽高等元数据
-         * - FullSnapshot 事件（type: 2）：完整的 DOM 快照
-         * rrweb 回放器需要这些事件来初始化
+         * 重要：始终保留基础事件 (Meta、FullSnapshot、FirstIncremental)
          */
         const now = Date.now()
         const cleanupInterval = 5000 // 5 秒清理一次
@@ -329,23 +421,36 @@ export class SessionReplayIntegration implements Integration {
             const bufferMs = this.options.bufferDuration * 1000
             const cutoffTime = now - bufferMs
 
-            // 找到第一个 Meta 事件（type: 4）和第一个 FullSnapshot 事件（type: 2）
-            // rrweb EventType: 0=DomContentLoaded, 1=Load, 2=FullSnapshot, 3=IncrementalSnapshot, 4=Meta, 5=Custom
-            const firstMeta = this.events.find(e => e.type === 4)
-            const firstFullSnapshot = this.events.find(e => e.type === 2)
+            const beforeCleanup = this.events.length
 
             this.events = this.events.filter(e => {
-                // 始终保留第一个 Meta 事件（type: 4）
-                if (firstMeta && e === firstMeta) {
+                // ========== 永久保留基础事件 ==========
+                // 保留 Meta 事件 (type: 4)
+                if (this.baseEvents.meta && e === this.baseEvents.meta) {
                     return true
                 }
-                // 始终保留第一个 FullSnapshot（type: 2）
-                if (firstFullSnapshot && e === firstFullSnapshot) {
+                // 保留 FullSnapshot 事件 (type: 2)
+                if (this.baseEvents.fullSnapshot && e === this.baseEvents.fullSnapshot) {
                     return true
                 }
+                // 保留第一个 IncrementalSnapshot 事件 (type: 3)
+                if (this.baseEvents.firstIncremental && e === this.baseEvents.firstIncremental) {
+                    return true
+                }
+
                 // 保留 cutoffTime 之后的事件
                 return e.timestamp >= cutoffTime
             })
+
+            // 开发环境: 打印清理信息
+            if (typeof window !== 'undefined' && (window as any).__DEV__) {
+                console.log('[SessionReplay] Buffer cleaned:', {
+                    before: beforeCleanup,
+                    after: this.events.length,
+                    removed: beforeCleanup - this.events.length,
+                    hasBaseEvents: !!(this.baseEvents.meta && this.baseEvents.fullSnapshot && this.baseEvents.firstIncremental),
+                })
+            }
 
             this.lastCleanupTime = now
         }
@@ -458,10 +563,11 @@ export class SessionReplayIntegration implements Integration {
      * 处理错误事件
      *
      * 执行流程（修复后）：
-     * 1. 如果没有 replayId，生成新的 replayId
-     * 2. 如果已有 replayId（说明在10秒内有多个错误），复用同一个 replayId
-     * 3. 重置定时器，延长录制时间
-     * 4. afterErrorDuration 后一次性上报完整数据（错误前60秒 + 错误后10秒）
+     * 1. 检查是否已初始化(收集到基础事件),如果没有则忽略
+     * 2. 如果没有 replayId，生成新的 replayId
+     * 3. 如果已有 replayId（说明在10秒内有多个错误），复用同一个 replayId
+     * 4. 重置定时器，延长录制时间
+     * 5. afterErrorDuration 后一次性上报完整数据（错误前60秒 + 错误后10秒）
      *
      * 改进：
      * - 多个错误共用同一个 replayId（在10秒内）
@@ -469,6 +575,19 @@ export class SessionReplayIntegration implements Integration {
      * - 上报的数据包含所有错误的完整上下文
      */
     private handleError(): void {
+        // ========== 关键修复: 检查初始化状态 ==========
+        // 如果 rrweb 还没初始化完成(没有收集到 Meta、FullSnapshot),忽略此错误
+        // 这样可以避免上报无效的 replay 数据
+        if (!this.isInitialized) {
+            console.warn('[SessionReplay] Error occurred but replay not initialized yet, ignoring...', {
+                hasMeta: !!this.baseEvents.meta,
+                hasFullSnapshot: !!this.baseEvents.fullSnapshot,
+                hasFirstIncremental: !!this.baseEvents.firstIncremental,
+                eventsCount: this.events.length,
+            })
+            return
+        }
+
         // 如果没有 replayId，生成新的（第一个错误）
         // 如果已有 replayId，复用（后续错误）
         if (!this.currentReplayId) {
@@ -481,16 +600,16 @@ export class SessionReplayIntegration implements Integration {
         // 这样可以确保最后一个错误发生后还能录制10秒
         if (this.errorTimer) {
             clearTimeout(this.errorTimer)
+            console.warn('[SessionReplay] Previous error timer cleared, restarting 10s countdown...')
         }
 
         // 开发环境：打印错误触发信息
-        if (typeof window !== 'undefined' && (window as any).__DEV__) {
-            console.log('[SessionReplay] Error occurred, will flush after 10s:', {
-                replayId: this.currentReplayId,
-                eventsCount: this.events.length,
-                errorTime: new Date().toISOString(),
-            })
-        }
+        console.warn('[SessionReplay] Error occurred, will flush after 10s:', {
+            replayId: this.currentReplayId,
+            eventsCount: this.events.length,
+            isInitialized: this.isInitialized,
+            errorTime: new Date().toISOString(),
+        })
 
         // 不立即上报，继续录制 afterErrorDuration 时长
         // 这样可以收集"错误后10秒"的数据
@@ -499,6 +618,8 @@ export class SessionReplayIntegration implements Integration {
          * afterErrorDuration 后一次性上报完整数据
          */
         this.errorTimer = window.setTimeout(() => {
+            console.warn('[SessionReplay] Error timer fired, flushing events...')
+
             // 一次性上报完整的 replay 数据（错误前60秒 + 错误后10秒）
             this.flushEvents()
 
@@ -509,7 +630,20 @@ export class SessionReplayIntegration implements Integration {
             // onError 模式下，清空缓冲区，继续录制（不停止）
             // 这样下次错误还能继续上报
             if (this.options.mode === 'onError') {
-                this.events = []
+                // ========== 核心修复: 只保留基础事件 (前3个) ==========
+                // Meta(4)、FullSnapshot(2)、FirstIncremental(3) 只在页面加载时发送一次
+                // 必须保留这3个事件,否则下次错误时无法上报
+                //
+                // 参考 Sentry 实现: buffer 永远保留基础事件
+                const baseEventsCount = 3
+                this.events = this.events.slice(0, baseEventsCount)
+
+                console.warn('[SessionReplay] Buffer reset, base events preserved:', {
+                    eventsCount: this.events.length,
+                    hasMeta: !!this.baseEvents.meta,
+                    hasFullSnapshot: !!this.baseEvents.fullSnapshot,
+                    hasFirstIncremental: !!this.baseEvents.firstIncremental,
+                })
             }
         }, this.options.afterErrorDuration * 1000) as any
     }
@@ -519,46 +653,90 @@ export class SessionReplayIntegration implements Integration {
      *
      * 将缓冲区中的所有事件上报到服务器
      * 创建 type: 'replay' 事件（符合 Sentry 标准）
-     * 上报后清空缓冲区
      *
      * 修复后的逻辑：
+     * - 验证并确保基础事件 4→2→3 存在
+     * - 重新排序: 基础事件放在最前面
      * - 创建事件快照,用于上报和开发环境查看
      * - 上报快照数据,而不是直接引用 this.events
      * - 保存快照到 lastFlushedEvents,供 getRecordedEvents() 使用
+     * - 上报后不清空缓冲区,由调用方决定如何处理
      */
     private flushEvents(): void {
         if (this.events.length === 0) {
             return
         }
 
-        // 创建事件快照
-        const eventsSnapshot = [...this.events]
+        // ========== 验证基础事件 ==========
+        const hasMeta = !!this.baseEvents.meta
+        const hasFullSnapshot = !!this.baseEvents.fullSnapshot
+        const hasFirstIncremental = !!this.baseEvents.firstIncremental
+
+        console.warn('[SessionReplay] flushEvents called:', {
+            hasMeta,
+            hasFullSnapshot,
+            hasFirstIncremental,
+            eventsCount: this.events.length,
+            isInitialized: this.isInitialized,
+            replayId: this.currentReplayId,
+        })
+
+        if (!hasMeta || !hasFullSnapshot || !hasFirstIncremental) {
+            console.error('[SessionReplay] Missing base events, cannot flush - ABORTING')
+            // 不上报不完整的replay数据
+            return
+        }
+
+        // ========== 重新排序: 确保基础事件在最前面 ==========
+        // 1. 移除基础事件(它们会被重新添加到最前面)
+        const otherEvents = this.events.filter(
+            e => e !== this.baseEvents.meta && e !== this.baseEvents.fullSnapshot && e !== this.baseEvents.firstIncremental
+        )
+
+        // 2. 重新组装: 基础事件 + 其他事件
+        // 已经在上面验证过这些字段存在,所以可以安全使用!
+        const metaEvent = this.baseEvents.meta!
+        const fullSnapshotEvent = this.baseEvents.fullSnapshot!
+        const firstIncrementalEvent = this.baseEvents.firstIncremental!
+        const reorderedEvents = [metaEvent, fullSnapshotEvent, firstIncrementalEvent, ...otherEvents]
+
+        // 3. 验证重排序结果
+        if (reorderedEvents[0]?.type !== 4 || reorderedEvents[1]?.type !== 2 || reorderedEvents[2]?.type !== 3) {
+            console.error('[SessionReplay] Failed to reorder events correctly:', {
+                first3Types: reorderedEvents.slice(0, 3).map(e => e.type),
+            })
+            return
+        }
+
+        // 创建事件快照(使用重排序后的events)
+        const eventsSnapshot = [...reorderedEvents]
         const duration = this.calculateDuration()
         const eventCount = eventsSnapshot.length
 
         // 开发环境：打印上报信息
-        if (typeof window !== 'undefined' && (window as any).__DEV__) {
-            const firstEvent = eventsSnapshot[0]
-            const lastEvent = eventsSnapshot[eventsSnapshot.length - 1]
-            console.log('[SessionReplay] Flushing events:', {
-                replayId: this.currentReplayId,
-                eventCount,
-                duration,
-                firstEventTime: firstEvent ? new Date(firstEvent.timestamp).toISOString() : null,
-                lastEventTime: lastEvent ? new Date(lastEvent.timestamp).toISOString() : null,
-                flushTime: new Date().toISOString(),
-            })
-        }
+        const firstEvent = eventsSnapshot[0]
+        const lastEvent = eventsSnapshot[eventsSnapshot.length - 1]
+        console.warn('[SessionReplay] Flushing events:', {
+            replayId: this.currentReplayId,
+            eventCount,
+            duration,
+            first3Types: eventsSnapshot.slice(0, 3).map(e => e.type), // 应该是 [4, 2, 3]
+            firstEventTime: firstEvent ? new Date(firstEvent.timestamp).toISOString() : null,
+            lastEventTime: lastEvent ? new Date(lastEvent.timestamp).toISOString() : null,
+            flushTime: new Date().toISOString(),
+        })
 
         /**
          * 上报录制数据
          * 使用 type: 'replay' 事件类型（不再使用 custom + category）
          * 包含 replayId 用于与错误事件关联
+         *
+         * 注意: 不需要 timestamp 字段,后端会使用 events[0].timestamp
          */
         const replayEvent = {
             type: 'replay',
             replayId: this.currentReplayId || this.generateReplayId(),
-            events: eventsSnapshot, // 使用快照,而不是 this.events
+            events: eventsSnapshot, // 使用重排序后的快照
             metadata: {
                 eventCount,
                 duration,
@@ -567,16 +745,20 @@ export class SessionReplayIntegration implements Integration {
                 compressedSize: 0,
             },
             trigger: this.errorOccurred ? 'error' : 'manual',
-            timestamp: getChinaTimestamp(),
         }
 
+        console.warn('[SessionReplay] Calling captureEvent with replay data:', {
+            replayId: replayEvent.replayId,
+            eventCount: eventsSnapshot.length,
+            firstEventTime: eventsSnapshot[0]?.timestamp,
+            trigger: replayEvent.trigger,
+        })
+
         captureEvent(replayEvent as any)
+        console.warn('[SessionReplay] captureEvent called successfully')
 
         // 保存快照到 lastFlushedEvents (用于开发环境查看)
         this.lastFlushedEvents = eventsSnapshot
-
-        // 清空已上报的事件
-        this.events = []
     }
 
     /**
@@ -624,8 +806,18 @@ export class SessionReplayIntegration implements Integration {
             this.errorTimer = undefined
         }
 
-        // 清空事件缓冲
+        if (this.initializationTimeout) {
+            clearTimeout(this.initializationTimeout)
+            this.initializationTimeout = undefined
+        }
+
+        // 清空事件缓冲和基础事件引用
         this.events = []
+        this.baseEvents = {
+            meta: null,
+            fullSnapshot: null,
+            firstIncremental: null,
+        }
     }
 
     /**

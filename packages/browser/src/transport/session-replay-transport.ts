@@ -22,6 +22,8 @@ export class SessionReplayTransport implements Transport {
     private buffer: any[] = []
     private timer: number | null = null
     private isUploading = false
+    private failureCount = 0 // 连续失败次数
+    private readonly maxFailures = 3 // 最大连续失败次数
 
     constructor(private options: SessionReplayTransportOptions) {
         this.options.immediateOnError = options.immediateOnError !== false
@@ -76,9 +78,19 @@ export class SessionReplayTransport implements Transport {
 
     /**
      * 刷新缓冲区
+     *
+     * 修复: 限制连续失败次数,避免无限循环
      */
     async flush(): Promise<void> {
         if (this.buffer.length === 0 || this.isUploading) {
+            return
+        }
+
+        // 检查连续失败次数,如果超过最大次数,清空缓冲区并重置计数器
+        if (this.failureCount >= this.maxFailures) {
+            console.warn(`[SessionReplay] Exceeded max failures (${this.maxFailures}), discarding ${this.buffer.length} events`)
+            this.buffer = []
+            this.failureCount = 0
             return
         }
 
@@ -89,11 +101,19 @@ export class SessionReplayTransport implements Transport {
         try {
             const payload = this.preparePayload(events)
             await this.uploadWithRetry(payload)
+            // 上传成功,重置失败计数器
+            this.failureCount = 0
         } catch (error) {
-            // 使用 console.warn 而不是 console.error，避免触发错误监听
-            console.warn('[SessionReplay] Failed to flush buffer:', error)
-            // 失败后重新加入缓冲区
-            this.buffer.unshift(...events)
+            // 上传失败,增加失败计数器
+            this.failureCount++
+            console.warn(`[SessionReplay] Failed to flush buffer (attempt ${this.failureCount}/${this.maxFailures}):`, error)
+
+            // 如果还没超过最大失败次数,重新加入缓冲区
+            if (this.failureCount < this.maxFailures) {
+                this.buffer.unshift(...events)
+            } else {
+                console.warn(`[SessionReplay] Reached max failures, discarding ${events.length} events`)
+            }
         } finally {
             this.isUploading = false
         }

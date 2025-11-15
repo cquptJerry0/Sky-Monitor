@@ -15,10 +15,10 @@ export function FieldRenderer({ type, value }: FieldRendererProps) {
 
     switch (type) {
         case 'text':
-            return <TruncatedText text={String(value)} maxWidth="max-w-2xl" className="text-sm" />
+            return <TruncatedText text={String(value)} maxWidth="max-w-2xl" className="text-sm text-left" />
 
         case 'number':
-            return <span className="text-sm font-mono">{String(value)}</span>
+            return <div className="text-sm font-mono text-left">{String(value)}</div>
 
         case 'code':
             return (
@@ -40,7 +40,7 @@ export function FieldRenderer({ type, value }: FieldRendererProps) {
                     href={String(value)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-primary underline-offset-4 hover:underline truncate block max-w-2xl"
+                    className="text-sm text-primary underline-offset-4 hover:underline truncate block max-w-2xl text-left"
                     title={String(value)}
                 >
                     {String(value)}
@@ -48,22 +48,24 @@ export function FieldRenderer({ type, value }: FieldRendererProps) {
             )
 
         case 'duration':
-            return <span className="text-sm font-mono">{formatDuration(Number(value))}</span>
+            return <div className="text-sm font-mono text-left">{formatDuration(Number(value))}</div>
 
         case 'timestamp':
             if (typeof value === 'number') {
-                return <span className="text-sm font-mono">{formatEventTime(new Date(value).toISOString())}</span>
+                return <div className="text-sm font-mono text-left">{formatEventTime(new Date(value).toISOString())}</div>
             }
-            return <span className="text-sm font-mono">{formatEventTime(String(value))}</span>
+            return <div className="text-sm font-mono text-left">{formatEventTime(String(value))}</div>
 
         case 'badge':
             return (
-                <Badge variant="outline" className="font-mono">
-                    {String(value)}
-                </Badge>
+                <div className="text-left">
+                    <Badge variant="outline" className="font-mono">
+                        {String(value)}
+                    </Badge>
+                </div>
             )
 
         default:
-            return <TruncatedText text={String(value)} maxWidth="max-w-2xl" className="text-sm" />
+            return <TruncatedText text={String(value)} maxWidth="max-w-2xl" className="text-sm text-left" />
     }
 }

@@ -35,13 +35,13 @@ export class EventsController {
     @ApiQuery({ name: 'eventType', required: false })
     @ApiQuery({ name: 'limit', required: false })
     @ApiQuery({ name: 'offset', required: false })
+    @ApiQuery({ name: 'timeRange', required: false, description: '时间范围: 15m, 1h, 6h, 24h, 7d, 30d' })
     async getEvents(
         @Query('appId') appId?: string,
         @Query('eventType') eventType?: string,
         @Query('limit') limit?: string,
         @Query('offset') offset?: string,
-        @Query('startTime') startTime?: string,
-        @Query('endTime') endTime?: string,
+        @Query('timeRange') timeRange?: string,
         @Request() req?: any
     ) {
         // 验证权限：如果指定了 appId，检查用户是否拥有该应用
@@ -54,8 +54,7 @@ export class EventsController {
             eventType,
             limit: limit ? parseInt(limit, 10) : undefined,
             offset: offset ? parseInt(offset, 10) : undefined,
-            startTime,
-            endTime,
+            timeRange,
         })
 
         return {

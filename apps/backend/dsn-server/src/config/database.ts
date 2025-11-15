@@ -11,5 +11,6 @@ export default () => ({
         password: process.env.DB_PASSWORD,
         entities: [join(__dirname, '../', '**/**.entity{.ts,.js}')],
         synchronize: true,
+        timezone: 'Asia/Shanghai',
     },
 })

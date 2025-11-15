@@ -37,6 +37,11 @@ import { QUERY_CONFIG } from '@/utils/constants'
  * - trigger: 触发方式
  * - timestamp: 创建时间
  *
+ * ## 重试策略
+ * - 如果查询失败 (404),会自动重试 2 次
+ * - 重试间隔: 2 秒
+ * - 这样可以处理 Error 事件先到达,Replay 事件稍后到达的情况
+ *
  * @param replayId - Replay ID
  * @param appId - 应用 ID
  * @returns TanStack Query 结果对象
@@ -47,6 +52,8 @@ export function useReplay(replayId: string | null, appId: string | null) {
         queryFn: () => replaysAPI.getReplayById(replayId!, appId!),
         enabled: !!replayId && !!appId, // 只有当 replayId 和 appId 都存在时才执行查询
         staleTime: QUERY_CONFIG.STALE_TIME,
+        retry: 2, // 失败后重试 2 次
+        retryDelay: 2000, // 重试间隔 2 秒
     })
 }
 

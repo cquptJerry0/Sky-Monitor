@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 
 import { QueryBuilder } from './QueryBuilder'
 import { WidgetPreview } from './WidgetPreview'
+import type { DashboardWidget } from './types'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -10,7 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useDebounce } from '@/hooks/useDebounce'
-import { useCreateWidget } from '@/hooks/useDashboard'
+import { useCreateWidget, useUpdateWidget } from '@/hooks/useDashboard'
 import { useDashboardStore } from '@/stores/dashboard.store'
 import type { CreateWidgetDto, QueryConfig, WidgetType } from '@/components/dashboard/types'
 
@@ -18,14 +19,18 @@ interface WidgetBuilderProps {
     dashboardId: string
     open: boolean
     onOpenChange: (open: boolean) => void
+    editingWidget?: DashboardWidget | null
 }
 
 /**
  * Widget 构建器弹窗
  */
-export function WidgetBuilder({ dashboardId, open, onOpenChange }: WidgetBuilderProps) {
+export function WidgetBuilder({ dashboardId, open, onOpenChange, editingWidget }: WidgetBuilderProps) {
     const { timeRange, selectedAppId } = useDashboardStore()
     const createWidget = useCreateWidget()
+    const updateWidget = useUpdateWidget()
+
+    const isEditMode = !!editingWidget
 
     // Widget 配置
     const [title, setTitle] = useState('')
@@ -41,45 +46,70 @@ export function WidgetBuilder({ dashboardId, open, onOpenChange }: WidgetBuilder
     // 防抖查询配置
     const debouncedQuery = useDebounce(query, 500)
 
-    // 创建 Widget
-    const handleCreate = async () => {
+    // 当编辑 Widget 时,初始化表单
+    useEffect(() => {
+        if (editingWidget && open) {
+            setTitle(editingWidget.title)
+            setWidgetType(editingWidget.widgetType)
+            if (editingWidget.queries && editingWidget.queries.length > 0) {
+                const firstQuery = editingWidget.queries[0]
+                if (firstQuery) {
+                    setQuery(firstQuery)
+                }
+            }
+        } else if (!open) {
+            // 关闭弹窗时重置表单
+            setTitle('')
+            setWidgetType('line')
+            setQuery({
+                id: uuidv4(),
+                fields: ['count()'],
+                conditions: [],
+                groupBy: [],
+                legend: '查询 1',
+            })
+        }
+    }, [editingWidget, open])
+
+    // 创建或更新 Widget
+    const handleSubmit = async () => {
         if (!title.trim()) {
             return
         }
 
-        const widgetData: CreateWidgetDto = {
-            dashboardId,
-            title,
-            widgetType,
-            queries: [query],
-            layout: {
-                x: 0,
-                y: 0,
-                w: 6,
-                h: 4,
-            },
+        if (isEditMode && editingWidget) {
+            // 更新模式
+            await updateWidget.mutateAsync({
+                id: editingWidget.id,
+                title,
+                widgetType,
+                queries: [query],
+            })
+        } else {
+            // 创建模式
+            const widgetData: CreateWidgetDto = {
+                dashboardId,
+                title,
+                widgetType,
+                queries: [query],
+                layout: {
+                    x: 0,
+                    y: 0,
+                    w: 6,
+                    h: 4,
+                },
+            }
+            await createWidget.mutateAsync(widgetData)
         }
 
-        await createWidget.mutateAsync(widgetData)
         onOpenChange(false)
-
-        // 重置表单
-        setTitle('')
-        setWidgetType('line')
-        setQuery({
-            id: uuidv4(),
-            fields: ['count()'],
-            conditions: [],
-            groupBy: [],
-            legend: '查询 1',
-        })
     }
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>创建 Widget</DialogTitle>
+                    <DialogTitle>{isEditMode ? '编辑 Widget' : '创建 Widget'}</DialogTitle>
                 </DialogHeader>
 
                 <div className="space-y-6">
@@ -128,8 +158,8 @@ export function WidgetBuilder({ dashboardId, open, onOpenChange }: WidgetBuilder
                     <Button variant="outline" onClick={() => onOpenChange(false)}>
                         取消
                     </Button>
-                    <Button onClick={handleCreate} disabled={!title.trim() || createWidget.isPending}>
-                        {createWidget.isPending ? '创建中...' : '创建'}
+                    <Button onClick={handleSubmit} disabled={!title.trim() || createWidget.isPending || updateWidget.isPending}>
+                        {isEditMode ? (updateWidget.isPending ? '保存中...' : '保存') : createWidget.isPending ? '创建中...' : '创建'}
                     </Button>
                 </DialogFooter>
             </DialogContent>

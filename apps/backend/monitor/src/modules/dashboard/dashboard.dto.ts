@@ -49,6 +49,16 @@ export const displayConfigSchema = z.object({
     showLegend: z.boolean().optional(),
     showGrid: z.boolean().optional(),
     stacked: z.boolean().optional(),
+    // big_number 专用配置
+    trend: z.boolean().optional(), // 是否显示趋势
+    trendField: z.string().optional(), // 趋势字段
+    icon: z.string().optional(), // 图标名称
+    color: z.string().optional(), // 颜色
+    unit: z.string().optional(), // 单位
+    // line/area 专用配置
+    smooth: z.boolean().optional(), // 是否平滑曲线
+    // bar 专用配置
+    horizontal: z.boolean().optional(), // 是否横向柱状图
 })
 
 /**
@@ -67,6 +77,7 @@ export const layoutConfigSchema = z.object({
 export const createDashboardSchema = z.object({
     name: z.string().min(1).max(255),
     description: z.string().optional(),
+    appId: z.string().optional(),
 })
 
 export type CreateDashboardDto = z.infer<typeof createDashboardSchema>
@@ -78,6 +89,7 @@ export const updateDashboardSchema = z.object({
     id: z.string().uuid(),
     name: z.string().min(1).max(255).optional(),
     description: z.string().optional(),
+    appId: z.string().optional(),
 })
 
 export type UpdateDashboardDto = z.infer<typeof updateDashboardSchema>

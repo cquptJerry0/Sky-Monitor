@@ -20,9 +20,9 @@ export class EventsService {
     /**
      * 获取事件列表
      */
-    async getEvents(params: { appId?: string; eventType?: string; limit?: number; offset?: number; startTime?: string; endTime?: string }) {
+    async getEvents(params: { appId?: string; eventType?: string; limit?: number; offset?: number; timeRange?: string }) {
         try {
-            const { appId, eventType, limit = 50, offset = 0, startTime, endTime } = params
+            const { appId, eventType, limit = 50, offset = 0, timeRange } = params
 
             const whereConditions = []
             const queryParams: Record<string, any> = { limit, offset }
@@ -35,98 +35,77 @@ export class EventsService {
                 whereConditions.push(`event_type = {eventType:String}`)
                 queryParams.eventType = eventType
             }
-            if (startTime) {
-                whereConditions.push(`timestamp >= parseDateTime64BestEffort({startTime:String})`)
-                queryParams.startTime = startTime
-            }
-            if (endTime) {
-                whereConditions.push(`timestamp <= parseDateTime64BestEffort({endTime:String})`)
-                queryParams.endTime = endTime
+
+            // 根据 timeRange 计算时间范围
+            if (timeRange) {
+                let intervalExpression: string
+                switch (timeRange) {
+                    case '15m':
+                        intervalExpression = 'INTERVAL 15 MINUTE'
+                        break
+                    case '1h':
+                        intervalExpression = 'INTERVAL 1 HOUR'
+                        break
+                    case '6h':
+                        intervalExpression = 'INTERVAL 6 HOUR'
+                        break
+                    case '24h':
+                        intervalExpression = 'INTERVAL 24 HOUR'
+                        break
+                    case '7d':
+                        intervalExpression = 'INTERVAL 7 DAY'
+                        break
+                    case '30d':
+                        intervalExpression = 'INTERVAL 30 DAY'
+                        break
+                    default:
+                        intervalExpression = 'INTERVAL 1 HOUR'
+                }
+                whereConditions.push(`timestamp >= now() - ${intervalExpression}`)
             }
 
             const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : ''
 
+            // 列表查询只返回必要字段
             const query = `
-                SELECT 
+                SELECT
                     id,
                     app_id,
                     event_type,
                     event_name,
-                    event_data,
                     path,
-                    user_agent,
                     timestamp,
-                    created_at,
-                    
-                    -- 错误字段
+
+                    -- 错误字段 (用于显示消息)
                     error_message,
-                    error_stack,
                     error_lineno,
                     error_colno,
-                    error_fingerprint,
-                    
-                    -- 设备信息
-                    device_browser,
-                    device_browser_version,
-                    device_os,
-                    device_os_version,
-                    device_type,
-                    device_screen,
-                    
-                    -- 网络信息
-                    network_type,
-                    network_rtt,
-                    
-                    -- 框架信息
-                    framework,
-                    component_name,
-                    component_stack,
-                    
-                    -- HTTP 错误
+
+                    -- HTTP 错误 (用于显示消息)
                     http_url,
                     http_method,
                     http_status,
                     http_duration,
-                    
-                    -- 资源错误
+
+                    -- 资源错误 (用于显示消息)
                     resource_url,
                     resource_type,
-                    
+
                     -- Session 会话
                     session_id,
-                    session_start_time,
-                    session_duration,
-                    session_event_count,
-                    session_error_count,
-                    session_page_views,
-                    
+                    replay_id,
+
                     -- User 用户
                     user_id,
                     user_email,
-                    user_username,
-                    user_ip,
-                    
-                    -- Scope 上下文
-                    tags,
-                    extra,
-                    breadcrumbs,
-                    contexts,
-                    
+
                     -- Event Level
                     event_level,
-                    environment,
-                    
-                    -- Performance
+
+                    -- Performance (用于显示消息)
                     perf_category,
                     perf_value,
-                    perf_is_slow,
-                    perf_success,
-                    perf_metrics,
-                    
-                    -- 元数据
-                    dedup_count,
-                    sampling_rate,
-                    sampling_sampled
+                    perf_is_slow
                 FROM monitor_events
                 ${whereClause}
                 ORDER BY timestamp DESC
@@ -213,7 +192,6 @@ export class EventsService {
             let originalStack = null
             let release = null
             let sessionId = event.session_id || null
-            let breadcrumbs = null
             let replayId = null
             let environment = event.environment || null
 
@@ -227,7 +205,6 @@ export class EventsService {
                     originalStack = eventData.originalStack || null
                     release = eventData.release || null
                     sessionId = eventData.sessionId || sessionId
-                    breadcrumbs = eventData.breadcrumbs || null
                     replayId = eventData.replayId || null
                     environment = eventData.environment || environment
 
@@ -315,13 +292,13 @@ export class EventsService {
             const mappedEvent = mapEventForFrontend(event)
 
             // 返回增强后的事件数据
+            // breadcrumbs已经在mapEventForFrontend中从event.breadcrumbs列解析,不需要再覆盖
             return {
                 ...mappedEvent,
                 parsedStack,
                 originalStack,
                 sourceMapStatus,
                 session_id: sessionId,
-                breadcrumbs,
                 replayId,
                 environment,
                 relatedErrors,

@@ -100,6 +100,14 @@ interface DatabaseEvent {
  * 将数据库字段映射为前端友好的格式
  */
 export function mapEventForFrontend(event: DatabaseEvent): any {
+    // 解析 event_data JSON
+    let eventData: any = {}
+    try {
+        eventData = event.event_data ? JSON.parse(event.event_data) : {}
+    } catch {
+        eventData = {}
+    }
+
     const mapped: any = {
         // 基础字段
         id: event.id,
@@ -118,6 +126,10 @@ export function mapEventForFrontend(event: DatabaseEvent): any {
         error_lineno: event.error_lineno,
         error_colno: event.error_colno,
         error_fingerprint: event.error_fingerprint,
+
+        // SourceMap 解析后的堆栈 (从 event_data 中提取)
+        parsedStack: eventData.parsedStack || null,
+        originalStack: eventData.originalStack || null,
 
         // 设备信息（组合为对象）
         device: {

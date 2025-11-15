@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { Responsive, WidthProvider, type Layout } from 'react-grid-layout'
 import type { Layouts } from 'react-grid-layout'
 
-import { WidgetPreview } from './WidgetPreview'
+import { WidgetCard } from './WidgetCard'
 import { useUpdateWidgetsLayout } from '@/hooks/useDashboard'
 import type { DashboardWidget } from '@/components/dashboard/types'
 
@@ -15,6 +15,7 @@ const COLS = { lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }
 interface DashboardGridProps {
     dashboardId: string
     widgets: DashboardWidget[]
+    onEditWidget?: (widget: DashboardWidget) => void
 }
 
 /**
@@ -48,7 +49,7 @@ interface DashboardGridProps {
  * - 使用 `.widget-drag-handle` 类名标记拖拽区域
  * - 只能通过标题栏拖拽，避免误操作
  */
-export function DashboardGrid({ dashboardId, widgets }: DashboardGridProps) {
+export function DashboardGrid({ dashboardId, widgets, onEditWidget }: DashboardGridProps) {
     const updateWidgetsLayout = useUpdateWidgetsLayout()
 
     /**
@@ -133,25 +134,14 @@ export function DashboardGrid({ dashboardId, widgets }: DashboardGridProps) {
             onLayoutChange={handleLayoutChange}
             draggableHandle=".widget-drag-handle"
             resizeHandle={<div className="react-resizable-handle react-resizable-handle-se" />}
-            compactType={null}
-            preventCollision={false}
+            compactType="vertical"
+            preventCollision={true}
             isDraggable
             isResizable
         >
             {widgets.map(widget => (
-                <div key={widget.id} className="relative flex flex-col rounded-lg border bg-card shadow-sm overflow-hidden h-full">
-                    <div className="widget-drag-handle cursor-move rounded-t-lg border-b bg-muted/50 px-4 py-2 flex-shrink-0">
-                        <h3 className="text-sm font-semibold">{widget.title}</h3>
-                    </div>
-                    <div className="widget-content flex-1 overflow-auto">
-                        <WidgetPreview
-                            widgetType={widget.widgetType}
-                            title={widget.title}
-                            data={undefined}
-                            isLoading={false}
-                            showCard={false}
-                        />
-                    </div>
+                <div key={widget.id}>
+                    <WidgetCard widget={widget} onEdit={onEditWidget} />
                 </div>
             ))}
         </ResponsiveGridLayout>

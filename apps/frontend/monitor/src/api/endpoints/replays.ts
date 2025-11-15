@@ -16,11 +16,24 @@ export const replaysAPI = {
 
     /**
      * 根据 replayId 获取关联的所有错误
+     *
+     * 后端返回的 timestamp 已经是 Unix 毫秒时间戳 (number)
      */
-    getRelatedErrors: (replayId: string, appId: string) =>
-        client.get<RelatedError[]>(`/replays/${replayId}/errors`, {
+    getRelatedErrors: async (replayId: string, appId: string): Promise<RelatedError[]> => {
+        const response = await client.get<any[]>(`/replays/${replayId}/errors`, {
             params: { appId },
-        }),
+        })
+
+        return response.map(error => ({
+            id: error.id,
+            message: error.message,
+            timestamp: String(error.timestamp), // 转换为字符串以匹配类型定义
+            errorType: error.eventType as RelatedError['errorType'],
+            path: error.pageUrl,
+            lineno: error.lineno,
+            colno: error.colno,
+        }))
+    },
 
     /**
      * 获取 Replay 详情(包含关联错误)

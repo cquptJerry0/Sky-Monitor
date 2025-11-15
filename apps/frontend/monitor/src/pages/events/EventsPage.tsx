@@ -1,24 +1,23 @@
 import { useMemo, useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useCurrentApp } from '@/hooks/useCurrentApp'
 import { useEvents } from '@/hooks/useEventQuery'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { EventDetailDrawer } from '@/components/events/EventDetailDrawer'
 import { EventFilters, type EventFiltersState } from '@/components/events/EventFilters'
 import { EventListRow } from '@/components/events/EventListRow'
 import { EventListSkeleton } from '@/components/events/EventListSkeleton'
 import { EventStats } from '@/components/events/EventStats'
-import { PAGINATION } from '@/utils/constants'
+import { PAGINATION, ROUTES } from '@/utils/constants'
 import { AlertCircle, RefreshCw } from 'lucide-react'
 import type { Event } from '@/api/types'
 
 export default function EventsPage() {
+    const navigate = useNavigate()
     const { currentApp } = useCurrentApp()
     const [page, setPage] = useState(0)
     const [pageSize] = useState(PAGINATION.DEFAULT_PAGE_SIZE)
-    const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
-    const [drawerOpen, setDrawerOpen] = useState(false)
     const [showLoading, setShowLoading] = useState(false)
 
     const [filters, setFilters] = useState<EventFiltersState>({
@@ -26,46 +25,11 @@ export default function EventsPage() {
         timeRange: '1h',
     })
 
-    // 将 timeRange 转换为 startTime 和 endTime
-    const getTimeRange = (timeRange: string) => {
-        const now = new Date()
-        const end = now.toISOString()
-        let start: string
-
-        switch (timeRange) {
-            case '15m':
-                start = new Date(now.getTime() - 15 * 60 * 1000).toISOString()
-                break
-            case '1h':
-                start = new Date(now.getTime() - 60 * 60 * 1000).toISOString()
-                break
-            case '6h':
-                start = new Date(now.getTime() - 6 * 60 * 60 * 1000).toISOString()
-                break
-            case '24h':
-                start = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
-                break
-            case '7d':
-                start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
-                break
-            case '30d':
-                start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString()
-                break
-            default:
-                start = new Date(now.getTime() - 60 * 60 * 1000).toISOString()
-        }
-
-        return { startTime: start, endTime: end }
-    }
-
-    const timeRange = getTimeRange(filters.timeRange)
-
     // 使用 React Query 轮询,每 5 秒自动刷新
     const { data, isLoading, refetch } = useEvents({
         appId: currentApp?.appId || '',
         eventType: filters.eventType === 'all' ? undefined : filters.eventType,
-        startTime: timeRange.startTime,
-        endTime: timeRange.endTime,
+        timeRange: filters.timeRange,
         limit: pageSize,
         offset: page * pageSize,
         refetchInterval: 5000, // 每 5 秒自动刷新
@@ -105,8 +69,7 @@ export default function EventsPage() {
     }, [filteredEvents])
 
     const handleEventClick = (event: Event) => {
-        setSelectedEvent(event)
-        setDrawerOpen(true)
+        navigate(`${ROUTES.EVENTS}/${event.id}`)
     }
 
     const handleFiltersChange = (newFilters: EventFiltersState) => {
@@ -171,6 +134,7 @@ export default function EventsPage() {
                                         <TableHead>路径</TableHead>
                                         <TableHead>用户</TableHead>
                                         <TableHead>会话</TableHead>
+                                        <TableHead className="text-center">回放</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -200,8 +164,6 @@ export default function EventsPage() {
                     )}
                 </CardContent>
             </Card>
-
-            <EventDetailDrawer event={selectedEvent} open={drawerOpen} onClose={() => setDrawerOpen(false)} />
         </div>
     )
 }

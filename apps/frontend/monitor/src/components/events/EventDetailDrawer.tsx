@@ -1,20 +1,22 @@
-import type { Event } from '@/api/types'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useEventDetail } from '@/hooks/useEventQuery'
 import { X } from 'lucide-react'
 import { EventDetailCard } from './EventDetailCard'
 import { extractEventMessage } from './eventDisplaySchema'
 
 interface EventDetailDrawerProps {
-    event: Event | null
+    eventId: string | null
+    appId: string
     open: boolean
     onClose: () => void
 }
 
-export function EventDetailDrawer({ event, open, onClose }: EventDetailDrawerProps) {
-    if (!event) return null
+export function EventDetailDrawer({ eventId, appId, open, onClose }: EventDetailDrawerProps) {
+    const { data: event, isLoading } = useEventDetail(eventId, appId, open)
 
-    const message = extractEventMessage(event)
+    if (!eventId) return null
 
     return (
         <Sheet open={open} onOpenChange={onClose}>
@@ -22,8 +24,21 @@ export function EventDetailDrawer({ event, open, onClose }: EventDetailDrawerPro
                 <SheetHeader>
                     <div className="flex items-start justify-between">
                         <div className="flex-1">
-                            <SheetTitle>{message.primary}</SheetTitle>
-                            {message.secondary && <SheetDescription className="mt-1">{message.secondary}</SheetDescription>}
+                            {isLoading ? (
+                                <>
+                                    <Skeleton className="h-6 w-3/4" />
+                                    <Skeleton className="mt-2 h-4 w-1/2" />
+                                </>
+                            ) : event ? (
+                                <>
+                                    <SheetTitle>{extractEventMessage(event).primary}</SheetTitle>
+                                    {extractEventMessage(event).secondary && (
+                                        <SheetDescription className="mt-1">{extractEventMessage(event).secondary}</SheetDescription>
+                                    )}
+                                </>
+                            ) : (
+                                <SheetTitle>事件详情</SheetTitle>
+                            )}
                         </div>
                         <Button variant="ghost" size="icon" onClick={onClose}>
                             <X className="h-4 w-4" />
@@ -31,7 +46,17 @@ export function EventDetailDrawer({ event, open, onClose }: EventDetailDrawerPro
                     </div>
                 </SheetHeader>
                 <div className="mt-6">
-                    <EventDetailCard event={event} />
+                    {isLoading ? (
+                        <div className="space-y-4">
+                            <Skeleton className="h-32 w-full" />
+                            <Skeleton className="h-32 w-full" />
+                            <Skeleton className="h-32 w-full" />
+                        </div>
+                    ) : event ? (
+                        <EventDetailCard event={event} />
+                    ) : (
+                        <div className="py-12 text-center text-muted-foreground">加载失败</div>
+                    )}
                 </div>
             </SheetContent>
         </Sheet>

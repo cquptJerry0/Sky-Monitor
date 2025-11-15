@@ -1,6 +1,7 @@
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
 
 import { AdminEntity } from './admin.entity'
+import { ApplicationEntity } from './application.entity'
 import { DashboardWidgetEntity } from './dashboard-widget.entity'
 
 /**
@@ -53,11 +54,25 @@ export class DashboardEntity {
     userId: number
 
     /**
+     * 应用 ID (外键,可选)
+     * NULL 表示全局 Dashboard,不关联特定应用
+     */
+    @Column({ type: 'varchar', length: 80, nullable: true })
+    appId: string
+
+    /**
      * 关联用户
      */
     @ManyToOne(() => AdminEntity)
     @JoinColumn({ name: 'userId' })
     user: AdminEntity
+
+    /**
+     * 关联应用 (可选)
+     */
+    @ManyToOne(() => ApplicationEntity, { nullable: true, onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'appId', referencedColumnName: 'appId' })
+    application: ApplicationEntity
 
     /**
      * 关联的 Widgets

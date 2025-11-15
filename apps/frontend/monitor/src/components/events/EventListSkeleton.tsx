@@ -16,6 +16,7 @@ export function EventListSkeleton({ rows = 10 }: EventListSkeletonProps) {
                     <TableHead>路径</TableHead>
                     <TableHead>用户</TableHead>
                     <TableHead>会话</TableHead>
+                    <TableHead className="text-center">回放</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
@@ -44,6 +45,9 @@ export function EventListSkeleton({ rows = 10 }: EventListSkeletonProps) {
                         </td>
                         <td className="p-4">
                             <Skeleton className="h-4 w-28" />
+                        </td>
+                        <td className="p-4 text-center">
+                            <Skeleton className="h-4 w-4 mx-auto" />
                         </td>
                     </TableRow>
                 ))}

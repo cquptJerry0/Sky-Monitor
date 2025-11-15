@@ -14,14 +14,36 @@ export const commonFields: DetailField[] = [
     { label: '事件ID', key: 'id', type: 'text' },
     { label: '应用ID', key: 'app_id', type: 'text' },
     { label: '事件类型', key: 'event_type', type: 'badge' },
+    { label: '事件名称', key: 'event_name', type: 'text' },
     { label: '时间', key: 'timestamp', type: 'timestamp' },
+    { label: '创建时间', key: 'created_at', type: 'timestamp' },
     { label: '页面路径', key: 'path', type: 'text' },
     { label: 'User Agent', key: 'user_agent', type: 'text' },
+    { label: '事件级别', key: 'event_level', type: 'badge' },
+    { label: '环境', key: 'environment', type: 'badge' },
+    { label: '版本号', key: 'release', type: 'text' },
 ]
 
 export const errorFields: DetailField[] = [
     { label: '错误消息', key: 'error_message', type: 'text' },
-    { label: '错误堆栈', key: 'error_stack', type: 'code' },
+    {
+        label: 'SourceMap 状态',
+        key: 'sourceMapStatus',
+        type: 'badge',
+        condition: e => !!e.sourceMapStatus,
+    },
+    {
+        label: '解析后的堆栈',
+        key: 'parsedStack',
+        type: 'code',
+        condition: e => !!e.parsedStack,
+    },
+    {
+        label: '原始堆栈',
+        key: 'error_stack',
+        type: 'code',
+        condition: e => !e.parsedStack && !!e.error_stack,
+    },
     { label: '行号', key: 'error_lineno', type: 'number' },
     { label: '列号', key: 'error_colno', type: 'number' },
     { label: '错误指纹', key: 'error_fingerprint', type: 'text' },
@@ -166,4 +188,30 @@ export const userFields: DetailField[] = [
     { label: '用户邮箱', key: 'user_email', type: 'text' },
     { label: '用户名', key: 'user_username', type: 'text' },
     { label: '用户IP', key: 'user_ip', type: 'text' },
+]
+
+export const deviceFields: DetailField[] = [
+    { label: '浏览器', key: 'device.browser', type: 'text', extract: e => e.device?.browser },
+    { label: '浏览器版本', key: 'device.browserVersion', type: 'text', extract: e => e.device?.browserVersion },
+    { label: '操作系统', key: 'device.os', type: 'text', extract: e => e.device?.os },
+    { label: '操作系统版本', key: 'device.osVersion', type: 'text', extract: e => e.device?.osVersion },
+    { label: '设备类型', key: 'device.type', type: 'badge', extract: e => e.device?.type },
+    { label: '屏幕分辨率', key: 'device.screen', type: 'text', extract: e => e.device?.screen },
+]
+
+export const networkFields: DetailField[] = [
+    { label: '网络类型', key: 'network.type', type: 'badge', extract: e => e.network?.type },
+    { label: '往返时间(RTT)', key: 'network.rtt', type: 'duration', extract: e => e.network?.rtt },
+]
+
+export const frameworkFields: DetailField[] = [
+    { label: '框架', key: 'framework', type: 'badge' },
+    { label: '组件名称', key: 'component_name', type: 'text' },
+    { label: '组件堆栈', key: 'component_stack', type: 'code' },
+]
+
+export const metadataFields: DetailField[] = [
+    { label: '去重计数', key: 'dedup_count', type: 'number' },
+    { label: '采样率', key: 'sampling_rate', type: 'number' },
+    { label: '是否被采样', key: 'sampling_sampled', type: 'badge', extract: e => (e.sampling_sampled ? '是' : '否') },
 ]

@@ -258,11 +258,11 @@ export const OfflineTab: React.FC = () => {
                                 <div className="flex items-start justify-between">
                                     <div className="flex-1">
                                         <p className="font-medium">{result.message}</p>
-                                        {result.details && (
+                                        {result.details ? (
                                             <pre className="mt-2 text-xs bg-white p-2 rounded overflow-x-auto">
-                                                {JSON.stringify(result.details as any, null, 2)}
+                                                {String(JSON.stringify(result.details, null, 2))}
                                             </pre>
-                                        )}
+                                        ) : null}
                                     </div>
                                     <span className="text-xs text-gray-500 ml-2">{(result as any).timestamp}</span>
                                 </div>

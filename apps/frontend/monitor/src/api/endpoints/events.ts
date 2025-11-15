@@ -11,7 +11,7 @@ export const eventsAPI = {
      * 后端返回: { success: true, data: { data: Event[], total: number } }
      * 响应拦截器解包后: { data: Event[], total: number }
      */
-    list: (params: { appId?: string; eventType?: string; limit?: number; offset?: number; startTime?: string; endTime?: string }) =>
+    list: (params: { appId?: string; eventType?: string; limit?: number; offset?: number; timeRange?: string }) =>
         client.get<{ data: Event[]; total: number }>('/events', { params }),
 
     /**

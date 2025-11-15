@@ -49,28 +49,85 @@ interface RRWebPlayerProps {
 export function RRWebPlayer({
     events,
     relatedErrors = [],
-    width = 1024,
-    height = 768,
+    width,
+    height,
     autoPlay = false,
     showController = true,
     onErrorClick,
 }: RRWebPlayerProps) {
     const containerRef = useRef<HTMLDivElement>(null)
+    const wrapperRef = useRef<HTMLDivElement>(null)
     const playerRef = useRef<RRWebPlayerInstance | null>(null)
     const [error, setError] = useState<string | null>(null)
     const [isPlaying, setIsPlaying] = useState(autoPlay)
     const [currentTime, setCurrentTime] = useState(0)
     const [duration, setDuration] = useState(0)
+    const [playerSize, setPlayerSize] = useState({ width: width || 1024, height: height || 768 })
+
+    /**
+     * 验证 rrweb 事件是否有效
+     *
+     * rrweb 回放器需要:
+     * - Type 4 (Meta): 页面元数据 (URL, 宽高)
+     * - Type 2 (FullSnapshot): 完整的 DOM 快照
+     */
+    const validateEvents = (events: EventWithTime[]): { valid: boolean; message?: string } => {
+        if (!events || events.length === 0) {
+            return { valid: false, message: 'Replay 数据为空' }
+        }
+
+        if (events.length < 3) {
+            return { valid: false, message: 'Replay 数据不完整 (事件数量过少)' }
+        }
+
+        // 检查是否有 Meta 事件 (type: 4)
+        const hasMeta = events.some(e => e.type === 4)
+        if (!hasMeta) {
+            return { valid: false, message: 'Replay 数据缺少 Meta 事件 (type: 4)' }
+        }
+
+        // 检查是否有 FullSnapshot 事件 (type: 2)
+        const hasFullSnapshot = events.some(e => e.type === 2)
+        if (!hasFullSnapshot) {
+            return { valid: false, message: 'Replay 数据缺少 FullSnapshot 事件 (type: 2)' }
+        }
+
+        return { valid: true }
+    }
+
+    /**
+     * 计算播放器尺寸 - 响应式适配容器
+     */
+    useEffect(() => {
+        if (!wrapperRef.current) return
+
+        const updateSize = () => {
+            if (wrapperRef.current) {
+                const containerWidth = wrapperRef.current.clientWidth
+                // 如果指定了固定宽度，使用固定宽度；否则使用容器宽度
+                const playerWidth = width || Math.min(containerWidth - 32, 1200)
+                // 保持 4:3 的宽高比
+                const playerHeight = height || Math.floor(playerWidth * 0.75)
+
+                setPlayerSize({ width: playerWidth, height: playerHeight })
+            }
+        }
+
+        updateSize()
+        window.addEventListener('resize', updateSize)
+        return () => window.removeEventListener('resize', updateSize)
+    }, [width, height])
 
     /**
      * 初始化播放器
      *
      * ## 生命周期管理
-     * 1. 清理旧的播放器实例 (避免内存泄漏)
-     * 2. 创建新的 rrweb-player 实例
-     * 3. 注册事件监听器 (播放状态、当前时间)
-     * 4. 计算会话总时长
-     * 5. 组件卸载时清理资源
+     * 1. 验证 rrweb 事件是否有效 (必须包含 Meta 和 FullSnapshot)
+     * 2. 清理旧的播放器实例 (避免内存泄漏)
+     * 3. 创建新的 rrweb-player 实例
+     * 4. 注册事件监听器 (播放状态、当前时间)
+     * 5. 计算会话总时长
+     * 6. 组件卸载时清理资源
      *
      * ## 为什么每次都重新创建播放器?
      * - rrweb-player 不支持动态更新 events
@@ -85,6 +142,13 @@ export function RRWebPlayer({
         if (!containerRef.current || events.length === 0) return
 
         try {
+            // 验证 rrweb 事件
+            const validation = validateEvents(events)
+            if (!validation.valid) {
+                setError(validation.message || 'Replay 数据无效')
+                return
+            }
+
             // 清理旧的播放器 DOM
             if (containerRef.current) {
                 containerRef.current.innerHTML = ''
@@ -95,8 +159,8 @@ export function RRWebPlayer({
                 target: containerRef.current,
                 props: {
                     events, // rrweb 事件数组
-                    width, // 播放器宽度
-                    height, // 播放器高度
+                    width: playerSize.width, // 播放器宽度
+                    height: playerSize.height, // 播放器高度
                     autoPlay, // 是否自动播放
                     showController, // 是否显示内置控制器
                     speedOption: [1, 2, 4, 8], // 播放速度选项
@@ -144,7 +208,7 @@ export function RRWebPlayer({
             }
             playerRef.current = null // 释放播放器引用
         }
-    }, [events, width, height, autoPlay, showController])
+    }, [events, playerSize.width, playerSize.height, autoPlay, showController])
 
     /**
      * 跳转到指定时间点
@@ -195,33 +259,40 @@ export function RRWebPlayer({
     /**
      * 计算错误在时间轴上的位置百分比
      *
-     * @param errorTimestamp - 错误发生的绝对时间戳 (ISO 字符串)
+     * @param errorTimestamp - 错误发生的绝对时间戳 (Unix 毫秒时间戳,number 或 string)
      * @returns 错误在时间轴上的位置百分比 (0-100)
      *
+     * ## 数据流说明
+     * 1. SDK: rrweb 事件的 timestamp 是 Unix 毫秒时间戳 (number)
+     * 2. Backend: 错误事件的 timestamp 也转换为 Unix 毫秒时间戳 (number)
+     * 3. Frontend: 直接使用数字进行计算,无需字符串解析
+     *
      * ## 计算公式
-     * 1. errorTime = new Date(errorTimestamp).getTime() // 错误的绝对时间
-     * 2. startTime = firstEvent.timestamp // 会话开始时间
+     * 1. errorTime = Number(errorTimestamp) // 错误的绝对时间 (Unix ms)
+     * 2. startTime = firstEvent.timestamp // 会话开始时间 (Unix ms)
      * 3. relativeTime = errorTime - startTime // 错误相对于会话开始的时间
      * 4. position = (relativeTime / duration) * 100 // 转换为百分比
      *
      * ## 示例
-     * - 会话开始: 10:00:00 (timestamp: 1000)
-     * - 会话结束: 10:05:00 (timestamp: 6000)
-     * - 错误发生: 10:02:30 (timestamp: 3500)
-     * - duration = 6000 - 1000 = 5000ms
-     * - relativeTime = 3500 - 1000 = 2500ms
-     * - position = (2500 / 5000) * 100 = 50%
+     * - 会话开始: 1763157539882 (rrweb 第一个事件)
+     * - 会话结束: 1763157553882 (rrweb 最后一个事件)
+     * - 错误发生: 1763157546882 (错误事件)
+     * - duration = 1763157553882 - 1763157539882 = 14000ms
+     * - relativeTime = 1763157546882 - 1763157539882 = 7000ms
+     * - position = (7000 / 14000) * 100 = 50%
      */
-    const getErrorPosition = (errorTimestamp: string) => {
-        if (events.length === 0) return 0
+    const getErrorPosition = (errorTimestamp: string | number) => {
+        if (events.length === 0 || duration === 0) return 0
         const firstEvent = events[0]
         if (!firstEvent) return 0
 
-        const errorTime = new Date(errorTimestamp).getTime()
+        const errorTime = Number(errorTimestamp)
         const startTime = firstEvent.timestamp
         const relativeTime = errorTime - startTime
 
-        return (relativeTime / duration) * 100
+        // 确保位置在 0-100 之间
+        const position = (relativeTime / duration) * 100
+        return Math.max(0, Math.min(100, position))
     }
 
     if (error) {
@@ -239,10 +310,14 @@ export function RRWebPlayer({
     }
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4" ref={wrapperRef}>
             {/* 播放器容器 */}
             <div className="relative rounded-lg border bg-background shadow-sm">
-                <div ref={containerRef} className="overflow-hidden rounded-lg" />
+                <div
+                    ref={containerRef}
+                    className="overflow-hidden rounded-lg w-full flex items-center justify-center"
+                    style={{ minHeight: `${playerSize.height}px` }}
+                />
             </div>
 
             {/* 关联错误列表 */}
@@ -265,13 +340,22 @@ export function RRWebPlayer({
                                         className="absolute top-0 h-2 w-1 cursor-pointer bg-destructive transition-all hover:h-3 hover:-translate-y-0.5"
                                         style={{ left: `${position}%` }}
                                         onClick={() => {
-                                            const errorTime = new Date(error.timestamp).getTime()
+                                            const errorTime = Number(error.timestamp)
                                             const firstEvent = events[0]
                                             if (firstEvent) {
-                                                seekTo(errorTime - firstEvent.timestamp)
+                                                const relativeTime = errorTime - firstEvent.timestamp
+                                                console.log('[RRWebPlayer] 跳转到错误时间:', {
+                                                    errorTimestamp: error.timestamp,
+                                                    errorTime,
+                                                    firstEventTime: firstEvent.timestamp,
+                                                    relativeTime,
+                                                    duration,
+                                                    position: `${position}%`,
+                                                })
+                                                seekTo(relativeTime)
                                             }
                                         }}
-                                        title={`${error.message} - ${formatTime(new Date(error.timestamp).getTime())}`}
+                                        title={`${error.message} - ${new Date(Number(error.timestamp)).toLocaleString()}`}
                                     />
                                 )
                             })}
@@ -284,10 +368,18 @@ export function RRWebPlayer({
                                     key={error.id}
                                     className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors hover:bg-accent"
                                     onClick={() => {
-                                        const errorTime = new Date(error.timestamp).getTime()
+                                        const errorTime = Number(error.timestamp)
                                         const firstEvent = events[0]
                                         if (firstEvent) {
-                                            seekTo(errorTime - firstEvent.timestamp)
+                                            const relativeTime = errorTime - firstEvent.timestamp
+                                            console.log('[RRWebPlayer] 点击错误跳转:', {
+                                                errorTimestamp: error.timestamp,
+                                                errorTime,
+                                                firstEventTime: firstEvent.timestamp,
+                                                relativeTime,
+                                                duration,
+                                            })
+                                            seekTo(relativeTime)
                                         }
                                         onErrorClick?.(error)
                                     }}
@@ -300,7 +392,7 @@ export function RRWebPlayer({
                                             <Badge variant="outline">{error.errorType}</Badge>
                                             <span className="text-xs text-muted-foreground">
                                                 <Clock className="mr-1 inline h-3 w-3" />
-                                                {formatTime(new Date(error.timestamp).getTime())}
+                                                {new Date(Number(error.timestamp)).toLocaleString()}
                                             </span>
                                         </div>
                                         <p className="text-sm font-medium">{error.message}</p>
@@ -317,10 +409,11 @@ export function RRWebPlayer({
                                         size="sm"
                                         onClick={e => {
                                             e.stopPropagation()
-                                            const errorTime = new Date(error.timestamp).getTime()
+                                            const errorTime = Number(error.timestamp)
                                             const firstEvent = events[0]
                                             if (firstEvent) {
-                                                seekTo(errorTime - firstEvent.timestamp)
+                                                const relativeTime = errorTime - firstEvent.timestamp
+                                                seekTo(relativeTime)
                                             }
                                         }}
                                     >

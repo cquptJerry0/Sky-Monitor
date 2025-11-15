@@ -37,6 +37,7 @@ export class DashboardService {
             name: payload.name,
             description: payload.description,
             userId,
+            appId: payload.appId,
             isDefault: false,
         })
 
@@ -89,6 +90,10 @@ export class DashboardService {
 
         if (payload.description !== undefined) {
             dashboard.description = payload.description
+        }
+
+        if (payload.appId !== undefined) {
+            dashboard.appId = payload.appId
         }
 
         return await this.dashboardRepository.save(dashboard)
@@ -218,10 +223,14 @@ export class DashboardService {
             throw new NotFoundException('无权访问此 Widget')
         }
 
-        // 3. 解析时间范围
+        // 3. 解析时间范围并加上 8 小时偏移 (因为 ClickHouse 中的数据是 UTC+8)
+        const startDate = new Date(payload.timeRange.start)
+        const endDate = new Date(payload.timeRange.end)
+
+        // 加上 8 小时偏移
         const timeRange = {
-            start: new Date(payload.timeRange.start),
-            end: new Date(payload.timeRange.end),
+            start: new Date(startDate.getTime() + 8 * 60 * 60 * 1000),
+            end: new Date(endDate.getTime() + 8 * 60 * 60 * 1000),
         }
 
         // 4. 执行所有查询

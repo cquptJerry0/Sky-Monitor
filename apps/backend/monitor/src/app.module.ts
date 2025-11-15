@@ -14,6 +14,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module'
 import { ErrorAnalyticsModule } from './modules/error-analytics/error-analytics.module'
 import { EventsModule } from './modules/events/events.module'
 import { HealthModule } from './modules/health/health.module'
+import { ReplaysModule } from './modules/replays/replays.module'
 import { SourceMapModule } from './modules/sourcemap/sourcemap.module'
 import { VersionModule } from './modules/version/version.module'
 
@@ -54,6 +55,7 @@ import { VersionModule } from './modules/version/version.module'
         SourceMapModule,
         AlertsModule,
         DashboardModule,
+        ReplaysModule,
     ],
     providers: [],
 })

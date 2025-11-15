@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { DashboardGrid } from '@/components/dashboard/DashboardGrid'
 import { TimeRangePicker } from '@/components/dashboard/TimeRangePicker'
 import { WidgetBuilder } from '@/components/dashboard/WidgetBuilder'
+import type { DashboardWidget } from '@/components/dashboard/types'
 import { AppSelector } from '@/components/layout/AppSelector'
 import { Button } from '@/components/ui/button'
 import { useCurrentApp } from '@/hooks/useCurrentApp'
@@ -46,6 +47,7 @@ export default function DashboardPage() {
 
     // Widget Builder 弹窗状态
     const [widgetBuilderOpen, setWidgetBuilderOpen] = useState(false)
+    const [editingWidget, setEditingWidget] = useState<DashboardWidget | null>(null)
 
     // 获取 Dashboard 列表
     const { data: dashboards, isLoading: isDashboardsLoading } = useDashboards()
@@ -105,6 +107,22 @@ export default function DashboardPage() {
         })
     }
 
+    /**
+     * 编辑 Widget
+     */
+    const handleEditWidget = (widget: DashboardWidget) => {
+        setEditingWidget(widget)
+        setWidgetBuilderOpen(true)
+    }
+
+    /**
+     * 关闭 Widget Builder
+     */
+    const handleCloseWidgetBuilder = () => {
+        setWidgetBuilderOpen(false)
+        setEditingWidget(null)
+    }
+
     if (isDashboardsLoading) {
         return (
             <div className="flex items-center justify-center h-96">
@@ -155,7 +173,12 @@ export default function DashboardPage() {
 
             {/* Widget Builder 弹窗 */}
             {currentDashboardId && (
-                <WidgetBuilder dashboardId={currentDashboardId} open={widgetBuilderOpen} onOpenChange={setWidgetBuilderOpen} />
+                <WidgetBuilder
+                    dashboardId={currentDashboardId}
+                    open={widgetBuilderOpen}
+                    onOpenChange={handleCloseWidgetBuilder}
+                    editingWidget={editingWidget}
+                />
             )}
 
             {/* Dashboard Grid */}
@@ -164,7 +187,7 @@ export default function DashboardPage() {
                     <div className="text-muted-foreground">加载中...</div>
                 </div>
             ) : currentDashboard?.widgets && currentDashboard.widgets.length > 0 ? (
-                <DashboardGrid dashboardId={currentDashboard.id} widgets={currentDashboard.widgets} />
+                <DashboardGrid dashboardId={currentDashboard.id} widgets={currentDashboard.widgets} onEditWidget={handleEditWidget} />
             ) : (
                 <div className="flex flex-col items-center justify-center h-96 space-y-4 border-2 border-dashed rounded-lg">
                     <div className="text-center">

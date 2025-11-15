@@ -7,6 +7,7 @@ import { setDefaultOptions } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { RouterProvider } from 'react-router-dom'
 
+import ErrorBoundary from './components/ErrorBoundary'
 import { Toaster } from './components/ui/toaster'
 import { router } from './router'
 
@@ -29,10 +30,12 @@ const queryClient = new QueryClient({
 
 function App() {
     return (
-        <QueryClientProvider client={queryClient}>
-            <Toaster />
-            <RouterProvider router={router} />
-        </QueryClientProvider>
+        <ErrorBoundary>
+            <QueryClientProvider client={queryClient}>
+                <Toaster />
+                <RouterProvider router={router} />
+            </QueryClientProvider>
+        </ErrorBoundary>
     )
 }
 
