@@ -3,103 +3,115 @@ import type { CreateWidgetDto } from '../dashboard/dashboard.dto'
 /**
  * 默认 Widget 配置
  * 为每个新创建的 Application 自动生成这些 Widget
+ *
+ * 设计原则:
+ * - Widget 数量少 (4个),但每个信息密度高
+ * - 覆盖核心监控维度: 性能 + 错误
+ * - 避免依赖特定事件类型 (httpError、pageView)
+ * - 布局紧凑,一屏展示完整
  */
 
 /**
  * 生成默认 Widget 配置
- * @param dashboardId Dashboard ID
+ * @param _dashboardId Dashboard ID (保留参数以保持接口兼容)
  * @param appId Application ID
  * @returns 默认 Widget 配置数组
  */
-export function generateDefaultWidgets(dashboardId: string, appId: string): Omit<CreateWidgetDto, 'dashboardId'>[] {
+export function generateDefaultWidgets(_dashboardId: string, appId: string): Omit<CreateWidgetDto, 'dashboardId'>[] {
     return [
-        // 1. 核心指标概览 (4个大数字)
+        // 1. Web Vitals 性能趋势 (6个核心指标)
         {
-            title: '总错误数',
-            widgetType: 'big_number',
+            title: 'Web Vitals 性能趋势',
+            widgetType: 'line',
             queries: [
                 {
-                    id: 'total-errors',
-                    fields: ['count()'],
+                    id: 'lcp',
+                    fields: ['avg(perf_value)'],
                     conditions: [
                         { field: 'app_id', operator: '=', value: appId },
-                        { field: 'event_type', operator: 'IN', value: ['error', 'exception', 'unhandledrejection'] },
+                        { field: 'event_type', operator: '=', value: 'webVital' },
+                        { field: 'event_name', operator: '=', value: 'LCP' },
                     ],
-                    legend: '错误',
+                    groupBy: ['toStartOfHour(timestamp)'],
+                    orderBy: [{ field: 'toStartOfHour(timestamp)', direction: 'ASC' }],
+                    legend: 'LCP (最大内容绘制)',
+                    color: '#3b82f6',
+                },
+                {
+                    id: 'fcp',
+                    fields: ['avg(perf_value)'],
+                    conditions: [
+                        { field: 'app_id', operator: '=', value: appId },
+                        { field: 'event_type', operator: '=', value: 'webVital' },
+                        { field: 'event_name', operator: '=', value: 'FCP' },
+                    ],
+                    groupBy: ['toStartOfHour(timestamp)'],
+                    orderBy: [{ field: 'toStartOfHour(timestamp)', direction: 'ASC' }],
+                    legend: 'FCP (首次内容绘制)',
+                    color: '#10b981',
+                },
+                {
+                    id: 'fid',
+                    fields: ['avg(perf_value)'],
+                    conditions: [
+                        { field: 'app_id', operator: '=', value: appId },
+                        { field: 'event_type', operator: '=', value: 'webVital' },
+                        { field: 'event_name', operator: '=', value: 'FID' },
+                    ],
+                    groupBy: ['toStartOfHour(timestamp)'],
+                    orderBy: [{ field: 'toStartOfHour(timestamp)', direction: 'ASC' }],
+                    legend: 'FID (首次输入延迟)',
+                    color: '#f59e0b',
+                },
+                {
+                    id: 'cls',
+                    fields: ['avg(perf_value)'],
+                    conditions: [
+                        { field: 'app_id', operator: '=', value: appId },
+                        { field: 'event_type', operator: '=', value: 'webVital' },
+                        { field: 'event_name', operator: '=', value: 'CLS' },
+                    ],
+                    groupBy: ['toStartOfHour(timestamp)'],
+                    orderBy: [{ field: 'toStartOfHour(timestamp)', direction: 'ASC' }],
+                    legend: 'CLS (累积布局偏移)',
+                    color: '#8b5cf6',
+                },
+                {
+                    id: 'ttfb',
+                    fields: ['avg(perf_value)'],
+                    conditions: [
+                        { field: 'app_id', operator: '=', value: appId },
+                        { field: 'event_type', operator: '=', value: 'webVital' },
+                        { field: 'event_name', operator: '=', value: 'TTFB' },
+                    ],
+                    groupBy: ['toStartOfHour(timestamp)'],
+                    orderBy: [{ field: 'toStartOfHour(timestamp)', direction: 'ASC' }],
+                    legend: 'TTFB (首字节时间)',
+                    color: '#ec4899',
+                },
+                {
+                    id: 'inp',
+                    fields: ['avg(perf_value)'],
+                    conditions: [
+                        { field: 'app_id', operator: '=', value: appId },
+                        { field: 'event_type', operator: '=', value: 'webVital' },
+                        { field: 'event_name', operator: '=', value: 'INP' },
+                    ],
+                    groupBy: ['toStartOfHour(timestamp)'],
+                    orderBy: [{ field: 'toStartOfHour(timestamp)', direction: 'ASC' }],
+                    legend: 'INP (交互延迟)',
+                    color: '#f97316',
                 },
             ],
             displayConfig: {
-                trend: true,
-                trendField: 'count()',
-                icon: 'AlertCircle',
-                color: '#ef4444',
+                yAxis: { unit: 'ms', min: 0 },
+                showLegend: true,
+                smooth: true,
             },
-            layout: { x: 0, y: 0, w: 3, h: 2 },
-        },
-        {
-            title: '活跃用户',
-            widgetType: 'big_number',
-            queries: [
-                {
-                    id: 'active-users',
-                    fields: ['count(DISTINCT user_id)'],
-                    conditions: [
-                        { field: 'app_id', operator: '=', value: appId },
-                        { field: 'user_id', operator: '!=', value: '' },
-                    ],
-                    legend: '用户',
-                },
-            ],
-            displayConfig: {
-                icon: 'Users',
-                color: '#3b82f6',
-            },
-            layout: { x: 3, y: 0, w: 3, h: 2 },
-        },
-        {
-            title: '页面浏览量',
-            widgetType: 'big_number',
-            queries: [
-                {
-                    id: 'page-views',
-                    fields: ['count()'],
-                    conditions: [
-                        { field: 'app_id', operator: '=', value: appId },
-                        { field: 'event_type', operator: '=', value: 'pageView' },
-                    ],
-                    legend: 'PV',
-                },
-            ],
-            displayConfig: {
-                icon: 'Eye',
-                color: '#10b981',
-            },
-            layout: { x: 6, y: 0, w: 3, h: 2 },
-        },
-        {
-            title: '平均响应时间',
-            widgetType: 'big_number',
-            queries: [
-                {
-                    id: 'avg-response-time',
-                    fields: ['avg(http_duration)'],
-                    conditions: [
-                        { field: 'app_id', operator: '=', value: appId },
-                        { field: 'event_type', operator: '=', value: 'httpError' },
-                        { field: 'http_duration', operator: '>', value: 0 },
-                    ],
-                    legend: 'ms',
-                },
-            ],
-            displayConfig: {
-                icon: 'Clock',
-                color: '#f59e0b',
-                unit: 'ms',
-            },
-            layout: { x: 9, y: 0, w: 3, h: 2 },
+            layout: { x: 0, y: 0, w: 12, h: 6 },
         },
 
-        // 2. 错误趋势 (多维度)
+        // 2. 错误趋势分析 (3个错误类型)
         {
             title: '错误趋势分析',
             widgetType: 'line',
@@ -145,63 +157,35 @@ export function generateDefaultWidgets(dashboardId: string, appId: string): Omit
                 showLegend: true,
                 smooth: true,
             },
-            layout: { x: 0, y: 2, w: 8, h: 4 },
+            layout: { x: 0, y: 6, w: 6, h: 6 },
         },
 
-        // 3. Web Vitals 性能指标
+        // 3. 错误类型分布 (Top 10)
         {
-            title: 'Web Vitals 性能趋势',
-            widgetType: 'line',
+            title: '错误类型分布 (Top 10)',
+            widgetType: 'bar',
             queries: [
                 {
-                    id: 'lcp',
-                    fields: ['avg(perf_value)'],
+                    id: 'error-distribution',
+                    fields: ['error_message', 'count() as count'],
                     conditions: [
                         { field: 'app_id', operator: '=', value: appId },
-                        { field: 'event_type', operator: '=', value: 'webVital' },
-                        { field: 'event_name', operator: '=', value: 'LCP' },
+                        { field: 'event_type', operator: 'IN', value: ['error', 'exception', 'unhandledrejection'] },
+                        { field: 'error_message', operator: '!=', value: '' },
                     ],
-                    groupBy: ['toStartOfHour(timestamp)'],
-                    orderBy: [{ field: 'toStartOfHour(timestamp)', direction: 'ASC' }],
-                    legend: 'LCP (最大内容绘制)',
-                    color: '#3b82f6',
-                },
-                {
-                    id: 'fcp',
-                    fields: ['avg(perf_value)'],
-                    conditions: [
-                        { field: 'app_id', operator: '=', value: appId },
-                        { field: 'event_type', operator: '=', value: 'webVital' },
-                        { field: 'event_name', operator: '=', value: 'FCP' },
-                    ],
-                    groupBy: ['toStartOfHour(timestamp)'],
-                    orderBy: [{ field: 'toStartOfHour(timestamp)', direction: 'ASC' }],
-                    legend: 'FCP (首次内容绘制)',
-                    color: '#10b981',
-                },
-                {
-                    id: 'fid',
-                    fields: ['avg(perf_value)'],
-                    conditions: [
-                        { field: 'app_id', operator: '=', value: appId },
-                        { field: 'event_type', operator: '=', value: 'webVital' },
-                        { field: 'event_name', operator: '=', value: 'FID' },
-                    ],
-                    groupBy: ['toStartOfHour(timestamp)'],
-                    orderBy: [{ field: 'toStartOfHour(timestamp)', direction: 'ASC' }],
-                    legend: 'FID (首次输入延迟)',
-                    color: '#f59e0b',
+                    groupBy: ['error_message'],
+                    orderBy: [{ field: 'count()', direction: 'DESC' }],
+                    limit: 10,
                 },
             ],
             displayConfig: {
-                yAxis: { unit: 'ms', min: 0 },
-                showLegend: true,
-                smooth: true,
+                horizontal: true,
+                showLegend: false,
             },
-            layout: { x: 8, y: 2, w: 4, h: 4 },
+            layout: { x: 6, y: 6, w: 6, h: 6 },
         },
 
-        // 4. 错误详情表 (联合多个维度)
+        // 4. 错误详情分析表 (多维度)
         {
             title: '错误详情分析',
             widgetType: 'table',
@@ -226,147 +210,7 @@ export function generateDefaultWidgets(dashboardId: string, appId: string): Omit
                     limit: 20,
                 },
             ],
-            layout: { x: 0, y: 6, w: 12, h: 5 },
-        },
-
-        // 5. 浏览器和设备分布
-        {
-            title: '浏览器分布',
-            widgetType: 'bar',
-            queries: [
-                {
-                    id: 'browser-dist',
-                    fields: ['device_browser', 'count() as count'],
-                    conditions: [
-                        { field: 'app_id', operator: '=', value: appId },
-                        { field: 'device_browser', operator: '!=', value: '' },
-                    ],
-                    groupBy: ['device_browser'],
-                    orderBy: [{ field: 'count()', direction: 'DESC' }],
-                    limit: 8,
-                },
-            ],
-            displayConfig: {
-                horizontal: true,
-            },
-            layout: { x: 0, y: 11, w: 4, h: 4 },
-        },
-
-        // 6. 操作系统分布
-        {
-            title: '操作系统分布',
-            widgetType: 'bar',
-            queries: [
-                {
-                    id: 'os-dist',
-                    fields: ['device_os', 'count() as count'],
-                    conditions: [
-                        { field: 'app_id', operator: '=', value: appId },
-                        { field: 'device_os', operator: '!=', value: '' },
-                    ],
-                    groupBy: ['device_os'],
-                    orderBy: [{ field: 'count()', direction: 'DESC' }],
-                    limit: 8,
-                },
-            ],
-            displayConfig: {
-                horizontal: true,
-            },
-            layout: { x: 4, y: 11, w: 4, h: 4 },
-        },
-
-        // 7. 页面访问 Top 10
-        {
-            title: 'Top 10 访问页面',
-            widgetType: 'table',
-            queries: [
-                {
-                    id: 'top-pages',
-                    fields: [
-                        'page_url',
-                        'count() as views',
-                        'count(DISTINCT user_id) as unique_users',
-                        'avg(perf_page_load_time) as avg_load_time',
-                    ],
-                    conditions: [
-                        { field: 'app_id', operator: '=', value: appId },
-                        { field: 'event_type', operator: '=', value: 'pageView' },
-                        { field: 'page_url', operator: '!=', value: '' },
-                    ],
-                    groupBy: ['page_url'],
-                    orderBy: [{ field: 'count()', direction: 'DESC' }],
-                    limit: 10,
-                },
-            ],
-            layout: { x: 8, y: 11, w: 4, h: 4 },
-        },
-
-        // 8. HTTP 错误分析
-        {
-            title: 'HTTP 错误状态码分布',
-            widgetType: 'bar',
-            queries: [
-                {
-                    id: 'http-4xx',
-                    fields: ['count()'],
-                    conditions: [
-                        { field: 'app_id', operator: '=', value: appId },
-                        { field: 'event_type', operator: '=', value: 'httpError' },
-                        { field: 'http_status', operator: '>=', value: 400 },
-                        { field: 'http_status', operator: '<', value: 500 },
-                    ],
-                    groupBy: ['http_status'],
-                    orderBy: [{ field: 'count()', direction: 'DESC' }],
-                    legend: '4xx 客户端错误',
-                    color: '#f59e0b',
-                },
-                {
-                    id: 'http-5xx',
-                    fields: ['count()'],
-                    conditions: [
-                        { field: 'app_id', operator: '=', value: appId },
-                        { field: 'event_type', operator: '=', value: 'httpError' },
-                        { field: 'http_status', operator: '>=', value: 500 },
-                    ],
-                    groupBy: ['http_status'],
-                    orderBy: [{ field: 'count()', direction: 'DESC' }],
-                    legend: '5xx 服务器错误',
-                    color: '#ef4444',
-                },
-            ],
-            displayConfig: {
-                stacked: true,
-                showLegend: true,
-            },
-            layout: { x: 0, y: 15, w: 6, h: 4 },
-        },
-
-        // 9. 慢请求分析
-        {
-            title: 'Top 10 慢请求',
-            widgetType: 'table',
-            queries: [
-                {
-                    id: 'slow-requests',
-                    fields: [
-                        'http_url',
-                        'http_method',
-                        'avg(http_duration) as avg_duration',
-                        'max(http_duration) as max_duration',
-                        'count() as request_count',
-                    ],
-                    conditions: [
-                        { field: 'app_id', operator: '=', value: appId },
-                        { field: 'event_type', operator: '=', value: 'httpError' },
-                        { field: 'perf_is_slow', operator: '=', value: 1 },
-                        { field: 'http_url', operator: '!=', value: '' },
-                    ],
-                    groupBy: ['http_url', 'http_method'],
-                    orderBy: [{ field: 'avg(http_duration)', direction: 'DESC' }],
-                    limit: 10,
-                },
-            ],
-            layout: { x: 6, y: 15, w: 6, h: 4 },
+            layout: { x: 0, y: 12, w: 12, h: 6 },
         },
     ]
 }
