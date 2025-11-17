@@ -14,7 +14,7 @@ export const commonFields: DetailField[] = [
     { label: '事件ID', key: 'id', type: 'text' },
     { label: '应用ID', key: 'app_id', type: 'text' },
     { label: '事件类型', key: 'event_type', type: 'badge' },
-    { label: '事件名称', key: 'event_name', type: 'text' },
+    { label: '事件名称', key: 'event_name', type: 'badge' },
     { label: '时间', key: 'timestamp', type: 'timestamp' },
     { label: '创建时间', key: 'created_at', type: 'timestamp' },
     { label: '页面路径', key: 'path', type: 'text' },

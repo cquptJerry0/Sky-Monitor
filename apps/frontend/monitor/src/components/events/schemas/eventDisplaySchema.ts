@@ -9,25 +9,33 @@ export interface EventMessage {
 export function extractEventMessage(event: Event): EventMessage {
     const eventData = parseEventData(event)
 
-    // 错误事件
+    // 错误事件 - 根据 event_name 精确判断
     if (event.event_type === 'error' || event.event_type === 'unhandledrejection') {
         // HTTP 错误
-        if (event.http) {
+        if (event.event_name === 'http_error' || event.http) {
             return {
-                primary: `HTTP ${event.http.status} ${event.http.method} ${event.http.url}`,
-                secondary: event.http.statusText || `耗时 ${event.http.duration}ms`,
+                primary: `HTTP ${event.http?.status} ${event.http?.method} ${event.http?.url}`,
+                secondary: `${event.http?.statusText || ''} · 耗时 ${event.http?.duration}ms`,
             }
         }
 
         // 资源错误
-        if (event.resource) {
+        if (event.event_name === 'resource_error' || event.resource) {
             return {
-                primary: `资源加载失败: ${event.resource.url}`,
-                secondary: `类型: ${event.resource.type}`,
+                primary: `资源加载失败: ${event.resource?.url}`,
+                secondary: `类型: ${event.resource?.type}`,
             }
         }
 
-        // 普通 JS 错误
+        // Promise拒绝
+        if (event.event_name === 'unhandled_rejection') {
+            return {
+                primary: event.error_message || '未处理的Promise拒绝',
+                secondary: event.error_stack ? `${event.path || ''} ${event.error_lineno}:${event.error_colno}` : undefined,
+            }
+        }
+
+        // JS运行时错误 (runtime_error 或默认)
         if (event.error_message) {
             return {
                 primary: event.error_message,
@@ -40,39 +48,24 @@ export function extractEventMessage(event: Event): EventMessage {
         }
     }
 
-    // 性能事件
+    // 性能事件 - 根据 event_name 区分
     if (event.event_type === 'performance') {
-        // 优先使用 perf_category 和 perf_value (后端查询返回的字段)
-        let category = event.perf_category || event.category
-        let value = event.perf_value ?? event.duration ?? event.value
-
-        // 如果后端字段为空,从 event_data 提取
-        if (!category && eventData?.category) {
-            category = eventData.category as string
-        }
-        if (value === undefined && eventData?.value !== undefined) {
-            value = eventData.value as number
-        }
-        if (value === undefined && eventData?.duration !== undefined) {
-            value = eventData.duration as number
-        }
+        const category = event.event_name || event.perf_category || event.category
+        const value = event.perf_value ?? event.duration ?? event.value
 
         // 格式化类别名称
         const categoryMap: Record<string, string> = {
-            'page-load': '页面加载',
-            'api-call': 'API调用',
-            'resource-load': '资源加载',
+            http_performance: 'HTTP性能',
+            resource_timing: '资源性能',
             http: 'HTTP请求',
             resourceTiming: '资源加载',
         }
         const displayCategory = categoryMap[category || ''] || category || '性能事件'
-
-        // 格式化数值
         const displayValue = value !== undefined ? `${Math.round(value)}ms` : '-'
 
         return {
             primary: `${displayCategory}: ${displayValue}`,
-            secondary: category ? `类型: ${category}` : undefined,
+            secondary: event.url || undefined,
         }
     }
 
