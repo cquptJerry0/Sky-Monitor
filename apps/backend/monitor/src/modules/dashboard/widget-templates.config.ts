@@ -216,4 +216,334 @@ export const WIDGET_TEMPLATES: Record<string, WidgetTemplate> = {
             ]
         },
     },
+
+    /**
+     * 6. 页面性能分析表格
+     */
+    page_performance_table: {
+        type: 'page_performance_table',
+        name: '页面性能分析表格',
+        description: '展示各页面的平均 LCP、FCP 和访问次数',
+        category: 'performance',
+        widgetType: 'table',
+        icon: 'Table',
+        editableParams: {
+            limit: {
+                enabled: true,
+                default: 10,
+                min: 5,
+                max: 50,
+            },
+        },
+        generateQuery: (params: TemplateParams): QueryConfig[] => {
+            const appConditions = getAppIdConditions(params.appId)
+            const limit = params.limit || 10
+
+            return [
+                {
+                    id: 'page_performance',
+                    fields: ['path', 'avg(perf_value) as avg_lcp', 'count() as visit_count'],
+                    conditions: [
+                        ...appConditions,
+                        { field: 'event_type', operator: '=', value: 'webVital' },
+                        { field: 'event_name', operator: '=', value: 'LCP' },
+                        { field: 'path', operator: '!=', value: '' },
+                    ],
+                    groupBy: ['path'],
+                    orderBy: [{ field: 'visit_count', direction: 'DESC' }],
+                    limit,
+                },
+            ]
+        },
+    },
+
+    /**
+     * 7. 性能分布直方图
+     */
+    performance_distribution: {
+        type: 'performance_distribution',
+        name: '性能分布直方图',
+        description: '展示 LCP 性能分级分布 (优秀/良好/需改进/差)',
+        category: 'performance',
+        widgetType: 'bar',
+        icon: 'BarChart3',
+        generateQuery: (params: TemplateParams): QueryConfig[] => {
+            const appConditions = getAppIdConditions(params.appId)
+
+            return [
+                {
+                    id: 'performance_distribution',
+                    fields: [
+                        `multiIf(
+                            perf_value <= 2500, '优秀',
+                            perf_value <= 4000, '良好',
+                            perf_value <= 6000, '需改进',
+                            '差'
+                        ) as performance_level`,
+                        'count() as count',
+                    ],
+                    conditions: [
+                        ...appConditions,
+                        { field: 'event_type', operator: '=', value: 'webVital' },
+                        { field: 'event_name', operator: '=', value: 'LCP' },
+                    ],
+                    groupBy: ['performance_level'],
+                    orderBy: [{ field: 'count', direction: 'DESC' }],
+                },
+            ]
+        },
+    },
+
+    /**
+     * 8. 网络性能分析
+     */
+    network_performance: {
+        type: 'network_performance',
+        name: '网络性能分析',
+        description: '按网络类型分析平均 RTT 和性能表现',
+        category: 'performance',
+        widgetType: 'bar',
+        icon: 'Wifi',
+        generateQuery: (params: TemplateParams): QueryConfig[] => {
+            const appConditions = getAppIdConditions(params.appId)
+
+            return [
+                {
+                    id: 'network_performance',
+                    fields: ['network_type', 'avg(network_rtt) as avg_rtt', 'count() as count'],
+                    conditions: [...appConditions, { field: 'network_type', operator: '!=', value: '' }],
+                    groupBy: ['network_type'],
+                    orderBy: [{ field: 'count', direction: 'DESC' }],
+                },
+            ]
+        },
+    },
+
+    /**
+     * 9. HTTP 请求性能表格
+     */
+    http_performance_table: {
+        type: 'http_performance_table',
+        name: 'HTTP 请求性能表格',
+        description: '展示 HTTP 请求的平均耗时和请求次数',
+        category: 'performance',
+        widgetType: 'table',
+        icon: 'Globe',
+        editableParams: {
+            limit: {
+                enabled: true,
+                default: 10,
+                min: 5,
+                max: 50,
+            },
+        },
+        generateQuery: (params: TemplateParams): QueryConfig[] => {
+            const appConditions = getAppIdConditions(params.appId)
+            const limit = params.limit || 10
+
+            return [
+                {
+                    id: 'http_performance',
+                    fields: ['http_url', 'http_method', 'avg(http_duration) as avg_duration', 'count() as request_count'],
+                    conditions: [
+                        ...appConditions,
+                        { field: 'event_type', operator: '=', value: 'httpError' },
+                        { field: 'http_url', operator: '!=', value: '' },
+                    ],
+                    groupBy: ['http_url', 'http_method'],
+                    orderBy: [{ field: 'request_count', direction: 'DESC' }],
+                    limit,
+                },
+            ]
+        },
+    },
+
+    // ==================== 错误监控类 (补充) ====================
+
+    /**
+     * 10. 错误详情表格
+     */
+    error_details_table: {
+        type: 'error_details_table',
+        name: '错误详情表格',
+        description: '展示错误消息、堆栈和发生次数的详细列表',
+        category: 'error',
+        widgetType: 'table',
+        icon: 'AlertCircle',
+        editableParams: {
+            limit: {
+                enabled: true,
+                default: 10,
+                min: 5,
+                max: 50,
+            },
+        },
+        generateQuery: (params: TemplateParams): QueryConfig[] => {
+            const appConditions = getAppIdConditions(params.appId)
+            const limit = params.limit || 10
+
+            return [
+                {
+                    id: 'error_details',
+                    fields: ['error_message', 'error_fingerprint', 'count() as error_count', 'max(timestamp) as last_seen'],
+                    conditions: [
+                        ...appConditions,
+                        { field: 'event_type', operator: 'IN', value: ['error', 'unhandledrejection'] },
+                        { field: 'error_message', operator: '!=', value: '' },
+                    ],
+                    groupBy: ['error_message', 'error_fingerprint'],
+                    orderBy: [{ field: 'error_count', direction: 'DESC' }],
+                    limit,
+                },
+            ]
+        },
+    },
+
+    /**
+     * 11. HTTP 错误分析
+     */
+    http_error_analysis: {
+        type: 'http_error_analysis',
+        name: 'HTTP 错误分析',
+        description: '按 HTTP 状态码分析错误分布',
+        category: 'error',
+        widgetType: 'bar',
+        icon: 'XCircle',
+        generateQuery: (params: TemplateParams): QueryConfig[] => {
+            const appConditions = getAppIdConditions(params.appId)
+
+            return [
+                {
+                    id: 'http_error_analysis',
+                    fields: ['http_status', 'count() as error_count'],
+                    conditions: [
+                        ...appConditions,
+                        { field: 'event_type', operator: '=', value: 'httpError' },
+                        { field: 'http_status', operator: '>=', value: 400 },
+                    ],
+                    groupBy: ['http_status'],
+                    orderBy: [{ field: 'error_count', direction: 'DESC' }],
+                },
+            ]
+        },
+    },
+
+    // ==================== 用户行为类 (补充) ====================
+
+    /**
+     * 12. 会话分析
+     */
+    session_analysis: {
+        type: 'session_analysis',
+        name: '会话分析',
+        description: '展示会话时长、事件数和错误数的统计',
+        category: 'user',
+        widgetType: 'table',
+        icon: 'Activity',
+        editableParams: {
+            limit: {
+                enabled: true,
+                default: 10,
+                min: 5,
+                max: 50,
+            },
+        },
+        generateQuery: (params: TemplateParams): QueryConfig[] => {
+            const appConditions = getAppIdConditions(params.appId)
+            const limit = params.limit || 10
+
+            return [
+                {
+                    id: 'session_analysis',
+                    fields: [
+                        'session_id',
+                        'max(session_duration) as duration',
+                        'max(session_event_count) as event_count',
+                        'max(session_error_count) as error_count',
+                    ],
+                    conditions: [...appConditions, { field: 'session_id', operator: '!=', value: '' }],
+                    groupBy: ['session_id'],
+                    orderBy: [{ field: 'duration', direction: 'DESC' }],
+                    limit,
+                },
+            ]
+        },
+    },
+
+    // ==================== 设备环境类 ====================
+
+    /**
+     * 13. 浏览器分布
+     */
+    browser_distribution: {
+        type: 'browser_distribution',
+        name: '浏览器分布',
+        description: '展示用户使用的浏览器类型和版本分布',
+        category: 'device',
+        widgetType: 'bar',
+        icon: 'Chrome',
+        generateQuery: (params: TemplateParams): QueryConfig[] => {
+            const appConditions = getAppIdConditions(params.appId)
+
+            return [
+                {
+                    id: 'browser_distribution',
+                    fields: ['device_browser', 'count() as user_count'],
+                    conditions: [...appConditions, { field: 'device_browser', operator: '!=', value: '' }],
+                    groupBy: ['device_browser'],
+                    orderBy: [{ field: 'user_count', direction: 'DESC' }],
+                },
+            ]
+        },
+    },
+
+    /**
+     * 14. 操作系统分布
+     */
+    os_distribution: {
+        type: 'os_distribution',
+        name: '操作系统分布',
+        description: '展示用户使用的操作系统类型分布',
+        category: 'device',
+        widgetType: 'bar',
+        icon: 'Monitor',
+        generateQuery: (params: TemplateParams): QueryConfig[] => {
+            const appConditions = getAppIdConditions(params.appId)
+
+            return [
+                {
+                    id: 'os_distribution',
+                    fields: ['device_os', 'count() as user_count'],
+                    conditions: [...appConditions, { field: 'device_os', operator: '!=', value: '' }],
+                    groupBy: ['device_os'],
+                    orderBy: [{ field: 'user_count', direction: 'DESC' }],
+                },
+            ]
+        },
+    },
+
+    /**
+     * 15. 设备类型分布
+     */
+    device_type_distribution: {
+        type: 'device_type_distribution',
+        name: '设备类型分布',
+        description: '展示用户使用的设备类型分布 (桌面/移动/平板)',
+        category: 'device',
+        widgetType: 'bar',
+        icon: 'Smartphone',
+        generateQuery: (params: TemplateParams): QueryConfig[] => {
+            const appConditions = getAppIdConditions(params.appId)
+
+            return [
+                {
+                    id: 'device_type_distribution',
+                    fields: ['device_type', 'count() as user_count'],
+                    conditions: [...appConditions, { field: 'device_type', operator: '!=', value: '' }],
+                    groupBy: ['device_type'],
+                    orderBy: [{ field: 'user_count', direction: 'DESC' }],
+                },
+            ]
+        },
+    },
 }
