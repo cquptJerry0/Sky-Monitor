@@ -32,6 +32,8 @@ export interface Application {
     name: string
     /** 应用描述 */
     description: string | null
+    /** 应用访问地址 */
+    url?: string
     /** 创建时间 */
     createdAt: string
     /** 更新时间 */
