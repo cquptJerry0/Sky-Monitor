@@ -50,4 +50,68 @@ export class AdminService {
         await this.adminRepository.save(admin)
         return admin
     }
+
+    async updateEmail(userId: number, email: string) {
+        // 检查邮箱是否已被其他用户使用
+        const existingUser = await this.adminRepository.findOne({
+            where: { email },
+        })
+        if (existingUser && existingUser.id !== userId) {
+            throw new HttpException({ message: '邮箱已被使用', error: 'email already in use' }, 400)
+        }
+
+        const admin = await this.adminRepository.findOne({
+            where: { id: userId },
+        })
+        if (!admin) {
+            throw new HttpException({ message: '用户不存在', error: 'user not found' }, 404)
+        }
+
+        admin.email = email
+        await this.adminRepository.save(admin)
+
+        // 不返回密码
+        const { password, ...result } = admin
+        return result
+    }
+
+    async updatePassword(userId: number, currentPassword: string, newPassword: string) {
+        const admin = await this.adminRepository.findOne({
+            where: { id: userId },
+        })
+        if (!admin) {
+            throw new HttpException({ message: '用户不存在', error: 'user not found' }, 404)
+        }
+
+        // 验证当前密码
+        const isPasswordValid = await bcrypt.compare(currentPassword, admin.password)
+        if (!isPasswordValid) {
+            throw new HttpException({ message: '当前密码错误', error: 'invalid current password' }, 400)
+        }
+
+        // 加密新密码
+        const hashedPassword = await bcrypt.hash(newPassword, 10)
+        admin.password = hashedPassword
+        await this.adminRepository.save(admin)
+
+        // 不返回密码
+        const { password, ...result } = admin
+        return result
+    }
+
+    async updateAvatar(userId: number, avatar: string) {
+        const admin = await this.adminRepository.findOne({
+            where: { id: userId },
+        })
+        if (!admin) {
+            throw new HttpException({ message: '用户不存在', error: 'user not found' }, 404)
+        }
+
+        admin.avatar = avatar
+        await this.adminRepository.save(admin)
+
+        // 不返回密码
+        const { password, ...result } = admin
+        return result
+    }
 }

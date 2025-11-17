@@ -12,7 +12,9 @@ export interface User {
     username: string
     email?: string
     role?: 'admin' | 'user'
+    avatar?: string
     created_at?: string
+    updated_at?: string
 }
 
 /**

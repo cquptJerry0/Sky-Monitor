@@ -104,3 +104,52 @@ export function useCurrentUser() {
         staleTime: 5 * 60 * 1000, // 5 分钟
     })
 }
+
+/**
+ * 修改邮箱 Mutation
+ */
+export function useUpdateEmail() {
+    const { setUser } = useAuthStore()
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: (email: string) => authAPI.updateEmail(email),
+        onSuccess: user => {
+            setUser(user)
+            queryClient.invalidateQueries({ queryKey: ['currentUser'] })
+        },
+    })
+}
+
+/**
+ * 修改密码 Mutation
+ */
+export function useUpdatePassword() {
+    const { setUser } = useAuthStore()
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: ({ currentPassword, newPassword }: { currentPassword: string; newPassword: string }) =>
+            authAPI.updatePassword(currentPassword, newPassword),
+        onSuccess: user => {
+            setUser(user)
+            queryClient.invalidateQueries({ queryKey: ['currentUser'] })
+        },
+    })
+}
+
+/**
+ * 修改头像 Mutation
+ */
+export function useUpdateAvatar() {
+    const { setUser } = useAuthStore()
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: (avatar: string) => authAPI.updateAvatar(avatar),
+        onSuccess: user => {
+            setUser(user)
+            queryClient.invalidateQueries({ queryKey: ['currentUser'] })
+        },
+    })
+}

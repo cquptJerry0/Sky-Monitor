@@ -3,7 +3,7 @@
  */
 
 import { useState } from 'react'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth, useUpdateEmail, useUpdatePassword, useUpdateAvatar } from '@/hooks/useAuth'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Label } from '@/components/ui/label'
@@ -16,6 +16,10 @@ import { format } from 'date-fns'
 export default function ProfilePage() {
     const { user } = useAuth()
     const { toast } = useToast()
+
+    const updateEmail = useUpdateEmail()
+    const updatePassword = useUpdatePassword()
+    const updateAvatar = useUpdateAvatar()
 
     const [email, setEmail] = useState(user?.email || '')
     const [isEditingEmail, setIsEditingEmail] = useState(false)
@@ -35,15 +39,24 @@ export default function ProfilePage() {
         return null
     }
 
-    const handleSaveEmail = () => {
-        toast({
-            title: '功能开发中',
-            description: '邮箱修改功能正在开发中',
-        })
-        setIsEditingEmail(false)
+    const handleSaveEmail = async () => {
+        try {
+            await updateEmail.mutateAsync(email)
+            toast({
+                title: '修改成功',
+                description: '邮箱已更新',
+            })
+            setIsEditingEmail(false)
+        } catch (error) {
+            toast({
+                title: '修改失败',
+                description: error instanceof Error ? error.message : '邮箱修改失败',
+                variant: 'destructive',
+            })
+        }
     }
 
-    const handleChangePassword = () => {
+    const handleChangePassword = async () => {
         if (!currentPassword || !newPassword || !confirmPassword) {
             toast({
                 title: '请填写完整',
@@ -71,23 +84,40 @@ export default function ProfilePage() {
             return
         }
 
-        toast({
-            title: '功能开发中',
-            description: '密码修改功能正在开发中',
-        })
-
-        setCurrentPassword('')
-        setNewPassword('')
-        setConfirmPassword('')
-        setIsChangingPassword(false)
+        try {
+            await updatePassword.mutateAsync({ currentPassword, newPassword })
+            toast({
+                title: '修改成功',
+                description: '密码已更新',
+            })
+            setCurrentPassword('')
+            setNewPassword('')
+            setConfirmPassword('')
+            setIsChangingPassword(false)
+        } catch (error) {
+            toast({
+                title: '修改失败',
+                description: error instanceof Error ? error.message : '密码修改失败',
+                variant: 'destructive',
+            })
+        }
     }
 
-    const handleSaveAvatar = () => {
-        toast({
-            title: '功能开发中',
-            description: '头像修改功能正在开发中',
-        })
-        setIsEditingAvatar(false)
+    const handleSaveAvatar = async () => {
+        try {
+            await updateAvatar.mutateAsync(avatarUrl)
+            toast({
+                title: '修改成功',
+                description: '头像已更新',
+            })
+            setIsEditingAvatar(false)
+        } catch (error) {
+            toast({
+                title: '修改失败',
+                description: error instanceof Error ? error.message : '头像修改失败',
+                variant: 'destructive',
+            })
+        }
     }
 
     const handleUploadAvatar = () => {

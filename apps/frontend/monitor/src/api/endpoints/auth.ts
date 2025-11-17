@@ -58,4 +58,26 @@ export const authAPI = {
      * 响应拦截器解包后: User
      */
     register: (data: { username: string; password: string; email?: string; phone?: string }) => client.post<User>('/admin/register', data),
+
+    /**
+     * 修改邮箱
+     * 后端返回: { success: true, data: User }
+     * 响应拦截器解包后: User
+     */
+    updateEmail: (email: string) => client.put<User>('/profile/email', { email }),
+
+    /**
+     * 修改密码
+     * 后端返回: { success: true, data: User }
+     * 响应拦截器解包后: User
+     */
+    updatePassword: (currentPassword: string, newPassword: string) =>
+        client.put<User>('/profile/password', { currentPassword, newPassword }),
+
+    /**
+     * 修改头像
+     * 后端返回: { success: true, data: User }
+     * 响应拦截器解包后: User
+     */
+    updateAvatar: (avatar: string) => client.put<User>('/profile/avatar', { avatar }),
 }

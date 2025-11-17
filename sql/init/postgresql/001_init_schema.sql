@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS admin (
     email VARCHAR(255),
     phone VARCHAR(50),
     role VARCHAR(50),
+    avatar VARCHAR(500),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -30,6 +31,7 @@ COMMENT ON COLUMN admin.password IS '密码(加密存储)';
 COMMENT ON COLUMN admin.email IS '邮箱';
 COMMENT ON COLUMN admin.phone IS '手机号';
 COMMENT ON COLUMN admin.role IS '角色';
+COMMENT ON COLUMN admin.avatar IS '头像URL';
 
 -- ============================================
 -- 2. application 表 (应用管理)

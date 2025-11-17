@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm'
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
 
 @Entity({ name: 'admin' })
 export class AdminEntity {
@@ -19,4 +19,13 @@ export class AdminEntity {
 
     @Column({ type: 'varchar', nullable: true })
     role: string
+
+    @Column({ type: 'varchar', nullable: true, length: 500 })
+    avatar: string
+
+    @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+    created_at: Date
+
+    @UpdateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
+    updated_at: Date
 }
