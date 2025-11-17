@@ -8,7 +8,11 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined)
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [appId, setAppId] = useState('vanilla1bhOoq')
+    // 从 URL 参数读取 appId,如果没有则使用默认值
+    const urlParams = new URLSearchParams(window.location.search)
+    const initialAppId = urlParams.get('appId') || 'vanilla1bhOoq'
+
+    const [appId, setAppId] = useState(initialAppId)
 
     return <AppContext.Provider value={{ appId, setAppId }}>{children}</AppContext.Provider>
 }

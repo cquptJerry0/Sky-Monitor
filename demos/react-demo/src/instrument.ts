@@ -17,8 +17,9 @@ if (typeof window !== 'undefined') {
     ;(window as any).__DEV__ = true
 }
 
-// 应用配置
-const APP_ID = 'vanilla1bhOoq'
+// 从 URL 参数读取 appId,如果没有则使用默认值
+const urlParams = new URLSearchParams(window.location.search)
+const APP_ID = urlParams.get('appId') || 'vanilla1bhOoq'
 const DSN = `http://localhost:8080/api/monitoring/${APP_ID}`
 
 // 获取 release 版本（构建时注入，开发环境使用默认值）
