@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom'
-import { ShoppingCart, User, Search, Settings } from 'lucide-react'
+import { ShoppingCart, User, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { useCartStore } from '@/store/cart'
+import { SdkDebugPanel } from '@/components/sdk-debug'
 
 export function Header() {
     const cartItems = useCartStore(state => state.items)
@@ -24,11 +25,7 @@ export function Header() {
                 </div>
 
                 <nav className="flex items-center gap-2">
-                    <Link to="/settings">
-                        <Button variant="ghost" size="icon">
-                            <Settings className="h-5 w-5" />
-                        </Button>
-                    </Link>
+                    <SdkDebugPanel />
 
                     <Link to="/account">
                         <Button variant="ghost" size="icon">
