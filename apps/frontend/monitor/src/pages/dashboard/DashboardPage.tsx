@@ -5,6 +5,16 @@ import { useNavigate } from 'react-router-dom'
 import { DashboardGrid, TimeRangePicker, WidgetBuilder } from '@/components/dashboard'
 import type { DashboardWidget } from '@/types/dashboard'
 import { Button } from '@/components/ui/button'
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { useCurrentAppId } from '@/hooks/useCurrentApp'
 import { useDashboard, useDashboards, useResetWidgets } from '@/hooks/useDashboard'
 import { useDashboardStore } from '@/stores/dashboard.store'
@@ -50,6 +60,9 @@ export default function DashboardPage() {
     // Widget Builder 弹窗状态
     const [widgetBuilderOpen, setWidgetBuilderOpen] = useState(false)
     const [editingWidget, setEditingWidget] = useState<DashboardWidget | null>(null)
+
+    // 恢复默认弹窗状态
+    const [showResetDialog, setShowResetDialog] = useState(false)
 
     // 跟踪appId切换状态
     const [isAppChanging, setIsAppChanging] = useState(false)
@@ -128,12 +141,9 @@ export default function DashboardPage() {
     const handleResetWidgets = async () => {
         if (!currentDashboardId) return
 
-        if (!confirm('确定要恢复默认Widget吗? 这将删除当前所有Widget并重新创建默认的4个Widget。')) {
-            return
-        }
-
         try {
             await resetWidgets.mutateAsync(currentDashboardId)
+            setShowResetDialog(false)
             toast({
                 title: '恢复成功',
                 description: '已恢复默认Widget',
@@ -194,7 +204,7 @@ export default function DashboardPage() {
                     {/* 恢复默认 Widget 按钮 */}
                     <Button
                         variant="outline"
-                        onClick={handleResetWidgets}
+                        onClick={() => setShowResetDialog(true)}
                         disabled={resetWidgets.isPending || !currentDashboard?.appId}
                         title={!currentDashboard?.appId ? '只有关联应用的Dashboard才能恢复默认Widget' : '恢复默认Widget'}
                     >
@@ -219,6 +229,25 @@ export default function DashboardPage() {
                     editingWidget={editingWidget}
                 />
             )}
+
+            {/* 恢复默认 Widget 确认弹窗 */}
+            <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>确认恢复默认Widget?</AlertDialogTitle>
+                        <AlertDialogDescription>这将删除当前所有Widget并重新创建默认的4个Widget,此操作无法撤销。</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>取消</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleResetWidgets}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            确认恢复
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             {/* Dashboard Grid */}
             {isDashboardLoading ? (
