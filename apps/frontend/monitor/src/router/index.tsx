@@ -16,6 +16,8 @@ const ProjectsPage = lazy(() => import('@/pages/projects/ProjectsPage'))
 const DashboardPage = lazy(() => import('@/pages/dashboard/DashboardPage'))
 const EventsPage = lazy(() => import('@/pages/events/EventsPage'))
 const EventDetailPage = lazy(() => import('@/pages/events/EventDetailPage'))
+const ProfilePage = lazy(() => import('@/pages/profile/ProfilePage'))
+const NotFoundPage = lazy(() => import('@/pages/error/NotFoundPage'))
 
 /**
  * 懒加载包装组件
@@ -42,6 +44,11 @@ export const router: ReturnType<typeof createBrowserRouter> = createBrowserRoute
                 </LazyPage>
             </GuestGuard>
         ),
+        errorElement: (
+            <Suspense fallback={<PageLoading />}>
+                <NotFoundPage />
+            </Suspense>
+        ),
     },
 
     // 主应用
@@ -51,6 +58,11 @@ export const router: ReturnType<typeof createBrowserRouter> = createBrowserRoute
             <AuthGuard>
                 <AppLayout />
             </AuthGuard>
+        ),
+        errorElement: (
+            <Suspense fallback={<PageLoading />}>
+                <NotFoundPage />
+            </Suspense>
         ),
         children: [
             // 默认重定向到应用列表
@@ -95,6 +107,16 @@ export const router: ReturnType<typeof createBrowserRouter> = createBrowserRoute
                 element: (
                     <LazyPage>
                         <EventDetailPage />
+                    </LazyPage>
+                ),
+            },
+
+            // 个人资料
+            {
+                path: ROUTES.PROFILE,
+                element: (
+                    <LazyPage>
+                        <ProfilePage />
                     </LazyPage>
                 ),
             },
