@@ -39,6 +39,7 @@ export function Sidebar({ collapsed }: SidebarProps) {
     useEffect(() => {
         if (collapsed) {
             setShowText(false)
+            return
         } else {
             const timer = setTimeout(() => {
                 setShowText(true)

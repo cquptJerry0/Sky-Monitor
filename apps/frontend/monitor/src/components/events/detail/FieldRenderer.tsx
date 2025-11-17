@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge'
 import { TruncatedText } from '@/components/ui/truncated-text'
 import { formatDuration, formatEventTime } from '@/utils/eventUtils'
-import type { FieldType } from './eventFieldSchema'
+import type { FieldType } from '../schemas/eventFieldSchema'
 
 interface FieldRendererProps {
     type: FieldType

@@ -25,7 +25,7 @@ import {
     frameworkFields,
     metadataFields,
     type DetailField,
-} from './eventFieldSchema'
+} from '../schemas/eventFieldSchema'
 
 interface EventDetailCardProps {
     event: Event

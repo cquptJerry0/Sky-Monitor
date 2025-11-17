@@ -155,10 +155,10 @@ export function RRWebPlayer({
             }
 
             // 创建新的播放器实例
-            playerRef.current = new rrwebPlayer({
+            const player = new rrwebPlayer({
                 target: containerRef.current,
                 props: {
-                    events, // rrweb 事件数组
+                    events: events as any, // rrweb 事件数组
                     width: playerSize.width, // 播放器宽度
                     height: playerSize.height, // 播放器高度
                     autoPlay, // 是否自动播放
@@ -167,21 +167,22 @@ export function RRWebPlayer({
                     skipInactive: false, // 不跳过不活跃时间 (保留完整会话)
                     showWarning: true, // 显示警告信息
                 },
-            })
+            }) as any
 
-            // 获取播放器实例
-            const player = playerRef.current
+            playerRef.current = player
 
             // 监听播放器事件
             if (player && player.on) {
                 // 监听当前播放时间变化
-                player.on('ui-update-current-time', (payload: PlayerEventPayload) => {
-                    setCurrentTime(payload.currentTime || 0)
+                player.on('ui-update-current-time', (payload: unknown) => {
+                    const p = payload as PlayerEventPayload
+                    setCurrentTime(p.currentTime || 0)
                 })
 
                 // 监听播放状态变化 (playing/paused)
-                player.on('ui-update-player-state', (payload: PlayerEventPayload) => {
-                    setIsPlaying(payload.state === 'playing')
+                player.on('ui-update-player-state', (payload: unknown) => {
+                    const p = payload as PlayerEventPayload
+                    setIsPlaying(p.state === 'playing')
                 })
             }
 

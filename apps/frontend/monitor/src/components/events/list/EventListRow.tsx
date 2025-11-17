@@ -4,7 +4,7 @@ import { TableCell, TableRow } from '@/components/ui/table'
 import { TruncatedText } from '@/components/ui/truncated-text'
 import { formatEventTime, getEventTypeBadgeVariant } from '@/utils/eventUtils'
 import { Video } from 'lucide-react'
-import { extractEventMessage } from './eventDisplaySchema'
+import { extractEventMessage } from '../schemas/eventDisplaySchema'
 
 interface EventListRowProps {
     event: Event

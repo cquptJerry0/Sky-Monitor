@@ -2,13 +2,12 @@ import { useMemo, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCurrentApp } from '@/hooks/useCurrentApp'
 import { useEvents } from '@/hooks/useEventQuery'
+import { usePersistedState } from '@/hooks/usePersistedState'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { EventFilters, type EventFiltersState } from '@/components/events/EventFilters'
-import { EventListRow } from '@/components/events/EventListRow'
-import { EventListSkeleton } from '@/components/events/EventListSkeleton'
-import { EventStats } from '@/components/events/EventStats'
+import { EventFilters, EventListRow, EventListSkeleton, EventStats } from '@/components/events'
+import type { EventFiltersState } from '@/components/events'
 import { PAGINATION, ROUTES } from '@/utils/constants'
 import { AlertCircle, RefreshCw } from 'lucide-react'
 import type { Event } from '@/api/types'
@@ -20,7 +19,7 @@ export default function EventsPage() {
     const [pageSize] = useState(PAGINATION.DEFAULT_PAGE_SIZE)
     const [showLoading, setShowLoading] = useState(false)
 
-    const [filters, setFilters] = useState<EventFiltersState>({
+    const [filters, setFilters] = usePersistedState<EventFiltersState>('events-filters', {
         eventType: 'all',
         timeRange: '1h',
     })

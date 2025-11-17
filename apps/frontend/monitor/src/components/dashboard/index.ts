@@ -2,7 +2,6 @@
  * Dashboard 组件统一导出
  */
 
-// 主组件
 export { DashboardGrid } from './DashboardGrid'
 export { TimeRangePicker } from './TimeRangePicker'
 

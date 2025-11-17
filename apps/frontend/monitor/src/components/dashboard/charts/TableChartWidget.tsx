@@ -20,7 +20,7 @@ export function TableChartWidget({ data }: TableChartWidgetProps) {
         )
     }
 
-    const columns = Object.keys(tableData[0])
+    const columns = Object.keys(tableData[0]!)
 
     return (
         <div className="h-full overflow-auto">

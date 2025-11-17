@@ -296,7 +296,11 @@ export function useUpdateWidgetsLayout() {
  */
 export function useExecuteQuery(data: ExecuteQueryDto | null) {
     return useQuery({
-        queryKey: dashboardKeys.query(data?.widgetId || '', data?.timeRange || { start: '', end: '' }, data?.appId),
+        queryKey: dashboardKeys.query(
+            data?.widgetId || '',
+            data?.timeRange || { start: '', end: '' },
+            Array.isArray(data?.appId) ? data.appId[0] : data?.appId
+        ),
         queryFn: () => dashboardApi.executeQuery(data!),
         enabled: !!data && !!data.widgetId && !!data.timeRange.start && !!data.timeRange.end,
         refetchInterval: false,

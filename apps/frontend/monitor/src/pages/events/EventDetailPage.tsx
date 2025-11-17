@@ -4,7 +4,7 @@ import { useEventDetail } from '@/hooks/useEventQuery'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { EventDetailCard } from '@/components/events/EventDetailCard'
+import { EventDetailCard } from '@/components/events'
 import { ArrowLeft, AlertCircle } from 'lucide-react'
 import { ROUTES } from '@/utils/constants'
 

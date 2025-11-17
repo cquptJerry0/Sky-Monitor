@@ -42,7 +42,7 @@ export function useEventStats(appId: string | null, timeRange?: { start: Date; e
 /**
  * 查询事件详情
  */
-export function useEventDetail(id: string | null) {
+export function useEventDetail(id: string | null, _appId?: string, _open?: boolean) {
     return useQuery({
         queryKey: ['event', id],
         queryFn: () => eventsAPI.getById(id!),
