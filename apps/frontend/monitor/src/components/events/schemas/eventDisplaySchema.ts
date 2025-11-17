@@ -42,27 +42,37 @@ export function extractEventMessage(event: Event): EventMessage {
 
     // 性能事件
     if (event.event_type === 'performance') {
-        // HTTP 性能
-        if (event.category === 'http') {
-            const status = event.status ? `[${event.status}]` : ''
-            const slow = event.is_slow ? '[慢请求]' : ''
-            return {
-                primary: `${status}${slow} ${event.method} ${event.url}`,
-                secondary: `耗时 ${event.duration}ms`,
-            }
+        // 优先使用 perf_category 和 perf_value (后端查询返回的字段)
+        let category = event.perf_category || event.category
+        let value = event.perf_value ?? event.duration ?? event.value
+
+        // 如果后端字段为空,从 event_data 提取
+        if (!category && eventData?.category) {
+            category = eventData.category as string
+        }
+        if (value === undefined && eventData?.value !== undefined) {
+            value = eventData.value as number
+        }
+        if (value === undefined && eventData?.duration !== undefined) {
+            value = eventData.duration as number
         }
 
-        // 资源性能
-        if (event.category === 'resourceTiming') {
-            return {
-                primary: `资源加载: ${event.url}`,
-                secondary: `耗时 ${event.duration}ms`,
-            }
+        // 格式化类别名称
+        const categoryMap: Record<string, string> = {
+            'page-load': '页面加载',
+            'api-call': 'API调用',
+            'resource-load': '资源加载',
+            http: 'HTTP请求',
+            resourceTiming: '资源加载',
         }
+        const displayCategory = categoryMap[category || ''] || category || '性能事件'
+
+        // 格式化数值
+        const displayValue = value !== undefined ? `${Math.round(value)}ms` : '-'
 
         return {
-            primary: (eventData.name as string) || '性能事件',
-            secondary: eventData.value ? `值: ${eventData.value}` : undefined,
+            primary: `${displayCategory}: ${displayValue}`,
+            secondary: category ? `类型: ${category}` : undefined,
         }
     }
 
