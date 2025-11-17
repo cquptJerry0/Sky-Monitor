@@ -1,5 +1,5 @@
 {
-    "name": "Miaoma Monitor Development Environment",
+    "name": "Sky Monitor Development Environment",
     "dockerComposeFile": ["docker-compose.yml"],
     "service": "sky-monitor",
     "workspaceFolder": "/workspace",

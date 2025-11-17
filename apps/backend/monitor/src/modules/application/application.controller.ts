@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Post, Put, Request, UseGuards, UsePipes } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Post, Put, Request, UseGuards, UsePipes } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
 import { nanoid } from 'nanoid'
 
@@ -52,5 +52,15 @@ export class ApplicationController {
     async delete(@Body() body: DeleteApplicationDto, @Request() req) {
         const newUser = await this.applicationService.delete({ appId: body.appId, userId: req.user.id })
         return { data: newUser, success: true }
+    }
+
+    /**
+     * 临时API: 为现有应用创建默认Dashboard
+     * POST /application/:appId/init-dashboard
+     */
+    @Post(':appId/init-dashboard')
+    async initDashboard(@Param('appId') appId: string, @Request() req) {
+        const dashboard = await this.applicationService.initDashboardForApp(appId, req.user.id)
+        return { data: dashboard, success: true }
     }
 }

@@ -84,4 +84,56 @@ export class ApplicationService {
 
         return res.affected
     }
+
+    /**
+     * 临时方法: 为现有应用初始化默认Dashboard
+     * 用于修复之前创建的应用没有默认Dashboard的问题
+     */
+    async initDashboardForApp(appId: string, userId: number) {
+        // 验证应用是否存在且属于当前用户
+        const app = await this.applicationRepository.findOne({
+            where: { appId, userId },
+        })
+
+        if (!app) {
+            throw new NotFoundException('Application not found')
+        }
+
+        // 检查是否已经有Dashboard
+        const existingDashboard = await this.dashboardRepository.findOne({
+            where: { appId, userId },
+        })
+
+        if (existingDashboard) {
+            this.logger.warn(`Dashboard already exists for app: ${appId}`)
+            return existingDashboard
+        }
+
+        // 创建默认Dashboard
+        const dashboard = new DashboardEntity({
+            name: `${appId} 监控面板`,
+            description: '自动创建的默认监控面板',
+            userId,
+            appId,
+            isDefault: true,
+        })
+
+        const savedDashboard = await this.dashboardRepository.save(dashboard)
+
+        // 创建默认Widgets
+        const defaultWidgets = generateDefaultWidgets(savedDashboard.id, appId)
+
+        const widgets = this.widgetRepository.create(
+            defaultWidgets.map(widgetConfig => ({
+                dashboardId: savedDashboard.id,
+                ...widgetConfig,
+            })) as any
+        )
+
+        await this.widgetRepository.save(widgets)
+
+        this.logger.log(`Initialized default dashboard with ${widgets.length} widgets for app: ${appId}`)
+
+        return savedDashboard
+    }
 }

@@ -42,7 +42,7 @@
 # }
 # termis
 # 线上监控示例
-monitoring.miaomaedu.com {
+monitoring.sky.com {
 
 
         encode zstd gzip
