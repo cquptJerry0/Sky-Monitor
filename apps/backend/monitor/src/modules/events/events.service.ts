@@ -32,8 +32,13 @@ export class EventsService {
                 queryParams.appId = appId
             }
             if (eventType) {
-                whereConditions.push(`event_type = {eventType:String}`)
-                queryParams.eventType = eventType
+                // 错误类事件分组处理: error 包含 error, exception, unhandledrejection
+                if (eventType === 'error') {
+                    whereConditions.push(`event_type IN ('error', 'exception', 'unhandledrejection')`)
+                } else {
+                    whereConditions.push(`event_type = {eventType:String}`)
+                    queryParams.eventType = eventType
+                }
             }
 
             // 根据 timeRange 计算时间范围
@@ -658,8 +663,9 @@ export class EventsService {
             const query = `
                 SELECT
                     count() as total_events,
-                    countIf(event_type IN ('error', 'unhandledrejection')) as error_count,
-                    countIf(event_type = 'webVital') as performance_count,
+                    countIf(event_type IN ('error', 'exception', 'unhandledrejection')) as error_count,
+                    countIf(event_type = 'performance') as performance_count,
+                    countIf(event_type = 'webVital') as web_vital_count,
                     min(timestamp) as first_seen,
                     max(timestamp) as last_seen,
 
@@ -715,6 +721,36 @@ export class EventsService {
             }
         } catch (error) {
             this.logger.error(`Failed to get events by session: ${error.message}`, error.stack)
+            throw error
+        }
+    }
+
+    /**
+     * 获取应用的用户列表
+     */
+    async getUsersByApp(appId: string) {
+        try {
+            const query = `
+                SELECT DISTINCT
+                    user_id as id,
+                    user_email as email,
+                    user_username as username
+                FROM monitor_events
+                WHERE app_id = {appId:String}
+                  AND user_id != ''
+                ORDER BY user_id ASC
+                LIMIT 1000
+            `
+
+            const result = await this.clickhouseClient.query({
+                query,
+                query_params: { appId },
+            })
+            const data = await result.json()
+
+            return data.data || []
+        } catch (error) {
+            this.logger.error(`Failed to get users by app: ${error.message}`, error.stack)
             throw error
         }
     }

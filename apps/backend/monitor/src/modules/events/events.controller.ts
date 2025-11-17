@@ -267,6 +267,27 @@ export class EventsController {
     }
 
     /**
+     * 获取应用的用户列表
+     * GET /api/events/users
+     */
+    @Get('users')
+    @ApiOperation({ summary: '获取应用的用户列表' })
+    @ApiQuery({ name: 'appId', required: true, description: '应用ID' })
+    async getUsersByApp(@Query('appId') appId: string, @Request() req?: any) {
+        // 验证权限
+        await this.validateUserOwnsApp(appId, req.user.id)
+
+        const users = await this.eventsService.getUsersByApp(appId)
+
+        return {
+            success: true,
+            data: {
+                users,
+            },
+        }
+    }
+
+    /**
      * 获取慢请求列表
      * GET /api/events/performance/slow-requests
      */
