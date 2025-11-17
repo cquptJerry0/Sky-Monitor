@@ -137,7 +137,6 @@ export default function EventsPage() {
                                         <TableHead>路径</TableHead>
                                         <TableHead>用户</TableHead>
                                         <TableHead>会话</TableHead>
-                                        <TableHead className="text-center">回放</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>

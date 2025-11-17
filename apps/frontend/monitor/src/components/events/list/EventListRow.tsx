@@ -3,7 +3,6 @@ import { Badge } from '@/components/ui/badge'
 import { TableCell, TableRow } from '@/components/ui/table'
 import { TruncatedText } from '@/components/ui/truncated-text'
 import { formatEventTime, getEventTypeBadgeVariant } from '@/utils/eventUtils'
-import { Video } from 'lucide-react'
 import { extractEventMessage } from '../schemas/eventDisplaySchema'
 
 interface EventListRowProps {
@@ -29,10 +28,13 @@ export function EventListRow({ event, onClick }: EventListRowProps) {
                 </div>
             </TableCell>
             <TableCell className="text-xs text-muted-foreground">
-                <TruncatedText text={event.user_id || event.user_email || ''} maxWidth="max-w-[120px]" />
+                <TruncatedText text={event.path || '-'} maxWidth="max-w-[200px]" />
             </TableCell>
             <TableCell className="text-xs text-muted-foreground">
-                <TruncatedText text={event.session_id || ''} maxWidth="max-w-[100px]" />
+                <TruncatedText text={event.user_id || event.user_email || '-'} maxWidth="max-w-[120px]" />
+            </TableCell>
+            <TableCell className="text-xs text-muted-foreground">
+                <TruncatedText text={event.session_id || '-'} maxWidth="max-w-[100px]" />
             </TableCell>
         </TableRow>
     )

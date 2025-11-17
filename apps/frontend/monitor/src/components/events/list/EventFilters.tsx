@@ -85,14 +85,11 @@ export function EventFilters({ filters, onFiltersChange }: EventFiltersProps) {
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">全部</SelectItem>
+                            <SelectItem value="all">全部事件</SelectItem>
                             <SelectItem value="error">错误事件</SelectItem>
-                            <SelectItem value="performance">性能事件</SelectItem>
                             <SelectItem value="webVital">Web Vitals</SelectItem>
+                            <SelectItem value="performance">性能事件</SelectItem>
                             <SelectItem value="message">日志消息</SelectItem>
-                            <SelectItem value="session">会话统计</SelectItem>
-                            <SelectItem value="replay">会话回放</SelectItem>
-                            <SelectItem value="transaction">事务追踪</SelectItem>
                             <SelectItem value="custom">自定义事件</SelectItem>
                         </SelectContent>
                     </Select>

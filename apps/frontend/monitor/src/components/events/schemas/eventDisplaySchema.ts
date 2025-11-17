@@ -69,19 +69,30 @@ export function extractEventMessage(event: Event): EventMessage {
     // Web Vitals
     if (event.event_type === 'webVital') {
         // 优先使用 event_name 和 perf_value (后端查询返回的字段)
+        // 如果没有,则从 event_data 中提取
         const name = event.event_name || (eventData.name as string)
-        const value = event.perf_value ?? (eventData.value as number)
+        const value = event.perf_value !== undefined && event.perf_value !== 0 ? event.perf_value : (eventData.value as number)
         const rating = eventData.rating as string
 
-        if (!name || value === undefined) {
+        if (!name || value === undefined || value === null) {
             return {
                 primary: 'Web Vitals 指标',
                 secondary: '数据不完整',
             }
         }
 
+        // 格式化数值显示
+        let displayValue: string
+        if (name === 'CLS') {
+            // CLS 是无单位的分数
+            displayValue = value.toFixed(3)
+        } else {
+            // LCP, FCP, TTFB, FID, INP 等都是毫秒
+            displayValue = `${Math.round(value)}ms`
+        }
+
         return {
-            primary: `${name}: ${value}${name === 'CLS' ? '' : 'ms'}`,
+            primary: `${name}: ${displayValue}`,
             secondary: rating ? `评级: ${rating}` : undefined,
         }
     }
