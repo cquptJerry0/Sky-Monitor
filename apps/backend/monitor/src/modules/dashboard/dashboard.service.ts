@@ -23,6 +23,8 @@ import { generateDefaultWidgets } from '../application/default-widgets.config'
 
 @Injectable()
 export class DashboardService {
+    private readonly logger = new Logger(DashboardService.name)
+
     constructor(
         @InjectRepository(DashboardEntity)
         private readonly dashboardRepository: Repository<DashboardEntity>,
