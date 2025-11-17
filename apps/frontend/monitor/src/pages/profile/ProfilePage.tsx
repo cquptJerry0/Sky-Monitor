@@ -2,8 +2,8 @@
  * 个人资料页面
  */
 
-import { useState } from 'react'
-import { useAuth, useUpdateEmail, useUpdatePassword, useUpdateAvatar } from '@/hooks/useAuth'
+import { useState, useRef } from 'react'
+import { useAuth, useUpdateEmail, useUpdatePassword, useUpdateAvatar, useUploadAvatar } from '@/hooks/useAuth'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Label } from '@/components/ui/label'
@@ -20,6 +20,9 @@ export default function ProfilePage() {
     const updateEmail = useUpdateEmail()
     const updatePassword = useUpdatePassword()
     const updateAvatar = useUpdateAvatar()
+    const uploadAvatar = useUploadAvatar()
+
+    const fileInputRef = useRef<HTMLInputElement>(null)
 
     const [email, setEmail] = useState(user?.email || '')
     const [isEditingEmail, setIsEditingEmail] = useState(false)
@@ -121,10 +124,56 @@ export default function ProfilePage() {
     }
 
     const handleUploadAvatar = () => {
-        toast({
-            title: '功能开发中',
-            description: '头像上传功能正在开发中',
-        })
+        fileInputRef.current?.click()
+    }
+
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0]
+        if (!file) return
+
+        // 验证文件类型
+        if (!file.type.match(/^image\/(jpg|jpeg|png|gif|webp)$/)) {
+            toast({
+                title: '文件格式错误',
+                description: '只支持图片格式(jpg, jpeg, png, gif, webp)',
+                variant: 'destructive',
+            })
+            return
+        }
+
+        // 验证文件大小 (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            toast({
+                title: '文件太大',
+                description: '文件大小不能超过5MB',
+                variant: 'destructive',
+            })
+            return
+        }
+
+        try {
+            const result = await uploadAvatar.mutateAsync(file)
+            toast({
+                title: '上传成功',
+                description: '头像已更新',
+            })
+            // 更新预览 - 使用完整的URL (API_BASE_URL + result.url)
+            const fullUrl = result.url.startsWith('http')
+                ? result.url
+                : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081'}${result.url}`
+            setAvatarUrl(fullUrl)
+        } catch (error) {
+            toast({
+                title: '上传失败',
+                description: error instanceof Error ? error.message : '头像上传失败',
+                variant: 'destructive',
+            })
+        }
+
+        // 清空input,允许重复上传同一文件
+        if (fileInputRef.current) {
+            fileInputRef.current.value = ''
+        }
     }
 
     return (
@@ -133,6 +182,15 @@ export default function ProfilePage() {
                 <h1 className="text-3xl font-bold">个人资料</h1>
                 <p className="text-muted-foreground mt-2">查看和管理您的个人信息</p>
             </div>
+
+            {/* 隐藏的文件上传input */}
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpg,image/jpeg,image/png,image/gif,image/webp"
+                onChange={handleFileChange}
+                className="hidden"
+            />
 
             <div className="grid gap-6 md:grid-cols-2">
                 {/* 基本信息卡片 */}

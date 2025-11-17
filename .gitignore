@@ -55,3 +55,6 @@ docs
 # React 和 Vue 包暂时不提交
 packages/react/
 packages/vue/
+
+# 上传文件
+uploads/

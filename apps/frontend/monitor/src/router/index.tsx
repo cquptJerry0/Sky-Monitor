@@ -12,6 +12,7 @@ import ErrorBoundary from '@/components/ErrorBoundary'
 
 // 懒加载页面组件
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'))
+const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage'))
 const ProjectsPage = lazy(() => import('@/pages/projects/ProjectsPage'))
 const DashboardPage = lazy(() => import('@/pages/dashboard/DashboardPage'))
 const EventsPage = lazy(() => import('@/pages/events/EventsPage'))
@@ -41,6 +42,21 @@ export const router: ReturnType<typeof createBrowserRouter> = createBrowserRoute
             <GuestGuard>
                 <LazyPage>
                     <LoginPage />
+                </LazyPage>
+            </GuestGuard>
+        ),
+        errorElement: (
+            <Suspense fallback={<PageLoading />}>
+                <NotFoundPage />
+            </Suspense>
+        ),
+    },
+    {
+        path: '/auth/reset-password',
+        element: (
+            <GuestGuard>
+                <LazyPage>
+                    <ResetPasswordPage />
                 </LazyPage>
             </GuestGuard>
         ),

@@ -80,4 +80,31 @@ export const authAPI = {
      * 响应拦截器解包后: User
      */
     updateAvatar: (avatar: string) => client.put<User>('/profile/avatar', { avatar }),
+
+    /**
+     * 上传头像文件
+     * 后端返回: { success: true, data: { user: User, url: string } }
+     * 响应拦截器解包后: { user: User, url: string }
+     */
+    uploadAvatar: (file: File) => {
+        const formData = new FormData()
+        formData.append('file', file)
+        return client.post<{ user: User; url: string }>('/profile/avatar/upload', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        })
+    },
+
+    /**
+     * 忘记密码 - 发送重置邮件
+     * 后端返回: { success: true, message: string }
+     */
+    forgotPassword: (email: string) => client.post<{ message: string }>('/auth/forgot-password', { email }),
+
+    /**
+     * 重置密码
+     * 后端返回: { success: true, message: string }
+     */
+    resetPassword: (token: string, newPassword: string) => client.post<{ message: string }>('/auth/reset-password', { token, newPassword }),
 }

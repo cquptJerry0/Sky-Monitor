@@ -23,6 +23,12 @@ export class AdminEntity {
     @Column({ type: 'varchar', nullable: true, length: 500 })
     avatar: string
 
+    @Column({ type: 'varchar', nullable: true, length: 255 })
+    reset_token: string
+
+    @Column({ type: 'timestamp', nullable: true })
+    reset_token_expires: Date
+
     @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     created_at: Date
 

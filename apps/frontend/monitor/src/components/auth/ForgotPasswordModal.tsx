@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
 import { Loader2, Mail } from 'lucide-react'
+import { authAPI } from '@/api'
 
 interface ForgotPasswordModalProps {
     open: boolean
@@ -44,11 +45,7 @@ export function ForgotPasswordModal({ open, onOpenChange }: ForgotPasswordModalP
         setIsLoading(true)
 
         try {
-            // TODO: 调用忘记密码 API
-            // await authAPI.forgotPassword({ email })
-
-            // 模拟 API 调用
-            await new Promise(resolve => setTimeout(resolve, 1000))
+            await authAPI.forgotPassword(email)
 
             toast({
                 title: '重置邮件已发送',

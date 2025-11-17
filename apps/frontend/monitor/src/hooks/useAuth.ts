@@ -153,3 +153,19 @@ export function useUpdateAvatar() {
         },
     })
 }
+
+/**
+ * 上传头像文件 Mutation
+ */
+export function useUploadAvatar() {
+    const { setUser } = useAuthStore()
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: (file: File) => authAPI.uploadAvatar(file),
+        onSuccess: data => {
+            setUser(data.user)
+            queryClient.invalidateQueries({ queryKey: ['currentUser'] })
+        },
+    })
+}

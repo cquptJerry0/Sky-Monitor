@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS admin (
     phone VARCHAR(50),
     role VARCHAR(50),
     avatar VARCHAR(500),
+    reset_token VARCHAR(255),
+    reset_token_expires TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

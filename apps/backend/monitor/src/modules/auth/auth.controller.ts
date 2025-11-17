@@ -2,12 +2,18 @@ import { Body, Controller, Get, Post, Request, Req, Res, UseGuards } from '@nest
 import { AuthGuard } from '@nestjs/passport'
 import { Request as ExpressRequest, Response } from 'express'
 
+import { AdminService } from '../admin/admin.service'
+import { EmailService } from '../email/email.service'
 import { AuthService } from './auth.service'
 import { cookieConstants } from './constants'
 
 @Controller()
 export class AuthController {
-    constructor(private readonly authService: AuthService) {}
+    constructor(
+        private readonly authService: AuthService,
+        private readonly adminService: AdminService,
+        private readonly emailService: EmailService
+    ) {}
 
     /**
      * 登录
@@ -147,5 +153,72 @@ export class AuthController {
     @Get('me')
     getProfile(@Request() req) {
         return req.user
+    }
+
+    /**
+     * 忘记密码 - 发送重置邮件
+     * @param body
+     * @returns
+     */
+    @Post('/auth/forgot-password')
+    async forgotPassword(@Body() body: { email: string }) {
+        const { email } = body
+
+        if (!email) {
+            return { success: false, message: '请提供邮箱地址' }
+        }
+
+        try {
+            const { token } = await this.adminService.generateResetToken(email)
+
+            // 生成重置密码URL
+            const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+            const resetUrl = `${frontendUrl}/auth/reset-password?token=${token}`
+
+            // 发送邮件
+            await this.emailService.sendResetPasswordEmail(email, resetUrl, 1)
+
+            return {
+                success: true,
+                message: '重置密码邮件已发送',
+            }
+        } catch (error) {
+            return {
+                success: false,
+                message: error.message || '发送失败',
+            }
+        }
+    }
+
+    /**
+     * 重置密码
+     * @param body
+     * @returns
+     */
+    @Post('/auth/reset-password')
+    async resetPassword(@Body() body: { token: string; newPassword: string }) {
+        const { token, newPassword } = body
+
+        if (!token || !newPassword) {
+            return { success: false, message: '缺少必要参数' }
+        }
+
+        if (newPassword.length < 6) {
+            return { success: false, message: '密码长度至少6位' }
+        }
+
+        try {
+            await this.adminService.resetPassword(token, newPassword)
+
+            return {
+                success: true,
+                message: '密码重置成功',
+            }
+        } catch (error) {
+            return {
+                success: false,
+                message: error.message || '重置失败',
+            }
+        }
     }
 }

@@ -3,6 +3,7 @@ import { JwtModule } from '@nestjs/jwt'
 import { PassportModule } from '@nestjs/passport'
 
 import { AdminModule } from '../admin/admin.module'
+import { EmailModule } from '../email/email.module'
 import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
 import { BlacklistService } from './blacklist.service'
@@ -18,6 +19,7 @@ import { LocalStrategy } from './local.strategy'
             signOptions: { expiresIn: jwtConstants.accessTokenExpiry },
         }),
         AdminModule,
+        EmailModule,
     ],
     controllers: [AuthController],
     providers: [AuthService, BlacklistService, LocalStrategy, JwtStrategy],

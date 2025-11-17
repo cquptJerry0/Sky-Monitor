@@ -1,6 +1,9 @@
 import { NestFactory } from '@nestjs/core'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import * as cookieParser from 'cookie-parser'
+import { NestExpressApplication } from '@nestjs/platform-express'
+import { join } from 'path'
+import { existsSync, mkdirSync } from 'fs'
 
 import { AppModule } from './app.module'
 import { HttpExceptionFilter } from './fundamentals/common/filters/http-exception.filter'
@@ -9,7 +12,22 @@ import { HttpExceptionFilter } from './fundamentals/common/filters/http-exceptio
 // import { ValidationPipe } from './common/pipes/validation.pipe'
 
 async function bootstrap() {
-    const app = await NestFactory.create(AppModule)
+    const app = await NestFactory.create<NestExpressApplication>(AppModule)
+
+    // 确保上传目录存在
+    const uploadsDir = join(__dirname, '..', 'uploads')
+    const avatarsDir = join(uploadsDir, 'avatars')
+    if (!existsSync(uploadsDir)) {
+        mkdirSync(uploadsDir)
+    }
+    if (!existsSync(avatarsDir)) {
+        mkdirSync(avatarsDir, { recursive: true })
+    }
+
+    // 配置静态文件服务
+    app.useStaticAssets(uploadsDir, {
+        prefix: '/uploads/',
+    })
 
     // 使用 cookie-parser 中间件
     app.use(cookieParser())
