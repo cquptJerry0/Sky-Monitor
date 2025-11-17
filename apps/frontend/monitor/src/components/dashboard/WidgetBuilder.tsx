@@ -1,9 +1,12 @@
+import { ArrowLeft } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 
 import { QueryBuilder } from './QueryBuilder'
-import { WidgetPreview } from './WidgetPreview'
+import { TemplateParamsEditor } from './TemplateParamsEditor'
+import { TemplateSelector } from './TemplateSelector'
 import type { DashboardWidget } from './types'
+import { WidgetPreview } from './WidgetPreview'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -12,8 +15,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useCreateWidget, useUpdateWidget } from '@/hooks/useDashboard'
+import { useCreateWidgetFromTemplate } from '@/hooks/useWidgetTemplate'
 import { useDashboardStore } from '@/stores/dashboard.store'
-import type { CreateWidgetDto, QueryConfig, WidgetType } from '@/components/dashboard/types'
+import type { CreateWidgetDto, QueryConfig, TemplateParams, WidgetTemplateMeta, WidgetType } from '@/types/dashboard'
 
 interface WidgetBuilderProps {
     dashboardId: string
@@ -22,17 +26,19 @@ interface WidgetBuilderProps {
     editingWidget?: DashboardWidget | null
 }
 
-/**
- * Widget 构建器弹窗
- */
+type BuilderMode = 'select-template' | 'edit-params' | 'custom-query'
+
 export function WidgetBuilder({ dashboardId, open, onOpenChange, editingWidget }: WidgetBuilderProps) {
-    const { timeRange, selectedAppId } = useDashboardStore()
+    const { selectedAppId } = useDashboardStore()
     const createWidget = useCreateWidget()
     const updateWidget = useUpdateWidget()
+    const createFromTemplate = useCreateWidgetFromTemplate()
 
     const isEditMode = !!editingWidget
 
-    // Widget 配置
+    const [mode, setMode] = useState<BuilderMode>('select-template')
+    const [selectedTemplate, setSelectedTemplate] = useState<WidgetTemplateMeta | null>(null)
+
     const [title, setTitle] = useState('')
     const [widgetType, setWidgetType] = useState<WidgetType>('line')
     const [query, setQuery] = useState<QueryConfig>({
@@ -43,12 +49,11 @@ export function WidgetBuilder({ dashboardId, open, onOpenChange, editingWidget }
         legend: '查询 1',
     })
 
-    // 防抖查询配置
     const debouncedQuery = useDebounce(query, 500)
 
-    // 当编辑 Widget 时,初始化表单
     useEffect(() => {
         if (editingWidget && open) {
+            setMode('custom-query')
             setTitle(editingWidget.title)
             setWidgetType(editingWidget.widgetType)
             if (editingWidget.queries && editingWidget.queries.length > 0) {
@@ -58,7 +63,8 @@ export function WidgetBuilder({ dashboardId, open, onOpenChange, editingWidget }
                 }
             }
         } else if (!open) {
-            // 关闭弹窗时重置表单
+            setMode('select-template')
+            setSelectedTemplate(null)
             setTitle('')
             setWidgetType('line')
             setQuery({
@@ -71,14 +77,29 @@ export function WidgetBuilder({ dashboardId, open, onOpenChange, editingWidget }
         }
     }, [editingWidget, open])
 
-    // 创建或更新 Widget
+    const handleSelectTemplate = (template: WidgetTemplateMeta) => {
+        setSelectedTemplate(template)
+        setMode('edit-params')
+    }
+
+    const handleConfirmTemplate = async (params: TemplateParams) => {
+        if (!selectedTemplate) return
+
+        await createFromTemplate.mutateAsync({
+            dashboardId,
+            templateType: selectedTemplate.type,
+            params,
+        })
+
+        onOpenChange(false)
+    }
+
     const handleSubmit = async () => {
         if (!title.trim()) {
             return
         }
 
         if (isEditMode && editingWidget) {
-            // 更新模式
             await updateWidget.mutateAsync({
                 id: editingWidget.id,
                 title,
@@ -86,7 +107,6 @@ export function WidgetBuilder({ dashboardId, open, onOpenChange, editingWidget }
                 queries: [query],
             })
         } else {
-            // 创建模式
             const widgetData: CreateWidgetDto = {
                 dashboardId,
                 title,
@@ -105,15 +125,67 @@ export function WidgetBuilder({ dashboardId, open, onOpenChange, editingWidget }
         onOpenChange(false)
     }
 
+    if (mode === 'select-template' && !isEditMode) {
+        return (
+            <Dialog open={open} onOpenChange={onOpenChange}>
+                <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>创建 Widget</DialogTitle>
+                    </DialogHeader>
+
+                    <div className="space-y-4">
+                        <TemplateSelector onSelect={handleSelectTemplate} />
+
+                        <div className="flex justify-center pt-4 border-t">
+                            <Button variant="outline" onClick={() => setMode('custom-query')}>
+                                或使用自定义查询
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        )
+    }
+
+    if (mode === 'edit-params' && selectedTemplate && !isEditMode) {
+        return (
+            <Dialog open={open} onOpenChange={onOpenChange}>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <div className="flex items-center gap-2">
+                            <Button variant="ghost" size="sm" onClick={() => setMode('select-template')}>
+                                <ArrowLeft className="h-4 w-4" />
+                            </Button>
+                            <DialogTitle>配置模板参数</DialogTitle>
+                        </div>
+                    </DialogHeader>
+
+                    <TemplateParamsEditor
+                        template={selectedTemplate}
+                        appId={selectedAppId || ''}
+                        onConfirm={handleConfirmTemplate}
+                        onCancel={() => setMode('select-template')}
+                    />
+                </DialogContent>
+            </Dialog>
+        )
+    }
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>{isEditMode ? '编辑 Widget' : '创建 Widget'}</DialogTitle>
+                    <div className="flex items-center gap-2">
+                        {!isEditMode && (
+                            <Button variant="ghost" size="sm" onClick={() => setMode('select-template')}>
+                                <ArrowLeft className="h-4 w-4" />
+                            </Button>
+                        )}
+                        <DialogTitle>{isEditMode ? '编辑 Widget' : '自定义 Widget'}</DialogTitle>
+                    </div>
                 </DialogHeader>
 
                 <div className="space-y-6">
-                    {/* 基础配置 */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label>Widget 标题</Label>
@@ -137,7 +209,6 @@ export function WidgetBuilder({ dashboardId, open, onOpenChange, editingWidget }
                         </div>
                     </div>
 
-                    {/* 查询构建器和预览 */}
                     <Tabs defaultValue="query" className="w-full">
                         <TabsList className="grid w-full grid-cols-2">
                             <TabsTrigger value="query">查询配置</TabsTrigger>
