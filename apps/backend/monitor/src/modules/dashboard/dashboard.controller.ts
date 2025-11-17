@@ -52,6 +52,30 @@ export class DashboardController {
         return { data: dashboards, success: true }
     }
 
+    // ==================== Widget 模板相关 API ====================
+    // 注意: 必须放在 @Get(':id') 之前,否则 'templates' 会被当作 id
+
+    /**
+     * 获取所有 Widget 模板
+     * GET /dashboards/templates
+     */
+    @Get('templates')
+    @UsePipes(new ZodValidationPipe(getTemplatesQuerySchema))
+    async getTemplates(@Query() query: GetTemplatesQueryDto) {
+        const templates = await this.dashboardService.getTemplates(query.category)
+        return { data: templates, success: true }
+    }
+
+    /**
+     * 获取单个 Widget 模板
+     * GET /dashboards/templates/:type
+     */
+    @Get('templates/:type')
+    async getTemplateByType(@Param('type') type: string) {
+        const template = await this.dashboardService.getTemplateByType(type)
+        return { data: template, success: true }
+    }
+
     /**
      * 获取 Dashboard 详情 (包含所有 Widget)
      * GET /dashboards/:id
@@ -137,29 +161,6 @@ export class DashboardController {
     async executeQuery(@Body() body: ExecuteQueryDto, @Request() req) {
         const result = await this.dashboardService.executeQuery(body, req.user.id)
         return { data: result, success: true }
-    }
-
-    // ==================== Widget 模板相关 API ====================
-
-    /**
-     * 获取所有 Widget 模板
-     * GET /dashboards/templates
-     */
-    @Get('templates')
-    @UsePipes(new ZodValidationPipe(getTemplatesQuerySchema))
-    async getTemplates(@Query() query: GetTemplatesQueryDto) {
-        const templates = await this.dashboardService.getTemplates(query.category)
-        return { data: templates, success: true }
-    }
-
-    /**
-     * 获取单个 Widget 模板
-     * GET /dashboards/templates/:type
-     */
-    @Get('templates/:type')
-    async getTemplateByType(@Param('type') type: string) {
-        const template = await this.dashboardService.getTemplateByType(type)
-        return { data: template, success: true }
     }
 
     /**
