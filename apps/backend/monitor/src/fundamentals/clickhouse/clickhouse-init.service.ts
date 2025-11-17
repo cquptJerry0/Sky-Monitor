@@ -1,6 +1,16 @@
 import { ClickHouseClient } from '@clickhouse/client'
 import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common'
 
+/**
+ * ClickHouse 初始化服务
+ *
+ * 注意: 此服务仅用于开发环境的自动初始化
+ * 生产环境应使用 sql/init/clickhouse/001_init_schema.sql 进行初始化
+ *
+ * 完整的 Schema 定义请参考:
+ * - sql/init/clickhouse/001_init_schema.sql (完整的表结构)
+ * - apps/backend/monitor/src/config/clickhouse-schema.ts (字段配置)
+ */
 @Injectable()
 export class ClickhouseInitService implements OnModuleInit {
     private readonly logger = new Logger(ClickhouseInitService.name)
@@ -9,6 +19,7 @@ export class ClickhouseInitService implements OnModuleInit {
 
     async onModuleInit() {
         this.logger.log('Initializing ClickHouse database')
+        this.logger.warn('使用简化的表结构初始化,完整结构请参考 sql/init/clickhouse/001_init_schema.sql')
         await this.initializeTables()
         this.logger.log('ClickHouse initialization completed')
     }
