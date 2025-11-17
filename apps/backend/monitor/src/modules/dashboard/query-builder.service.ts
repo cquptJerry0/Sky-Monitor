@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common'
 import type { QueryConfig, QueryCondition } from '../../entities/dashboard-widget.entity'
+import { CLICKHOUSE_SCHEMA, validateField, getFieldConfig } from '../../config/clickhouse-schema'
 
 /**
  * 查询构建器服务
@@ -34,7 +35,7 @@ export class QueryBuilderService {
             throw new BadRequestException('fields 不能为空')
         }
 
-        const sanitizedFields = fields.map(field => this.sanitizeField(field))
+        const sanitizedFields = fields.map(field => this.sanitizeAndValidateField(field))
         return `SELECT ${sanitizedFields.join(', ')}`
     }
 
@@ -88,7 +89,7 @@ export class QueryBuilderService {
         const { field, operator, value } = condition
 
         // 验证字段名
-        const sanitizedField = this.sanitizeField(field)
+        const sanitizedField = this.sanitizeAndValidateField(field)
 
         switch (operator) {
             case '=':
@@ -123,7 +124,7 @@ export class QueryBuilderService {
             return ''
         }
 
-        const sanitizedFields = groupBy.map(field => this.sanitizeField(field))
+        const sanitizedFields = groupBy.map(field => this.sanitizeAndValidateGroupByField(field))
         return `GROUP BY ${sanitizedFields.join(', ')}`
     }
 
@@ -136,7 +137,7 @@ export class QueryBuilderService {
         }
 
         const orderClauses = orderBy.map(order => {
-            const sanitizedField = this.sanitizeField(order.field)
+            const sanitizedField = this.sanitizeAndValidateField(order.field)
             const direction = order.direction === 'DESC' ? 'DESC' : 'ASC'
             return `${sanitizedField} ${direction}`
         })
@@ -145,12 +146,112 @@ export class QueryBuilderService {
     }
 
     /**
-     * 清理字段名,防止 SQL 注入
+     * 清理并验证字段名
+     * 支持聚合函数和 ClickHouse 函数
+     */
+    private sanitizeAndValidateField(field: string): string {
+        // 先进行基本的 SQL 注入防护
+        if (!/^[a-zA-Z0-9_(),.\s*]+$/.test(field)) {
+            throw new BadRequestException(`非法的字段名: ${field}`)
+        }
+
+        // 提取字段名 (去除聚合函数和别名)
+        const extractedField = this.extractFieldName(field)
+
+        // 如果是聚合函数或 ClickHouse 函数,直接返回
+        if (this.isAggregateOrFunction(field)) {
+            return field
+        }
+
+        // 验证字段是否存在于 Schema 中
+        if (extractedField && !validateField(extractedField)) {
+            throw new BadRequestException(`字段 "${extractedField}" 不存在于 ClickHouse Schema 中`)
+        }
+
+        return field
+    }
+
+    /**
+     * 验证 GROUP BY 字段
+     */
+    private sanitizeAndValidateGroupByField(field: string): string {
+        // 先进行基本验证
+        const sanitized = this.sanitizeAndValidateField(field)
+
+        // 提取字段名
+        const extractedField = this.extractFieldName(field)
+
+        // 如果是 ClickHouse 时间函数,允许
+        if (this.isTimeFunction(field)) {
+            return sanitized
+        }
+
+        // 验证字段是否可分组
+        if (extractedField) {
+            const fieldConfig = getFieldConfig(extractedField)
+            if (fieldConfig && !fieldConfig.groupable) {
+                throw new BadRequestException(`字段 "${extractedField}" 不支持 GROUP BY 操作`)
+            }
+        }
+
+        return sanitized
+    }
+
+    /**
+     * 提取字段名 (去除函数和别名)
+     */
+    private extractFieldName(field: string): string | null {
+        // 去除空格
+        const trimmed = field.trim()
+
+        // 处理别名 (如 "count() as total")
+        const withoutAlias = trimmed.split(/\s+as\s+/i)[0].trim()
+
+        // 处理聚合函数 (如 "count(field)", "avg(field)")
+        const functionMatch = withoutAlias.match(/^[a-zA-Z]+\(([^)]+)\)$/)
+        if (functionMatch) {
+            const innerField = functionMatch[1].trim()
+            // 如果是 count(*) 或 count(DISTINCT field),返回 null
+            if (innerField === '*' || innerField.startsWith('DISTINCT')) {
+                return null
+            }
+            return innerField
+        }
+
+        // 处理 ClickHouse 时间函数 (如 "toStartOfHour(timestamp)")
+        const timeMatch = withoutAlias.match(/^to[A-Z][a-zA-Z]+\(([^)]+)\)$/)
+        if (timeMatch) {
+            return timeMatch[1].trim()
+        }
+
+        // 普通字段
+        return withoutAlias
+    }
+
+    /**
+     * 判断是否为聚合函数或 ClickHouse 函数
+     */
+    private isAggregateOrFunction(field: string): boolean {
+        const trimmed = field.trim().toLowerCase()
+        const aggregateFunctions = ['count', 'sum', 'avg', 'min', 'max', 'uniq', 'grouparray']
+        return aggregateFunctions.some(fn => trimmed.startsWith(fn + '('))
+    }
+
+    /**
+     * 判断是否为 ClickHouse 时间函数
+     */
+    private isTimeFunction(field: string): boolean {
+        const trimmed = field.trim().toLowerCase()
+        const timeFunctions = ['tostartofminute', 'tostartofhour', 'tostartofday', 'tostartofweek', 'tostartofmonth']
+        return timeFunctions.some(fn => trimmed.startsWith(fn + '('))
+    }
+
+    /**
+     * 清理字段名,防止 SQL 注入 (保留用于向后兼容)
+     * @deprecated 使用 sanitizeAndValidateField 替代
      */
     private sanitizeField(field: string): string {
-        // 允许的字符: 字母、数字、下划线、括号、逗号、点
-        // 用于支持函数调用如 count(), toStartOfHour(timestamp)
-        if (!/^[a-zA-Z0-9_(),.\s]+$/.test(field)) {
+        if (!/^[a-zA-Z0-9_(),.\s*]+$/.test(field)) {
             throw new BadRequestException(`非法的字段名: ${field}`)
         }
         return field
