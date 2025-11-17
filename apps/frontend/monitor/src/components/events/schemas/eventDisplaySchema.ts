@@ -68,12 +68,21 @@ export function extractEventMessage(event: Event): EventMessage {
 
     // Web Vitals
     if (event.event_type === 'webVital') {
-        const name = eventData.name as string
-        const value = eventData.value as number
+        // 优先使用 event_name 和 perf_value (后端查询返回的字段)
+        const name = event.event_name || (eventData.name as string)
+        const value = event.perf_value ?? (eventData.value as number)
         const rating = eventData.rating as string
+
+        if (!name || value === undefined) {
+            return {
+                primary: 'Web Vitals 指标',
+                secondary: '数据不完整',
+            }
+        }
+
         return {
             primary: `${name}: ${value}${name === 'CLS' ? '' : 'ms'}`,
-            secondary: `评级: ${rating}`,
+            secondary: rating ? `评级: ${rating}` : undefined,
         }
     }
 

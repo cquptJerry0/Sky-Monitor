@@ -13,10 +13,8 @@ export function EventListSkeleton({ rows = 10 }: EventListSkeletonProps) {
                     <TableHead>时间</TableHead>
                     <TableHead>类型</TableHead>
                     <TableHead>消息</TableHead>
-                    <TableHead>路径</TableHead>
                     <TableHead>用户</TableHead>
                     <TableHead>会话</TableHead>
-                    <TableHead className="text-center">回放</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>

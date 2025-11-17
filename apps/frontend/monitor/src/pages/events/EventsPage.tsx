@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCurrentApp } from '@/hooks/useCurrentApp'
-import { useEvents } from '@/hooks/useEventQuery'
+import { useEvents, useAppSummary } from '@/hooks/useEventQuery'
 import { usePersistedState } from '@/hooks/usePersistedState'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -34,6 +34,9 @@ export default function EventsPage() {
         refetchInterval: 5000, // 每 5 秒自动刷新
     })
 
+    // 获取应用摘要统计数据
+    const { data: summaryData } = useAppSummary(currentApp?.appId || null)
+
     // 确保 loading
     useEffect(() => {
         if (isLoading) {
@@ -55,17 +58,16 @@ export default function EventsPage() {
     // 不需要前端筛选了,直接使用后端返回的数据
     const filteredEvents = events
 
-    // 统计数据
+    // 统计数据 - 使用后端返回的全局统计
     const stats = useMemo(() => {
-        const errorTypes = ['error', 'exception', 'unhandledrejection']
         return {
-            total: filteredEvents.length,
-            errors: filteredEvents.filter(e => errorTypes.includes(e.event_type)).length,
-            performance: filteredEvents.filter(e => e.event_type === 'performance').length,
-            sessions: filteredEvents.filter(e => e.event_type === 'session').length,
-            webVitals: filteredEvents.filter(e => e.event_type === 'webVital').length,
+            total: summaryData?.total_events || 0,
+            errors: summaryData?.error_count || 0,
+            performance: summaryData?.performance_count || 0,
+            sessions: summaryData?.session_count || 0,
+            webVitals: summaryData?.web_vital_count || 0,
         }
-    }, [filteredEvents])
+    }, [summaryData])
 
     const handleEventClick = (event: Event) => {
         navigate(`${ROUTES.EVENTS}/${event.id}`)

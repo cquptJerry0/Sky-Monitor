@@ -1,13 +1,17 @@
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { X } from 'lucide-react'
-import { useState } from 'react'
+import { Input } from '@/components/ui/input'
+import { X, Search } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { eventsAPI } from '@/api'
+import { useCurrentApp } from '@/hooks/useCurrentApp'
 
 export interface EventFiltersState {
     eventType: string
     timeRange: string
+    userId?: string
 }
 
 interface EventFiltersProps {
@@ -16,9 +20,33 @@ interface EventFiltersProps {
 }
 
 export function EventFilters({ filters, onFiltersChange }: EventFiltersProps) {
+    const { currentApp } = useCurrentApp()
     const [localFilters, setLocalFilters] = useState(filters)
+    const [userSearch, setUserSearch] = useState('')
 
-    const handleFilterChange = (key: keyof EventFiltersState, value: string) => {
+    // 获取用户列表
+    const { data: usersData } = useQuery({
+        queryKey: ['event-users', currentApp?.appId],
+        queryFn: () => eventsAPI.getUsers(currentApp?.appId || ''),
+        enabled: !!currentApp?.appId,
+        staleTime: 5 * 60 * 1000, // 缓存5分钟
+    })
+
+    // 过滤用户列表
+    const filteredUsers = useMemo(() => {
+        if (!usersData?.users) return []
+        if (!userSearch) return usersData.users
+
+        const search = userSearch.toLowerCase()
+        return usersData.users.filter(
+            user =>
+                user.id.toLowerCase().includes(search) ||
+                user.email.toLowerCase().includes(search) ||
+                user.username.toLowerCase().includes(search)
+        )
+    }, [usersData?.users, userSearch])
+
+    const handleFilterChange = (key: keyof EventFiltersState, value: string | undefined) => {
         const newFilters = { ...localFilters, [key]: value }
         setLocalFilters(newFilters)
         onFiltersChange(newFilters)
@@ -28,12 +56,14 @@ export function EventFilters({ filters, onFiltersChange }: EventFiltersProps) {
         const resetFilters: EventFiltersState = {
             eventType: 'all',
             timeRange: '1h',
+            userId: undefined,
         }
         setLocalFilters(resetFilters)
         onFiltersChange(resetFilters)
+        setUserSearch('')
     }
 
-    const hasActiveFilters = localFilters.eventType !== 'all'
+    const hasActiveFilters = localFilters.eventType !== 'all' || !!localFilters.userId
 
     return (
         <div className="space-y-4 rounded-lg border bg-card p-4">
@@ -47,7 +77,7 @@ export function EventFilters({ filters, onFiltersChange }: EventFiltersProps) {
                 )}
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div className="space-y-2">
                     <Label htmlFor="eventType">事件类型</Label>
                     <Select value={localFilters.eventType} onValueChange={value => handleFilterChange('eventType', value)}>
@@ -56,16 +86,14 @@ export function EventFilters({ filters, onFiltersChange }: EventFiltersProps) {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">全部</SelectItem>
-                            <SelectItem value="error">error</SelectItem>
-                            <SelectItem value="exception">exception</SelectItem>
-                            <SelectItem value="unhandledrejection">unhandledrejection</SelectItem>
-                            <SelectItem value="performance">performance</SelectItem>
-                            <SelectItem value="webVital">webVital</SelectItem>
-                            <SelectItem value="message">message</SelectItem>
-                            <SelectItem value="session">session</SelectItem>
-                            <SelectItem value="replay">replay</SelectItem>
-                            <SelectItem value="transaction">transaction</SelectItem>
-                            <SelectItem value="custom">custom</SelectItem>
+                            <SelectItem value="error">错误事件</SelectItem>
+                            <SelectItem value="performance">性能事件</SelectItem>
+                            <SelectItem value="webVital">Web Vitals</SelectItem>
+                            <SelectItem value="message">日志消息</SelectItem>
+                            <SelectItem value="session">会话统计</SelectItem>
+                            <SelectItem value="replay">会话回放</SelectItem>
+                            <SelectItem value="transaction">事务追踪</SelectItem>
+                            <SelectItem value="custom">自定义事件</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -83,6 +111,39 @@ export function EventFilters({ filters, onFiltersChange }: EventFiltersProps) {
                             <SelectItem value="24h">最近 24 小时</SelectItem>
                             <SelectItem value="7d">最近 7 天</SelectItem>
                             <SelectItem value="30d">最近 30 天</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="userId">用户筛选</Label>
+                    <Select
+                        value={localFilters.userId || 'all'}
+                        onValueChange={value => handleFilterChange('userId', value === 'all' ? undefined : value)}
+                    >
+                        <SelectTrigger id="userId">
+                            <SelectValue placeholder="全部用户" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <div className="px-2 py-1.5">
+                                <Input
+                                    placeholder="搜索用户..."
+                                    value={userSearch}
+                                    onChange={e => setUserSearch(e.target.value)}
+                                    className="h-8"
+                                    onClick={e => e.stopPropagation()}
+                                />
+                            </div>
+                            <SelectItem value="all">全部用户</SelectItem>
+                            {filteredUsers.length > 0 ? (
+                                filteredUsers.map(user => (
+                                    <SelectItem key={user.id} value={user.id}>
+                                        {user.username || user.email} ({user.id})
+                                    </SelectItem>
+                                ))
+                            ) : (
+                                <div className="px-2 py-1.5 text-sm text-muted-foreground">无匹配用户</div>
+                            )}
                         </SelectContent>
                     </Select>
                 </div>

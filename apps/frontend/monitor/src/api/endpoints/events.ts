@@ -3,7 +3,7 @@
  */
 
 import { client } from '../client'
-import type { Event, EventStats, Session, SourceMapStatusInfo } from '../types'
+import type { Event, EventStats, Session, SourceMapStatusInfo, EventUser } from '../types'
 
 export const eventsAPI = {
     /**
@@ -11,8 +11,15 @@ export const eventsAPI = {
      * 后端返回: { success: true, data: { data: Event[], total: number } }
      * 响应拦截器解包后: { data: Event[], total: number }
      */
-    list: (params: { appId?: string; eventType?: string; limit?: number; offset?: number; timeRange?: string }) =>
-        client.get<{ data: Event[]; total: number }>('/events', { params }),
+    list: (params: {
+        appId?: string
+        eventType?: string
+        userId?: string
+        userEmail?: string
+        limit?: number
+        offset?: number
+        timeRange?: string
+    }) => client.get<{ data: Event[]; total: number }>('/events', { params }),
 
     /**
      * 获取事件详情
@@ -35,6 +42,13 @@ export const eventsAPI = {
      * 响应拦截器解包后: EventStats
      */
     getAppSummary: (appId: string) => client.get<EventStats>(`/events/app/${appId}/summary`),
+
+    /**
+     * 获取应用的用户列表
+     * 后端返回: { success: true, data: { users: EventUser[] } }
+     * 响应拦截器解包后: { users: EventUser[] }
+     */
+    getUsers: (appId: string) => client.get<{ users: EventUser[] }>('/events/users', { params: { appId } }),
 
     /**
      * 获取会话列表

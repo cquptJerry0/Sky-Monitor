@@ -58,6 +58,20 @@ export interface Admin {
     updatedAt: string | null
 }
 
+/**
+ * 事件用户信息
+ * 对应后端: monitor_events 表的用户字段
+ * 注意: 这是SDK通过setUser()设置的用户信息,不是管理员用户
+ */
+export interface EventUser {
+    /** 用户 ID */
+    id: string
+    /** 用户邮箱 */
+    email: string
+    /** 用户名 */
+    username: string
+}
+
 // ==================== 枚举类型 ====================
 
 /**

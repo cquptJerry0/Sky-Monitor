@@ -79,6 +79,9 @@ export interface Event {
     success?: boolean
     value?: number
     metrics?: Record<string, unknown>
+    perf_category?: string
+    perf_value?: number
+    perf_is_slow?: boolean
 
     // 会话相关字段
     session_id?: string
