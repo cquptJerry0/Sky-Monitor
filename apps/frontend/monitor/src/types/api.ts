@@ -75,20 +75,44 @@ export interface EventUser {
 // ==================== 枚举类型 ====================
 
 /**
- * 事件类型枚举
+ * 事件类型枚举 (一级分类)
  * 对应后端: MonitoringEventDto.type
+ * 注意: 二级分类使用 event_name 字段
  */
 export type EventType =
-    | 'error'
-    | 'unhandledrejection'
+    | 'error' // 错误事件(一级)
+    | 'unhandledrejection' // Promise拒绝(已废弃,统一为error)
+    | 'performance' // 性能事件(一级)
+    | 'webVital' // Web Vitals(一级)
+    | 'session' // 会话统计
+    | 'message' // 日志消息
+    | 'custom' // 自定义事件
+    // 向后兼容
     | 'httpError'
     | 'resourceError'
-    | 'webVital'
-    | 'performance'
-    | 'session'
-    | 'message'
     | 'event'
-    | 'custom'
+
+/**
+ * 事件名称 (二级分类)
+ * 对应后端: MonitoringEventDto.name
+ * 用于在同一 type 下进一步区分事件子类型
+ */
+export type EventName =
+    // 错误子类型
+    | 'runtime_error' // JS运行时错误
+    | 'http_error' // HTTP请求错误
+    | 'resource_error' // 资源加载错误
+    | 'unhandled_rejection' // Promise拒绝
+    // 性能子类型
+    | 'http_performance' // HTTP性能
+    | 'resource_timing' // 资源性能
+    // Web Vitals子类型
+    | 'LCP' // Largest Contentful Paint
+    | 'FCP' // First Contentful Paint
+    | 'CLS' // Cumulative Layout Shift
+    | 'TTFB' // Time to First Byte
+    | 'FID' // First Input Delay
+    | 'INP' // Interaction to Next Paint
 
 /**
  * SourceMap 解析状态
