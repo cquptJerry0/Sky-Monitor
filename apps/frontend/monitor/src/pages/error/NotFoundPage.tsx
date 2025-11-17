@@ -10,6 +10,7 @@ import { Home, ArrowLeft } from 'lucide-react'
 export default function NotFoundPage() {
     const navigate = useNavigate()
     const error = useRouteError()
+    const errorMessage = error instanceof Error ? error.message : String(error)
 
     console.error('Route error:', error)
 
@@ -35,10 +36,10 @@ export default function NotFoundPage() {
                         </Button>
                     </div>
 
-                    {process.env.NODE_ENV === 'development' && error && (
+                    {process.env.NODE_ENV === 'development' && errorMessage && (
                         <details className="text-sm mt-4">
                             <summary className="cursor-pointer font-medium text-muted-foreground">错误详情</summary>
-                            <pre className="mt-2 bg-muted p-3 rounded-md overflow-auto text-xs">{JSON.stringify(error, null, 2)}</pre>
+                            <pre className="mt-2 bg-muted p-3 rounded-md overflow-auto text-xs">{errorMessage}</pre>
                         </details>
                     )}
                 </CardContent>
