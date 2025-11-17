@@ -70,9 +70,6 @@ export function TemplateParamsEditor({ template, appId, onConfirm, onCancel }: T
                                     ))}
                                 </SelectContent>
                             </Select>
-                            {template.editableParams?.timeGranularity?.description && (
-                                <p className="text-sm text-muted-foreground">{template.editableParams.timeGranularity.description}</p>
-                            )}
                         </div>
                     )}
 
@@ -87,9 +84,6 @@ export function TemplateParamsEditor({ template, appId, onConfirm, onCancel }: T
                                 value={params.limit || 10}
                                 onChange={e => setParams({ ...params, limit: parseInt(e.target.value) || 10 })}
                             />
-                            {template.editableParams?.limit?.description && (
-                                <p className="text-sm text-muted-foreground">{template.editableParams.limit.description}</p>
-                            )}
                         </div>
                     )}
 
