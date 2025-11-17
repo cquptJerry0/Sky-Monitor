@@ -211,7 +211,23 @@ export const frameworkFields: DetailField[] = [
 ]
 
 export const metadataFields: DetailField[] = [
-    { label: '去重计数', key: 'dedup_count', type: 'number' },
-    { label: '采样率', key: 'sampling_rate', type: 'number' },
-    { label: '是否被采样', key: 'sampling_sampled', type: 'badge', extract: e => (e.sampling_sampled ? '是' : '否') },
+    {
+        label: '去重计数',
+        key: 'dedup_count',
+        type: 'number',
+        condition: e => !!e.dedup_count && e.dedup_count > 1,
+    },
+    {
+        label: '采样率',
+        key: 'sampling_rate',
+        type: 'number',
+        condition: e => !!e.sampling_rate,
+    },
+    {
+        label: '是否被采样',
+        key: 'sampling_sampled',
+        type: 'badge',
+        extract: e => (e.sampling_sampled ? '是' : '否'),
+        condition: e => e.sampling_sampled !== undefined,
+    },
 ]

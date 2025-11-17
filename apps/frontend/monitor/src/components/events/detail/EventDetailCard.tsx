@@ -62,6 +62,12 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
         const visibleFields = fields.filter(field => {
             if (field.condition && !field.condition(event)) return false
             const value = getFieldValue(field, event)
+
+            if (field.type === 'number') {
+                const numValue = Number(value)
+                if (isNaN(numValue) || numValue === 0) return false
+            }
+
             return value !== null && value !== undefined && value !== ''
         })
 
@@ -76,7 +82,7 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
                         return (
                             <div key={field.key} className="space-y-1">
                                 <div className="text-xs font-medium text-muted-foreground">{field.label}</div>
-                                <FieldRenderer type={field.type} value={value} />
+                                <FieldRenderer type={field.type} value={value} fieldKey={field.key} />
                             </div>
                         )
                     })}
@@ -301,7 +307,21 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
 
                         {/* 元数据 Tab */}
                         <TabsContent value="metadata" className="space-y-6 mt-6">
-                            {renderFields(metadataFields, '元数据')}
+                            <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground">
+                                <p className="font-medium mb-2">关于元数据</p>
+                                <ul className="space-y-1 text-xs">
+                                    <li>
+                                        • <strong>去重计数</strong>: 相同错误被合并的次数,帮助识别高频错误
+                                    </li>
+                                    <li>
+                                        • <strong>采样率</strong>: 事件采样比例,用于控制数据量
+                                    </li>
+                                    <li>
+                                        • <strong>是否被采样</strong>: 该事件是否通过采样规则
+                                    </li>
+                                </ul>
+                            </div>
+                            {renderFields(metadataFields, 'SDK 元数据')}
                         </TabsContent>
                     </Tabs>
                 </CardContent>

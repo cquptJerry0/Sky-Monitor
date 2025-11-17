@@ -29,16 +29,10 @@ export function EventListRow({ event, onClick }: EventListRowProps) {
                 </div>
             </TableCell>
             <TableCell className="text-xs text-muted-foreground">
-                <TruncatedText text={event.path || ''} maxWidth="max-w-xs" />
-            </TableCell>
-            <TableCell className="text-xs text-muted-foreground">
                 <TruncatedText text={event.user_id || event.user_email || ''} maxWidth="max-w-[120px]" />
             </TableCell>
             <TableCell className="text-xs text-muted-foreground">
                 <TruncatedText text={event.session_id || ''} maxWidth="max-w-[100px]" />
-            </TableCell>
-            <TableCell className="text-center">
-                {event.replayId ? <Video className="h-4 w-4 text-blue-500" /> : <span className="text-muted-foreground">-</span>}
             </TableCell>
         </TableRow>
     )

@@ -323,82 +323,83 @@ export function RRWebPlayer({
 
             {/* 关联错误列表 */}
             {relatedErrors.length > 0 && (
-                <Card>
-                    <CardHeader>
+                <Card className="border-destructive/50">
+                    <CardHeader className="bg-destructive/5">
                         <CardTitle className="flex items-center gap-2 text-base">
-                            <AlertCircle className="h-4 w-4 text-destructive" />
-                            关联错误 ({relatedErrors.length})
+                            <AlertCircle className="h-5 w-5 text-destructive animate-pulse" />
+                            <span>会话中发现 {relatedErrors.length} 个错误</span>
                         </CardTitle>
+                        <p className="text-sm text-muted-foreground mt-1">点击下方错误或时间轴标记可跳转到错误发生时刻</p>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="pt-6">
                         {/* 错误时间轴 */}
-                        <div className="relative mb-4 h-2 rounded-full bg-muted">
-                            {relatedErrors.map((error, index) => {
-                                const position = getErrorPosition(error.timestamp)
-                                return (
-                                    <div
-                                        key={error.id}
-                                        className="absolute top-0 h-2 w-1 cursor-pointer bg-destructive transition-all hover:h-3 hover:-translate-y-0.5"
-                                        style={{ left: `${position}%` }}
-                                        onClick={() => {
-                                            const errorTime = Number(error.timestamp)
-                                            const firstEvent = events[0]
-                                            if (firstEvent) {
-                                                const relativeTime = errorTime - firstEvent.timestamp
-                                                console.log('[RRWebPlayer] 跳转到错误时间:', {
-                                                    errorTimestamp: error.timestamp,
-                                                    errorTime,
-                                                    firstEventTime: firstEvent.timestamp,
-                                                    relativeTime,
-                                                    duration,
-                                                    position: `${position}%`,
-                                                })
-                                                seekTo(relativeTime)
-                                            }
-                                        }}
-                                        title={`${error.message} - ${new Date(Number(error.timestamp)).toLocaleString()}`}
-                                    />
-                                )
-                            })}
+                        <div className="relative mb-6">
+                            <div className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+                                <span>错误时间轴</span>
+                                <span className="text-xs text-muted-foreground">(点击红点跳转)</span>
+                            </div>
+                            <div className="relative h-3 rounded-full bg-muted">
+                                {relatedErrors.map((error, index) => {
+                                    const position = getErrorPosition(error.timestamp)
+                                    return (
+                                        <div
+                                            key={error.id}
+                                            className="absolute top-0 h-3 w-3 cursor-pointer rounded-full bg-destructive shadow-lg transition-all hover:scale-150 hover:shadow-xl hover:z-10 animate-pulse"
+                                            style={{ left: `calc(${position}% - 6px)` }}
+                                            onClick={() => {
+                                                const errorTime = Number(error.timestamp)
+                                                const firstEvent = events[0]
+                                                if (firstEvent) {
+                                                    const relativeTime = errorTime - firstEvent.timestamp
+                                                    seekTo(relativeTime)
+                                                }
+                                            }}
+                                            title={`错误 ${index + 1}: ${error.message}`}
+                                        >
+                                            <div className="absolute inset-0 rounded-full bg-destructive animate-ping opacity-75" />
+                                        </div>
+                                    )
+                                })}
+                            </div>
                         </div>
 
                         {/* 错误列表 */}
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                             {relatedErrors.map((error, index) => (
                                 <div
                                     key={error.id}
-                                    className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors hover:bg-accent"
+                                    className="group relative flex cursor-pointer items-start gap-3 rounded-lg border-2 border-destructive/20 bg-destructive/5 p-4 transition-all hover:border-destructive/50 hover:bg-destructive/10 hover:shadow-md"
                                     onClick={() => {
                                         const errorTime = Number(error.timestamp)
                                         const firstEvent = events[0]
                                         if (firstEvent) {
                                             const relativeTime = errorTime - firstEvent.timestamp
-                                            console.log('[RRWebPlayer] 点击错误跳转:', {
-                                                errorTimestamp: error.timestamp,
-                                                errorTime,
-                                                firstEventTime: firstEvent.timestamp,
-                                                relativeTime,
-                                                duration,
-                                            })
                                             seekTo(relativeTime)
                                         }
                                         onErrorClick?.(error)
                                     }}
                                 >
-                                    <Badge variant="destructive" className="mt-0.5 shrink-0">
-                                        {index + 1}
-                                    </Badge>
-                                    <div className="flex-1 space-y-1">
-                                        <div className="flex items-center gap-2">
-                                            <Badge variant="outline">{error.errorType}</Badge>
-                                            <span className="text-xs text-muted-foreground">
-                                                <Clock className="mr-1 inline h-3 w-3" />
+                                    <div className="flex items-center gap-2">
+                                        <Badge
+                                            variant="destructive"
+                                            className="h-8 w-8 flex items-center justify-center text-base shrink-0"
+                                        >
+                                            {index + 1}
+                                        </Badge>
+                                    </div>
+                                    <div className="flex-1 space-y-2">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <Badge variant="outline" className="bg-red-500 text-white border-red-600">
+                                                {error.errorType}
+                                            </Badge>
+                                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                                <Clock className="h-3 w-3" />
                                                 {new Date(Number(error.timestamp)).toLocaleString()}
                                             </span>
                                         </div>
-                                        <p className="text-sm font-medium">{error.message}</p>
+                                        <p className="text-sm font-medium text-foreground">{error.message}</p>
                                         {error.path && (
-                                            <p className="text-xs text-muted-foreground">
+                                            <p className="text-xs text-muted-foreground font-mono">
                                                 {error.path}
                                                 {error.lineno && `:${error.lineno}`}
                                                 {error.colno && `:${error.colno}`}
@@ -406,8 +407,9 @@ export function RRWebPlayer({
                                         )}
                                     </div>
                                     <Button
-                                        variant="ghost"
+                                        variant="default"
                                         size="sm"
+                                        className="shrink-0 bg-destructive hover:bg-destructive/90"
                                         onClick={e => {
                                             e.stopPropagation()
                                             const errorTime = Number(error.timestamp)
@@ -418,8 +420,10 @@ export function RRWebPlayer({
                                             }
                                         }}
                                     >
-                                        跳转
+                                        <Play className="h-4 w-4 mr-1" />
+                                        跳转播放
                                     </Button>
+                                    <div className="absolute inset-0 rounded-lg border-2 border-transparent group-hover:border-destructive/30 pointer-events-none transition-all" />
                                 </div>
                             ))}
                         </div>
