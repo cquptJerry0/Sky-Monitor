@@ -182,6 +182,7 @@ export class PerformanceIntegration implements Integration {
         if (shouldReport) {
             captureEvent({
                 type: 'performance',
+                name: 'http_performance',
                 category: 'http',
                 url: request.url,
                 method: request.method,

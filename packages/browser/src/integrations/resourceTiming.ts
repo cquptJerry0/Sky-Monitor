@@ -223,8 +223,8 @@ export class ResourceTimingIntegration implements Integration {
                 if (shouldReport) {
                     captureEvent({
                         type: 'performance',
+                        name: 'resource_timing',
                         category: 'resourceTiming',
-                        name: 'resource',
                         timestamp: getChinaTimestamp(),
                         extra: {
                             resource,
