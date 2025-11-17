@@ -1,5 +1,12 @@
 {
     "collection": "@nestjs/schematics",
     "sourceRoot": "src",
-    "compilerOptions": {}
+    "compilerOptions": {
+        "assets": [
+            {
+                "include": "fundamentals/templates/**/*",
+                "outDir": "dist/src"
+            }
+        ]
+    }
 }

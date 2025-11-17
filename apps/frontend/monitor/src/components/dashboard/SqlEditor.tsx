@@ -3,8 +3,10 @@ import { autocompletion, CompletionContext } from '@codemirror/autocomplete'
 import { linter, Diagnostic } from '@codemirror/lint'
 import CodeMirror from '@uiw/react-codemirror'
 import { useMemo } from 'react'
+import { githubDark, githubLight } from '@uiw/codemirror-theme-github'
 
 import { CLICKHOUSE_SCHEMA_FIELDS } from '@/config/clickhouse-schema'
+import { useUIStore } from '@/stores/ui.store'
 
 interface SqlEditorProps {
     value: string
@@ -18,6 +20,8 @@ interface SqlEditorProps {
  * 支持语法高亮、自动补全、字段验证
  */
 export function SqlEditor({ value, onChange, height = '300px', readOnly = false }: SqlEditorProps) {
+    const { theme } = useUIStore()
+
     // ClickHouse 字段自动补全
     const clickhouseCompletions = useMemo(() => {
         return autocompletion({
@@ -96,7 +100,7 @@ export function SqlEditor({ value, onChange, height = '300px', readOnly = false 
                 extensions={extensions}
                 onChange={onChange}
                 readOnly={readOnly}
-                theme="light"
+                theme={theme === 'dark' ? githubDark : githubLight}
                 basicSetup={{
                     lineNumbers: true,
                     highlightActiveLineGutter: true,

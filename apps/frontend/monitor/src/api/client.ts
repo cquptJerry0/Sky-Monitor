@@ -66,9 +66,17 @@ axiosInstance.interceptors.response.use(
         const responseData = response.data
 
         // 检查是否是标准的包装格式 { success: boolean, data: T }
-        if (responseData && typeof responseData === 'object' && 'success' in responseData && 'data' in responseData) {
-            // 返回解包后的数据
-            return responseData.data
+        if (responseData && typeof responseData === 'object' && 'success' in responseData) {
+            // 如果 success 为 false，抛出错误
+            if (responseData.success === false) {
+                const errorMessage = responseData.message || '请求失败'
+                throw new Error(errorMessage)
+            }
+
+            // success 为 true，返回解包后的数据
+            if ('data' in responseData) {
+                return responseData.data
+            }
         }
 
         // 兼容没有包装的响应（直接返回原始数据）
@@ -109,7 +117,14 @@ axiosInstance.interceptors.response.use(
             }
         }
 
-        // 其他错误直接抛出
+        // 其他错误：尝试从响应中提取错误消息
+        if (error.response?.data) {
+            const errorData = error.response.data as any
+            const errorMessage = errorData.message || error.message || '请求失败'
+            return Promise.reject(new Error(errorMessage))
+        }
+
+        // 网络错误或其他错误
         return Promise.reject(error)
     }
 )

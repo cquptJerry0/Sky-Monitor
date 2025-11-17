@@ -9,6 +9,7 @@
         "outDir": "build/types",
         "skipLibCheck": true,
         "noEmit": false,
-        "emitDecoratorMetadata": false
+        "emitDecoratorMetadata": false,
+        "lib": ["ES2018", "DOM"]
     }
 }
