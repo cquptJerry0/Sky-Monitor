@@ -2,20 +2,99 @@
  * 个人资料页面
  */
 
+import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { User, Mail, Calendar } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
+import { User, Mail, Calendar, Upload, Lock, Eye, EyeOff } from 'lucide-react'
 import { format } from 'date-fns'
 
 export default function ProfilePage() {
     const { user } = useAuth()
+    const { toast } = useToast()
+
+    const [email, setEmail] = useState(user?.email || '')
+    const [isEditingEmail, setIsEditingEmail] = useState(false)
+
+    const [currentPassword, setCurrentPassword] = useState('')
+    const [newPassword, setNewPassword] = useState('')
+    const [confirmPassword, setConfirmPassword] = useState('')
+    const [showCurrentPassword, setShowCurrentPassword] = useState(false)
+    const [showNewPassword, setShowNewPassword] = useState(false)
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+    const [isChangingPassword, setIsChangingPassword] = useState(false)
+
+    const [avatarUrl, setAvatarUrl] = useState(user?.avatar || '')
+    const [isEditingAvatar, setIsEditingAvatar] = useState(false)
 
     if (!user) {
         return null
+    }
+
+    const handleSaveEmail = () => {
+        toast({
+            title: '功能开发中',
+            description: '邮箱修改功能正在开发中',
+        })
+        setIsEditingEmail(false)
+    }
+
+    const handleChangePassword = () => {
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            toast({
+                title: '请填写完整',
+                description: '请填写所有密码字段',
+                variant: 'destructive',
+            })
+            return
+        }
+
+        if (newPassword !== confirmPassword) {
+            toast({
+                title: '密码不匹配',
+                description: '新密码和确认密码不一致',
+                variant: 'destructive',
+            })
+            return
+        }
+
+        if (newPassword.length < 6) {
+            toast({
+                title: '密码太短',
+                description: '密码长度至少为6位',
+                variant: 'destructive',
+            })
+            return
+        }
+
+        toast({
+            title: '功能开发中',
+            description: '密码修改功能正在开发中',
+        })
+
+        setCurrentPassword('')
+        setNewPassword('')
+        setConfirmPassword('')
+        setIsChangingPassword(false)
+    }
+
+    const handleSaveAvatar = () => {
+        toast({
+            title: '功能开发中',
+            description: '头像修改功能正在开发中',
+        })
+        setIsEditingAvatar(false)
+    }
+
+    const handleUploadAvatar = () => {
+        toast({
+            title: '功能开发中',
+            description: '头像上传功能正在开发中',
+        })
     }
 
     return (
@@ -34,16 +113,51 @@ export default function ProfilePage() {
                     </CardHeader>
                     <CardContent className="space-y-6">
                         {/* 头像 */}
-                        <div className="flex items-center gap-4">
-                            <Avatar className="h-20 w-20">
-                                <AvatarImage src={user.avatar} alt={user.username} />
-                                <AvatarFallback className="bg-foreground text-background text-2xl">
-                                    {user.username?.charAt(0).toUpperCase() || 'U'}
-                                </AvatarFallback>
-                            </Avatar>
-                            <div>
-                                <p className="text-sm font-medium">头像</p>
-                                <p className="text-xs text-muted-foreground">暂不支持修改头像</p>
+                        <div className="space-y-3">
+                            <Label>头像</Label>
+                            <div className="flex items-center gap-4">
+                                <Avatar className="h-20 w-20">
+                                    <AvatarImage src={avatarUrl || user.avatar} alt={user.username} />
+                                    <AvatarFallback className="bg-foreground text-background text-2xl">
+                                        {user.username?.charAt(0).toUpperCase() || 'U'}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 space-y-2">
+                                    {isEditingAvatar ? (
+                                        <>
+                                            <Input
+                                                placeholder="输入头像URL"
+                                                value={avatarUrl}
+                                                onChange={e => setAvatarUrl(e.target.value)}
+                                            />
+                                            <div className="flex gap-2">
+                                                <Button size="sm" onClick={handleSaveAvatar}>
+                                                    保存
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => {
+                                                        setAvatarUrl(user.avatar || '')
+                                                        setIsEditingAvatar(false)
+                                                    }}
+                                                >
+                                                    取消
+                                                </Button>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="flex gap-2">
+                                            <Button size="sm" variant="outline" onClick={() => setIsEditingAvatar(true)}>
+                                                修改头像URL
+                                            </Button>
+                                            <Button size="sm" variant="outline" onClick={handleUploadAvatar}>
+                                                <Upload className="w-4 h-4 mr-2" />
+                                                上传头像
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
@@ -54,6 +168,7 @@ export default function ProfilePage() {
                                 用户名
                             </Label>
                             <Input id="username" value={user.username} disabled />
+                            <p className="text-xs text-muted-foreground">用户名不可修改</p>
                         </div>
 
                         {/* 邮箱 */}
@@ -62,7 +177,35 @@ export default function ProfilePage() {
                                 <Mail className="inline-block w-4 h-4 mr-2" />
                                 邮箱
                             </Label>
-                            <Input id="email" value={user.email || '未设置'} disabled />
+                            {isEditingEmail ? (
+                                <>
+                                    <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} />
+                                    <div className="flex gap-2">
+                                        <Button size="sm" onClick={handleSaveEmail}>
+                                            保存
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => {
+                                                setEmail(user.email || '')
+                                                setIsEditingEmail(false)
+                                            }}
+                                        >
+                                            取消
+                                        </Button>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="flex gap-2">
+                                        <Input id="email" value={user.email || '未设置'} disabled className="flex-1" />
+                                        <Button variant="outline" onClick={() => setIsEditingEmail(true)}>
+                                            修改
+                                        </Button>
+                                    </div>
+                                </>
+                            )}
                         </div>
 
                         {/* 创建时间 */}
@@ -85,21 +228,103 @@ export default function ProfilePage() {
                         <CardDescription>管理您的账户安全设置</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                            <Label>密码</Label>
-                            <div className="flex gap-2">
-                                <Input type="password" value="********" disabled />
-                                <Button variant="outline" disabled>
-                                    修改密码
-                                </Button>
-                            </div>
-                            <p className="text-xs text-muted-foreground">暂不支持修改密码</p>
-                        </div>
+                        {isChangingPassword ? (
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="current-password">
+                                        <Lock className="inline-block w-4 h-4 mr-2" />
+                                        当前密码
+                                    </Label>
+                                    <div className="relative">
+                                        <Input
+                                            id="current-password"
+                                            type={showCurrentPassword ? 'text' : 'password'}
+                                            value={currentPassword}
+                                            onChange={e => setCurrentPassword(e.target.value)}
+                                            placeholder="请输入当前密码"
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            className="absolute right-0 top-0 h-full px-3"
+                                            onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                                        >
+                                            {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                        </Button>
+                                    </div>
+                                </div>
 
-                        <div className="space-y-2">
-                            <Label>角色</Label>
-                            <Input value={user.role === 'admin' ? '管理员' : '普通用户'} disabled />
-                        </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="new-password">新密码</Label>
+                                    <div className="relative">
+                                        <Input
+                                            id="new-password"
+                                            type={showNewPassword ? 'text' : 'password'}
+                                            value={newPassword}
+                                            onChange={e => setNewPassword(e.target.value)}
+                                            placeholder="请输入新密码(至少6位)"
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            className="absolute right-0 top-0 h-full px-3"
+                                            onClick={() => setShowNewPassword(!showNewPassword)}
+                                        >
+                                            {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="confirm-password">确认新密码</Label>
+                                    <div className="relative">
+                                        <Input
+                                            id="confirm-password"
+                                            type={showConfirmPassword ? 'text' : 'password'}
+                                            value={confirmPassword}
+                                            onChange={e => setConfirmPassword(e.target.value)}
+                                            placeholder="请再次输入新密码"
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            className="absolute right-0 top-0 h-full px-3"
+                                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                        >
+                                            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-2">
+                                    <Button onClick={handleChangePassword}>确认修改</Button>
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => {
+                                            setCurrentPassword('')
+                                            setNewPassword('')
+                                            setConfirmPassword('')
+                                            setIsChangingPassword(false)
+                                        }}
+                                    >
+                                        取消
+                                    </Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                <Label>密码</Label>
+                                <div className="flex gap-2">
+                                    <Input type="password" value="********" disabled className="flex-1" />
+                                    <Button variant="outline" onClick={() => setIsChangingPassword(true)}>
+                                        修改密码
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>
