@@ -11,10 +11,10 @@ export class QueryBuilderService {
      * 构建 ClickHouse SQL 查询
      * @param query 查询配置
      * @param timeRange 时间范围 { start: Date, end: Date }
-     * @param appId 应用 ID (可选)
+     * @param appId 应用 ID (可选,支持单个或多个)
      * @returns ClickHouse SQL 字符串
      */
-    buildQuery(query: QueryConfig, timeRange: { start: Date; end: Date }, appId?: string): string {
+    buildQuery(query: QueryConfig, timeRange: { start: Date; end: Date }, appId?: string | string[]): string {
         const selectClause = this.buildSelectClause(query.fields)
         const fromClause = 'FROM monitor_events'
         const whereClause = this.buildWhereClause(query.conditions, timeRange, appId)
@@ -41,7 +41,11 @@ export class QueryBuilderService {
     /**
      * 构建 WHERE 子句
      */
-    private buildWhereClause(conditions: QueryCondition[] | undefined, timeRange: { start: Date; end: Date }, appId?: string): string {
+    private buildWhereClause(
+        conditions: QueryCondition[] | undefined,
+        timeRange: { start: Date; end: Date },
+        appId?: string | string[]
+    ): string {
         const whereClauses: string[] = []
 
         // 时间范围条件 (必须)
@@ -50,9 +54,18 @@ export class QueryBuilderService {
         whereClauses.push(`timestamp >= '${startTime}'`)
         whereClauses.push(`timestamp <= '${endTime}'`)
 
-        // 应用 ID 条件 (可选)
+        // 应用 ID 条件 (可选,支持单个或多个)
         if (appId) {
-            whereClauses.push(`app_id = '${this.escapeString(appId)}'`)
+            if (Array.isArray(appId)) {
+                if (appId.length === 1) {
+                    whereClauses.push(`app_id = '${this.escapeString(appId[0])}'`)
+                } else if (appId.length > 1) {
+                    const appIdList = appId.map(id => `'${this.escapeString(id)}'`).join(', ')
+                    whereClauses.push(`app_id IN (${appIdList})`)
+                }
+            } else {
+                whereClauses.push(`app_id = '${this.escapeString(appId)}'`)
+            }
         }
 
         // 用户自定义条件

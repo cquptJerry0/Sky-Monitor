@@ -172,7 +172,7 @@ export interface ExecuteQueryDto {
         start: string
         end: string
     }
-    appId?: string
+    appId?: string | string[]
 }
 
 /**

@@ -164,7 +164,7 @@ export const executeQuerySchema = z.object({
         start: z.string().datetime(),
         end: z.string().datetime(),
     }),
-    appId: z.string().optional(),
+    appId: z.union([z.string(), z.array(z.string())]).optional(),
 })
 
 export type ExecuteQueryDto = z.infer<typeof executeQuerySchema>
