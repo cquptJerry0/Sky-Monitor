@@ -43,6 +43,15 @@ export class EventsService {
                 // 错误类事件分组处理: error 包含 error, exception, unhandledrejection
                 if (eventType === 'error') {
                     whereConditions.push(`event_type IN ('error', 'exception', 'unhandledrejection')`)
+                } else if (eventType === 'error:js') {
+                    // JS错误: event_type = 'error' 且没有 http_url 和 resource_url
+                    whereConditions.push(`event_type = 'error' AND http_url = '' AND resource_url = ''`)
+                } else if (eventType === 'error:http') {
+                    // HTTP错误: event_type = 'error' 且有 http_url
+                    whereConditions.push(`event_type = 'error' AND http_url != ''`)
+                } else if (eventType === 'error:resource') {
+                    // 资源错误: event_type = 'error' 且有 resource_url
+                    whereConditions.push(`event_type = 'error' AND resource_url != ''`)
                 } else {
                     whereConditions.push(`event_type = {eventType:String}`)
                     queryParams.eventType = eventType

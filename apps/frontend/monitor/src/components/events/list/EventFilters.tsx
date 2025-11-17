@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { X, Search } from 'lucide-react'
 import { useState, useMemo } from 'react'
@@ -86,7 +86,15 @@ export function EventFilters({ filters, onFiltersChange }: EventFiltersProps) {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">全部事件</SelectItem>
-                            <SelectItem value="error">错误事件</SelectItem>
+                            <SelectGroup>
+                                <SelectLabel>错误事件</SelectLabel>
+                                <SelectItem value="error">全部错误</SelectItem>
+                                <SelectItem value="error:js">JS错误</SelectItem>
+                                <SelectItem value="error:http">HTTP错误</SelectItem>
+                                <SelectItem value="error:resource">资源错误</SelectItem>
+                                <SelectItem value="exception">异常</SelectItem>
+                                <SelectItem value="unhandledrejection">Promise拒绝</SelectItem>
+                            </SelectGroup>
                             <SelectItem value="webVital">Web Vitals</SelectItem>
                             <SelectItem value="performance">性能事件</SelectItem>
                             <SelectItem value="message">日志消息</SelectItem>

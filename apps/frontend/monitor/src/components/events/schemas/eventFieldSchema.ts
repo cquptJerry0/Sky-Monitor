@@ -150,8 +150,10 @@ export const webVitalFields: DetailField[] = [
         key: 'name',
         type: 'text',
         extract: e => {
+            // 优先使用 event_name,否则从 event_data 中提取
+            if (e.event_name) return e.event_name
             const data = typeof e.event_data === 'string' ? JSON.parse(e.event_data) : e.event_data
-            return data.name
+            return data?.name || '-'
         },
     },
     {
@@ -159,8 +161,23 @@ export const webVitalFields: DetailField[] = [
         key: 'value',
         type: 'number',
         extract: e => {
+            // 优先使用 perf_value,否则从 event_data 中提取
+            if (e.perf_value !== undefined && e.perf_value !== 0) {
+                const name = e.event_name
+                if (name === 'CLS') {
+                    return e.perf_value.toFixed(3)
+                }
+                return `${Math.round(e.perf_value)}ms`
+            }
             const data = typeof e.event_data === 'string' ? JSON.parse(e.event_data) : e.event_data
-            return data.value
+            const value = data?.value
+            if (value === undefined || value === null) return '-'
+
+            const name = e.event_name || data?.name
+            if (name === 'CLS') {
+                return value.toFixed(3)
+            }
+            return `${Math.round(value)}ms`
         },
     },
     {
@@ -169,7 +186,7 @@ export const webVitalFields: DetailField[] = [
         type: 'badge',
         extract: e => {
             const data = typeof e.event_data === 'string' ? JSON.parse(e.event_data) : e.event_data
-            return data.rating
+            return data?.rating || '-'
         },
     },
 ]
