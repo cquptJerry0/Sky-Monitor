@@ -7,6 +7,7 @@ export const createApplicationSchema = z
     .object({
         type: z.enum(['vanilla', 'react', 'vue']),
         name: z.string(),
+        url: z.string().url({ message: '请输入有效的 URL 地址' }).optional().or(z.literal('')),
     })
     .required()
 

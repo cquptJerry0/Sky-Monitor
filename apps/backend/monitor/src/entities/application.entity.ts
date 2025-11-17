@@ -43,6 +43,12 @@ export class ApplicationEntity {
     description: string
 
     /**
+     * 应用访问地址
+     */
+    @Column({ type: 'varchar', length: 500, nullable: true })
+    url?: string
+
+    /**
      * 项目创建时间
      */
     @Column({ nullable: true, default: () => 'CURRENT_TIMESTAMP' })
