@@ -33,12 +33,16 @@ export class EventsController {
     @ApiOperation({ summary: '获取监控事件列表' })
     @ApiQuery({ name: 'appId', required: false })
     @ApiQuery({ name: 'eventType', required: false })
+    @ApiQuery({ name: 'userId', required: false, description: '用户ID筛选' })
+    @ApiQuery({ name: 'userEmail', required: false, description: '用户邮箱筛选(模糊匹配)' })
     @ApiQuery({ name: 'limit', required: false })
     @ApiQuery({ name: 'offset', required: false })
     @ApiQuery({ name: 'timeRange', required: false, description: '时间范围: 15m, 1h, 6h, 24h, 7d, 30d' })
     async getEvents(
         @Query('appId') appId?: string,
         @Query('eventType') eventType?: string,
+        @Query('userId') userId?: string,
+        @Query('userEmail') userEmail?: string,
         @Query('limit') limit?: string,
         @Query('offset') offset?: string,
         @Query('timeRange') timeRange?: string,
@@ -52,6 +56,8 @@ export class EventsController {
         const result = await this.eventsService.getEvents({
             appId,
             eventType,
+            userId,
+            userEmail,
             limit: limit ? parseInt(limit, 10) : undefined,
             offset: offset ? parseInt(offset, 10) : undefined,
             timeRange,

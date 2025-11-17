@@ -20,9 +20,17 @@ export class EventsService {
     /**
      * 获取事件列表
      */
-    async getEvents(params: { appId?: string; eventType?: string; limit?: number; offset?: number; timeRange?: string }) {
+    async getEvents(params: {
+        appId?: string
+        eventType?: string
+        userId?: string
+        userEmail?: string
+        limit?: number
+        offset?: number
+        timeRange?: string
+    }) {
         try {
-            const { appId, eventType, limit = 50, offset = 0, timeRange } = params
+            const { appId, eventType, userId, userEmail, limit = 50, offset = 0, timeRange } = params
 
             const whereConditions = []
             const queryParams: Record<string, any> = { limit, offset }
@@ -39,6 +47,14 @@ export class EventsService {
                     whereConditions.push(`event_type = {eventType:String}`)
                     queryParams.eventType = eventType
                 }
+            }
+            if (userId) {
+                whereConditions.push(`user_id = {userId:String}`)
+                queryParams.userId = userId
+            }
+            if (userEmail) {
+                whereConditions.push(`user_email LIKE {userEmail:String}`)
+                queryParams.userEmail = `%${userEmail}%`
             }
 
             // 根据 timeRange 计算时间范围
