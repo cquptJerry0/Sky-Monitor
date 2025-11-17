@@ -7,6 +7,11 @@ export const OverviewTab: React.FC = () => {
     const initialized = Boolean(client)
     const { appId, setAppId } = useApp()
     const inputRef = useRef<HTMLInputElement>(null)
+
+    // 检测 URL 是否包含 appId 参数
+    const urlParams = new URLSearchParams(window.location.search)
+    const isAppIdFromUrl = urlParams.has('appId')
+
     const sdkStatus = {
         initialized,
         integrations: initialized
@@ -41,23 +46,32 @@ export const OverviewTab: React.FC = () => {
                 <div className="space-y-3">
                     <div className="flex justify-between items-center">
                         <span className="text-gray-600">App ID</span>
-                        <div className="flex gap-2">
-                            <input
-                                ref={inputRef}
-                                defaultValue={appId}
-                                className="w-48 px-3 py-2 border-2 border-gray-300 focus:border-black focus:outline-none"
-                                placeholder="输入 App ID..."
-                            />
-                            <button
-                                onClick={() => {
-                                    if (inputRef.current) {
-                                        setAppId(inputRef.current.value)
-                                    }
-                                }}
-                                className="px-4 py-2 bg-black text-white hover:bg-gray-800 transition-colors"
-                            >
-                                确定
-                            </button>
+                        <div className="flex gap-2 flex-col items-end">
+                            <div className="flex gap-2">
+                                <input
+                                    ref={inputRef}
+                                    defaultValue={appId}
+                                    disabled={isAppIdFromUrl}
+                                    className={`w-48 px-3 py-2 border-2 border-gray-300 focus:border-black focus:outline-none ${
+                                        isAppIdFromUrl ? 'bg-gray-100 cursor-not-allowed' : ''
+                                    }`}
+                                    placeholder="输入 App ID..."
+                                />
+                                <button
+                                    onClick={() => {
+                                        if (inputRef.current) {
+                                            setAppId(inputRef.current.value)
+                                        }
+                                    }}
+                                    disabled={isAppIdFromUrl}
+                                    className={`px-4 py-2 bg-black text-white transition-colors ${
+                                        isAppIdFromUrl ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-800'
+                                    }`}
+                                >
+                                    确定
+                                </button>
+                            </div>
+                            {isAppIdFromUrl && <p className="text-sm text-gray-500">App ID 由 URL 参数指定,无法修改</p>}
                         </div>
                     </div>
                     <div className="flex justify-between">
