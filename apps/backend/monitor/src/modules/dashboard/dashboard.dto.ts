@@ -168,3 +168,37 @@ export const executeQuerySchema = z.object({
 })
 
 export type ExecuteQueryDto = z.infer<typeof executeQuerySchema>
+
+// ==================== Widget 模板相关 DTO ====================
+
+/**
+ * 模板参数 Schema
+ */
+export const templateParamsSchema = z.object({
+    appId: z.union([z.string(), z.array(z.string())]),
+    timeGranularity: z.enum(['minute', 'hour', 'day']).optional(),
+    limit: z.number().int().min(1).max(100).optional(),
+})
+
+export type TemplateParamsDto = z.infer<typeof templateParamsSchema>
+
+/**
+ * 从模板创建 Widget Schema
+ */
+export const createWidgetFromTemplateSchema = z.object({
+    dashboardId: z.string().uuid(),
+    templateType: z.string(),
+    params: templateParamsSchema,
+    layout: layoutConfigSchema,
+})
+
+export type CreateWidgetFromTemplateDto = z.infer<typeof createWidgetFromTemplateSchema>
+
+/**
+ * 获取模板列表查询参数 Schema
+ */
+export const getTemplatesQuerySchema = z.object({
+    category: z.enum(['performance', 'error', 'user', 'device']).optional(),
+})
+
+export type GetTemplatesQueryDto = z.infer<typeof getTemplatesQuerySchema>

@@ -1,5 +1,5 @@
 import { ClickHouseClient } from '@clickhouse/client'
-import { Inject, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 
@@ -8,6 +8,7 @@ import { DashboardWidgetEntity } from '../../entities/dashboard-widget.entity'
 import {
     CreateDashboardDto,
     CreateWidgetDto,
+    CreateWidgetFromTemplateDto,
     DeleteDashboardDto,
     DeleteWidgetDto,
     ExecuteQueryDto,
@@ -16,6 +17,8 @@ import {
     UpdateWidgetsLayoutDto,
 } from './dashboard.dto'
 import { QueryBuilderService } from './query-builder.service'
+import { WidgetTemplateService } from './widget-template.service'
+import type { TemplateCategory, WidgetTemplateMeta } from './widget-template.types'
 
 @Injectable()
 export class DashboardService {
@@ -26,7 +29,8 @@ export class DashboardService {
         private readonly widgetRepository: Repository<DashboardWidgetEntity>,
         @Inject('CLICKHOUSE_CLIENT')
         private readonly clickhouseClient: ClickHouseClient,
-        private readonly queryBuilderService: QueryBuilderService
+        private readonly queryBuilderService: QueryBuilderService,
+        private readonly widgetTemplateService: WidgetTemplateService
     ) {}
 
     /**
@@ -260,5 +264,76 @@ export class DashboardService {
             title: widget.title,
             results,
         }
+    }
+
+    // ==================== Widget 模板相关方法 ====================
+
+    /**
+     * 获取所有模板或按分类获取模板
+     */
+    async getTemplates(category?: TemplateCategory): Promise<{ templates: WidgetTemplateMeta[] }> {
+        if (category) {
+            const templates = this.widgetTemplateService.getTemplatesByCategory(category)
+            return { templates }
+        }
+        return this.widgetTemplateService.getAllTemplates()
+    }
+
+    /**
+     * 根据类型获取模板
+     */
+    async getTemplateByType(type: string): Promise<WidgetTemplateMeta> {
+        const template = this.widgetTemplateService.getTemplateByType(type as any)
+        return {
+            type: template.type,
+            name: template.name,
+            description: template.description,
+            category: template.category,
+            widgetType: template.widgetType,
+            icon: template.icon,
+            editableParams: template.editableParams,
+        }
+    }
+
+    /**
+     * 从模板创建 Widget
+     */
+    async createWidgetFromTemplate(payload: CreateWidgetFromTemplateDto, userId: number) {
+        // 验证 Dashboard 是否存在且属于当前用户
+        const dashboard = await this.dashboardRepository.findOne({
+            where: { id: payload.dashboardId },
+        })
+
+        if (!dashboard) {
+            throw new NotFoundException('Dashboard 不存在')
+        }
+
+        if (dashboard.userId !== userId) {
+            throw new NotFoundException('无权访问此 Dashboard')
+        }
+
+        // 验证模板参数
+        const validation = this.widgetTemplateService.validateTemplateParams(payload.templateType as any, payload.params)
+        if (!validation.valid) {
+            throw new BadRequestException(`模板参数验证失败: ${validation.errors.join(', ')}`)
+        }
+
+        // 从模板生成查询配置
+        const queries = this.widgetTemplateService.generateQueryFromTemplate(payload.templateType as any, payload.params)
+
+        // 获取模板元数据
+        const template = this.widgetTemplateService.getTemplateByType(payload.templateType as any)
+
+        // 创建 Widget
+        const widget = new DashboardWidgetEntity({
+            dashboardId: payload.dashboardId,
+            title: template.name,
+            widgetType: template.widgetType,
+            queries,
+            displayConfig: {},
+            layout: payload.layout,
+        })
+
+        return await this.widgetRepository.save(widget)
     }
 }
