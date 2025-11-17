@@ -22,12 +22,14 @@ export default function EventsPage() {
     const [filters, setFilters] = usePersistedState<EventFiltersState>('events-filters', {
         eventType: 'all',
         timeRange: '1h',
+        userId: undefined,
     })
 
     // 使用 React Query 轮询,每 5 秒自动刷新
     const { data, isLoading, refetch } = useEvents({
         appId: currentApp?.appId || '',
         eventType: filters.eventType === 'all' ? undefined : filters.eventType,
+        userId: filters.userId,
         timeRange: filters.timeRange,
         limit: pageSize,
         offset: page * pageSize,
