@@ -1,8 +1,9 @@
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Code2, Sliders } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 
 import { QueryBuilder } from './QueryBuilder'
+import { SqlQueryBuilder } from './SqlQueryBuilder'
 import { TemplateParamsEditor } from './TemplateParamsEditor'
 import { TemplateSelector } from './TemplateSelector'
 import type { DashboardWidget } from './types'
@@ -27,6 +28,7 @@ interface WidgetBuilderProps {
 }
 
 type BuilderMode = 'select-template' | 'edit-params' | 'custom-query'
+type QueryMode = 'builder' | 'sql'
 
 export function WidgetBuilder({ dashboardId, open, onOpenChange, editingWidget }: WidgetBuilderProps) {
     const { selectedAppId } = useDashboardStore()
@@ -37,6 +39,7 @@ export function WidgetBuilder({ dashboardId, open, onOpenChange, editingWidget }
     const isEditMode = !!editingWidget
 
     const [mode, setMode] = useState<BuilderMode>('select-template')
+    const [queryMode, setQueryMode] = useState<QueryMode>('builder')
     const [selectedTemplate, setSelectedTemplate] = useState<WidgetTemplateMeta | null>(null)
 
     const [title, setTitle] = useState('')
@@ -48,6 +51,7 @@ export function WidgetBuilder({ dashboardId, open, onOpenChange, editingWidget }
         groupBy: [],
         legend: '查询 1',
     })
+    const [rawSql, setRawSql] = useState('')
 
     const debouncedQuery = useDebounce(query, 500)
 
@@ -216,7 +220,34 @@ export function WidgetBuilder({ dashboardId, open, onOpenChange, editingWidget }
                         </TabsList>
 
                         <TabsContent value="query" className="space-y-4">
-                            <QueryBuilder query={query} onChange={setQuery} />
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant={queryMode === 'builder' ? 'default' : 'outline'}
+                                        size="sm"
+                                        onClick={() => setQueryMode('builder')}
+                                        className="flex items-center gap-2"
+                                    >
+                                        <Sliders className="h-4 w-4" />
+                                        可视化构建器
+                                    </Button>
+                                    <Button
+                                        variant={queryMode === 'sql' ? 'default' : 'outline'}
+                                        size="sm"
+                                        onClick={() => setQueryMode('sql')}
+                                        className="flex items-center gap-2"
+                                    >
+                                        <Code2 className="h-4 w-4" />
+                                        SQL 编辑器
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {queryMode === 'builder' ? (
+                                <QueryBuilder query={query} onChange={setQuery} />
+                            ) : (
+                                <SqlQueryBuilder sql={rawSql} onChange={setRawSql} />
+                            )}
                         </TabsContent>
 
                         <TabsContent value="preview">
