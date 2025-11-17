@@ -13,6 +13,28 @@ export class AdminService {
         private readonly adminRepository: Repository<AdminEntity>
     ) {}
 
+    private formatAvatarUrl(avatar: string | null): string | null {
+        if (!avatar) return avatar
+        if (avatar.startsWith('http')) return avatar
+        const baseUrl = process.env.BACKEND_URL || 'http://localhost:8081'
+        return `${baseUrl}${avatar}`
+    }
+
+    private formatUserResponse(admin: AdminEntity) {
+        const { password, ...result } = admin
+        return {
+            ...result,
+            avatar: this.formatAvatarUrl(result.avatar),
+        }
+    }
+
+    async findById(userId: number) {
+        const admin = await this.adminRepository.findOne({
+            where: { id: userId },
+        })
+        return admin
+    }
+
     async validateUser(username: string, pass: string): Promise<any> {
         // 第一步：根据用户名查询用户
         const admin = await this.adminRepository.findOne({
@@ -71,9 +93,7 @@ export class AdminService {
         admin.email = email
         await this.adminRepository.save(admin)
 
-        // 不返回密码
-        const { password, ...result } = admin
-        return result
+        return this.formatUserResponse(admin)
     }
 
     async updatePassword(userId: number, currentPassword: string, newPassword: string) {
@@ -95,9 +115,7 @@ export class AdminService {
         admin.password = hashedPassword
         await this.adminRepository.save(admin)
 
-        // 不返回密码
-        const { password, ...result } = admin
-        return result
+        return this.formatUserResponse(admin)
     }
 
     async updateAvatar(userId: number, avatar: string) {
@@ -111,9 +129,7 @@ export class AdminService {
         admin.avatar = avatar
         await this.adminRepository.save(admin)
 
-        // 不返回密码
-        const { password, ...result } = admin
-        return result
+        return this.formatUserResponse(admin)
     }
 
     async generateResetToken(email: string): Promise<{ token: string; user: AdminEntity }> {
@@ -138,7 +154,7 @@ export class AdminService {
         return { token, user: admin }
     }
 
-    async resetPassword(token: string, newPassword: string): Promise<AdminEntity> {
+    async resetPassword(token: string, newPassword: string): Promise<any> {
         const admin = await this.adminRepository.findOne({
             where: { reset_token: token },
         })
@@ -162,8 +178,6 @@ export class AdminService {
 
         await this.adminRepository.save(admin)
 
-        // 不返回密码
-        const { password, ...result } = admin
-        return result as AdminEntity
+        return this.formatUserResponse(admin)
     }
 }

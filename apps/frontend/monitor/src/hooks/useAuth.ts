@@ -66,23 +66,6 @@ export function useLogout() {
 }
 
 /**
- * 登出所有设备 Mutation
- */
-export function useLogoutAll() {
-    const { clearAuth } = useAuthStore()
-    const queryClient = useQueryClient()
-
-    return useMutation({
-        mutationFn: authAPI.logoutAll,
-        onSuccess: () => {
-            clearAuth()
-            queryClient.clear()
-            window.location.href = '/auth/login'
-        },
-    })
-}
-
-/**
  * 获取当前用户信息
  */
 export function useCurrentUser() {

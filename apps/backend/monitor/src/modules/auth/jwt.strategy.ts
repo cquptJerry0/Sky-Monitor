@@ -50,6 +50,25 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         // 如果没有 jti，说明是旧版本 token，仍然允许通过（向后兼容）
         // 生产环境可以改为：if (!payload.jti) throw new UnauthorizedException('Token 格式无效')
 
-        return { id: payload.sub, username: payload.username, jti: payload.jti }
+        // 从数据库获取完整的用户信息
+        const user = await this.adminService.findById(payload.sub)
+        if (!user) {
+            throw new UnauthorizedException('用户不存在')
+        }
+
+        // 格式化头像URL
+        let avatar = user.avatar
+        if (avatar && !avatar.startsWith('http')) {
+            const baseUrl = process.env.BACKEND_URL || 'http://localhost:8081'
+            avatar = `${baseUrl}${avatar}`
+        }
+
+        // 返回完整用户信息(不包含密码)
+        const { password, reset_token, reset_token_expires, ...userInfo } = user
+        return {
+            ...userInfo,
+            avatar,
+            jti: payload.jti,
+        }
     }
 }

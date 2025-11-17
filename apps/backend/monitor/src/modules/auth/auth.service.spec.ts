@@ -26,8 +26,9 @@ describe('AuthService', () => {
             isRefreshTokenValid: vi.fn(),
             isUserBlacklisted: vi.fn(),
             addTokenToBlacklist: vi.fn(),
-            addUserToBlacklist: vi.fn(),
             isTokenBlacklisted: vi.fn(),
+            clearUserRefreshTokens: vi.fn(),
+            removeRefreshToken: vi.fn(),
         } as any
 
         authService = new AuthService(jwtService, adminService, blacklistService)
@@ -96,11 +97,14 @@ describe('AuthService', () => {
             vi.spyOn(jwtService, 'verify').mockReturnValue(mockPayload)
             vi.spyOn(blacklistService, 'isRefreshTokenValid').mockResolvedValue(true)
             vi.spyOn(blacklistService, 'isUserBlacklisted').mockResolvedValue(false)
-            vi.spyOn(jwtService, 'sign').mockReturnValue('new-access-token')
+            vi.spyOn(blacklistService, 'removeRefreshToken').mockResolvedValue()
+            vi.spyOn(blacklistService, 'storeRefreshToken').mockResolvedValue()
+            vi.spyOn(jwtService, 'sign').mockReturnValueOnce('new-refresh-token').mockReturnValueOnce('new-access-token')
 
             const result = await authService.refreshToken('valid-refresh-token')
 
             expect(result).toHaveProperty('access_token', 'new-access-token')
+            expect(result).toHaveProperty('refresh_token', 'new-refresh-token')
             expect(result).toHaveProperty('expires_in', 900)
         })
 
@@ -133,24 +137,15 @@ describe('AuthService', () => {
     })
 
     describe('logout', () => {
-        it('应该将 access token 加入黑名单', async () => {
+        it('应该将 access token 加入黑名单并清理 refresh tokens', async () => {
             vi.spyOn(blacklistService, 'addTokenToBlacklist').mockResolvedValue()
+            vi.spyOn(blacklistService, 'clearUserRefreshTokens').mockResolvedValue()
 
             const result = await authService.logout(1, 'token-jti')
 
             expect(blacklistService.addTokenToBlacklist).toHaveBeenCalledWith('token-jti', 1, 900)
+            expect(blacklistService.clearUserRefreshTokens).toHaveBeenCalledWith(1)
             expect(result).toEqual({ success: true, message: '登出成功' })
-        })
-    })
-
-    describe('logoutAll', () => {
-        it('应该将用户加入黑名单（所有设备登出）', async () => {
-            vi.spyOn(blacklistService, 'addUserToBlacklist').mockResolvedValue()
-
-            const result = await authService.logoutAll(1)
-
-            expect(blacklistService.addUserToBlacklist).toHaveBeenCalledWith(1, 604800)
-            expect(result).toEqual({ success: true, message: '所有设备已登出' })
         })
     })
 

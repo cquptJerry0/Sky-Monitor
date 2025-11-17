@@ -13,7 +13,10 @@ export default () => ({
             },
         },
         defaults: {
-            from: `"Sky Monitor" <${process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@skymonitor.com'}>`,
+            from: {
+                name: 'Sky Monitor',
+                address: process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@skymonitor.com',
+            },
         },
         template: {
             dir: join(__dirname, '../fundamentals/templates/email'),

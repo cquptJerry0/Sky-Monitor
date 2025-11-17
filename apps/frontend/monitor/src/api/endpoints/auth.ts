@@ -32,13 +32,6 @@ export const authAPI = {
     logout: () => client.post<null>('/auth/logout'),
 
     /**
-     * 登出所有设备
-     * 后端返回: { success: true, data: null }
-     * 响应拦截器解包后: null
-     */
-    logoutAll: () => client.post<null>('/auth/logout-all'),
-
-    /**
      * 获取当前用户信息
      * 后端返回: { success: true, data: User }
      * 响应拦截器解包后: User

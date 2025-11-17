@@ -125,17 +125,6 @@ export class AuthController {
     }
 
     /**
-     * 登出所有设备
-     * @param req
-     * @returns
-     */
-    @UseGuards(AuthGuard('jwt'))
-    @Post('/auth/logout-all')
-    async logoutAll(@Request() req) {
-        return await this.authService.logoutAll(req.user.id)
-    }
-
-    /**
      * 获取用户信息
      * @param req
      * @returns

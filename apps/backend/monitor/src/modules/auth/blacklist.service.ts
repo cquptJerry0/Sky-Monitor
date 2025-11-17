@@ -64,7 +64,7 @@ export class BlacklistService {
 
     /**
      * 清理用户的所有 refresh token
-     * 用于：全局登出时清理所有设备的 refresh token
+     * 用于：登出时清理所有设备的 refresh token
      */
     async clearUserRefreshTokens(userId: number): Promise<void> {
         const pattern = `refresh:${userId}:*`

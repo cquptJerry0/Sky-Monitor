@@ -56,12 +56,16 @@ export class ProfileController {
             return { success: false, message: '没有上传文件' }
         }
 
-        // 生成访问URL (假设静态文件服务在 /uploads 路径)
+        // 生成访问URL (相对路径存储到数据库)
         const avatarUrl = `/uploads/avatars/${file.filename}`
 
-        // 更新用户头像
+        // 更新用户头像 (返回的user.avatar已经是完整URL)
         const user = await this.adminService.updateAvatar(req.user.id, avatarUrl)
 
-        return { data: { user, url: avatarUrl }, success: true }
+        // 返回完整URL
+        const baseUrl = process.env.BACKEND_URL || 'http://localhost:8081'
+        const fullUrl = `${baseUrl}${avatarUrl}`
+
+        return { data: { user, url: fullUrl }, success: true }
     }
 }

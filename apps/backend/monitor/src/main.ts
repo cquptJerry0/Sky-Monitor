@@ -14,8 +14,8 @@ import { HttpExceptionFilter } from './fundamentals/common/filters/http-exceptio
 async function bootstrap() {
     const app = await NestFactory.create<NestExpressApplication>(AppModule)
 
-    // 确保上传目录存在
-    const uploadsDir = join(__dirname, '..', 'uploads')
+    // 确保上传目录存在 (项目根目录的 uploads 文件夹)
+    const uploadsDir = join(__dirname, '..', '..', 'uploads')
     const avatarsDir = join(uploadsDir, 'avatars')
     if (!existsSync(uploadsDir)) {
         mkdirSync(uploadsDir)

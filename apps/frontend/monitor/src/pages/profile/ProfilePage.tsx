@@ -2,7 +2,7 @@
  * 个人资料页面
  */
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useAuth, useUpdateEmail, useUpdatePassword, useUpdateAvatar, useUploadAvatar } from '@/hooks/useAuth'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -24,7 +24,7 @@ export default function ProfilePage() {
 
     const fileInputRef = useRef<HTMLInputElement>(null)
 
-    const [email, setEmail] = useState(user?.email || '')
+    const [email, setEmail] = useState('')
     const [isEditingEmail, setIsEditingEmail] = useState(false)
 
     const [currentPassword, setCurrentPassword] = useState('')
@@ -35,8 +35,16 @@ export default function ProfilePage() {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
     const [isChangingPassword, setIsChangingPassword] = useState(false)
 
-    const [avatarUrl, setAvatarUrl] = useState(user?.avatar || '')
+    const [avatarUrl, setAvatarUrl] = useState('')
     const [isEditingAvatar, setIsEditingAvatar] = useState(false)
+
+    // 当 user 数据加载后,同步到 state
+    useEffect(() => {
+        if (user) {
+            setEmail(user.email || '')
+            setAvatarUrl(user.avatar || '')
+        }
+    }, [user])
 
     if (!user) {
         return null

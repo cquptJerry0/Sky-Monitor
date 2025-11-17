@@ -120,23 +120,14 @@ export class AuthService {
     }
 
     async logout(userId: number, jti: string): Promise<any> {
-        // 将 access token 加入黑名单 (15分钟 = 900秒)
+        // 将当前 access token 加入黑名单 (15分钟 = 900秒)
         await this.blacklistService.addTokenToBlacklist(jti, userId, 900)
 
-        // 清理该用户的所有 refresh tokens（登出所有设备）
+        // 只清理当前设备的 refresh token (需要从请求中获取 refresh token 的 jti)
+        // 注意: 这里暂时清理所有 refresh tokens,如果需要单设备登出,需要传入 refresh token 的 jti
         await this.blacklistService.clearUserRefreshTokens(userId)
 
         return { success: true, message: '登出成功' }
-    }
-
-    async logoutAll(userId: number): Promise<any> {
-        // 将用户加入黑名单，使所有设备的 token 失效 (7天 = 604800秒)
-        await this.blacklistService.addUserToBlacklist(userId, 604800)
-
-        // 清理该用户的所有 refresh tokens
-        await this.blacklistService.clearUserRefreshTokens(userId)
-
-        return { success: true, message: '所有设备已登出' }
     }
 
     async validateToken(jti: string, userId: number): Promise<boolean> {
