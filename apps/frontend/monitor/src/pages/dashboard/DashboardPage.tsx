@@ -1,10 +1,8 @@
 import { Plus } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-import { DashboardGrid } from '@/components/dashboard/DashboardGrid'
-import { TimeRangePicker } from '@/components/dashboard/TimeRangePicker'
-import { WidgetBuilder } from '@/components/dashboard/WidgetBuilder'
-import type { DashboardWidget } from '@/components/dashboard/dashboard.types'
+import { DashboardGrid, TimeRangePicker, WidgetBuilder } from '@/components/dashboard'
+import type { DashboardWidget } from '@/types/dashboard'
 import { AppSelector } from '@/components/layout/AppSelector'
 import { Button } from '@/components/ui/button'
 import { useCurrentApp } from '@/hooks/useCurrentApp'

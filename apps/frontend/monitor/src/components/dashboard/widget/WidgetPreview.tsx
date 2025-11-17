@@ -1,8 +1,8 @@
 import { AlertCircle } from 'lucide-react'
 
-import { ChartRenderer, getChartIcon } from './charts/ChartRenderer'
+import { ChartRenderer, getChartIcon } from '../charts/ChartRenderer'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import type { ExecuteQueryResponse, WidgetType } from '@/components/dashboard/dashboard.types'
+import type { ExecuteQueryResponse, WidgetType } from '@/types/dashboard'
 
 interface WidgetPreviewProps {
     widgetType: WidgetType

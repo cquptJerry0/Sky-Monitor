@@ -2,9 +2,9 @@ import { useMemo } from 'react'
 import { Responsive, WidthProvider, type Layout } from 'react-grid-layout'
 import type { Layouts } from 'react-grid-layout'
 
-import { WidgetCard } from './WidgetCard'
+import { WidgetCard } from './widget/WidgetCard'
 import { useUpdateWidgetsLayout } from '@/hooks/useDashboard'
-import type { DashboardWidget } from '@/components/dashboard/dashboard.types'
+import type { DashboardWidget } from '@/types/dashboard'
 
 const ResponsiveGridLayout = WidthProvider(Responsive)
 

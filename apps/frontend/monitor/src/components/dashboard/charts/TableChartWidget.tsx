@@ -1,5 +1,5 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import type { ExecuteQueryResponse } from '@/components/dashboard/dashboard.types'
+import type { ExecuteQueryResponse } from '@/types/dashboard'
 
 interface TableChartWidgetProps {
     data: ExecuteQueryResponse

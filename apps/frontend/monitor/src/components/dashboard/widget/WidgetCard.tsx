@@ -3,7 +3,7 @@ import { Edit2, Trash2, MoreVertical } from 'lucide-react'
 import { WidgetPreview } from './WidgetPreview'
 import { useExecuteQuery, useDeleteWidget } from '@/hooks/useDashboard'
 import { useDashboardStore } from '@/stores/dashboard.store'
-import type { DashboardWidget } from '@/components/dashboard/dashboard.types'
+import type { DashboardWidget } from '@/types/dashboard'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import {
     AlertDialog,

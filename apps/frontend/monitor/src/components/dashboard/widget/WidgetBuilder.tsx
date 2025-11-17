@@ -1,10 +1,9 @@
 import { ArrowLeft } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-import { SqlQueryBuilder } from './SqlQueryBuilder'
-import { TemplateParamsEditor } from './TemplateParamsEditor'
-import { TemplateSelector } from './TemplateSelector'
-import type { DashboardWidget } from './dashboard.types'
+import { SqlQueryBuilder } from '../sql/SqlQueryBuilder'
+import { TemplateParamsEditor } from '../template/TemplateParamsEditor'
+import { TemplateSelector } from '../template/TemplateSelector'
 import { WidgetPreview } from './WidgetPreview'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -15,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useCreateWidget, useUpdateWidget } from '@/hooks/useDashboard'
 import { useCreateWidgetFromTemplate } from '@/hooks/useWidgetTemplate'
 import { useDashboardStore } from '@/stores/dashboard.store'
-import type { CreateWidgetDto, TemplateParams, WidgetTemplateMeta, WidgetType } from '@/types/dashboard'
+import type { CreateWidgetDto, DashboardWidget, TemplateParams, WidgetTemplateMeta, WidgetType } from '@/types/dashboard'
 
 interface WidgetBuilderProps {
     dashboardId: string
@@ -78,19 +77,28 @@ export function WidgetBuilder({ dashboardId, open, onOpenChange, editingWidget }
             return
         }
 
+        // 将 SQL 转换为 QueryConfig 格式
+        const queryConfig = {
+            id: crypto.randomUUID(),
+            rawSql,
+            fields: [],
+            conditions: [],
+            legend: title,
+        }
+
         if (isEditMode && editingWidget) {
             await updateWidget.mutateAsync({
                 id: editingWidget.id,
                 title,
                 widgetType,
-                rawSql,
+                queries: [queryConfig],
             })
         } else {
             const widgetData: CreateWidgetDto = {
                 dashboardId,
                 title,
                 widgetType,
-                rawSql,
+                queries: [queryConfig],
                 layout: {
                     x: 0,
                     y: 0,

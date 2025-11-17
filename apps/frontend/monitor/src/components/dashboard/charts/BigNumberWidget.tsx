@@ -1,6 +1,6 @@
 import { TrendingDown, TrendingUp } from 'lucide-react'
 
-import type { ExecuteQueryResponse } from '@/components/dashboard/dashboard.types'
+import type { ExecuteQueryResponse } from '@/types/dashboard'
 
 interface BigNumberWidgetProps {
     data: ExecuteQueryResponse
