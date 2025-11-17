@@ -5,18 +5,18 @@ export class AdminEntity {
     @PrimaryGeneratedColumn()
     id: number
 
-    @Column()
+    @Column('varchar')
     username: string
 
-    @Column()
+    @Column('varchar')
     password: string
 
-    @Column({ nullable: true })
+    @Column({ type: 'varchar', nullable: true })
     email: string
 
-    @Column({ nullable: true })
+    @Column({ type: 'varchar', nullable: true })
     phone: string
 
-    @Column({ nullable: true })
+    @Column({ type: 'varchar', nullable: true })
     role: string
 }
