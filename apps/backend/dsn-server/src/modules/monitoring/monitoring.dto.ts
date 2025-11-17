@@ -166,7 +166,11 @@ export class MonitoringEventDto {
     type: string
 
     /**
-     * 事件名称（对于webVital: LCP, FCP, CLS, TTFB等）
+     * 事件名称 (二级分类)
+     * 用于在同一 type 下进一步区分事件子类型
+     * - error: runtime_error, http_error, resource_error, unhandled_rejection
+     * - performance: http_performance, resource_timing
+     * - webVital: LCP, FCP, CLS, TTFB, FID, INP
      */
     @IsString()
     @IsOptional()

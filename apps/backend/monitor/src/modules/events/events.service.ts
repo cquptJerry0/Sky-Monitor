@@ -40,19 +40,50 @@ export class EventsService {
                 queryParams.appId = appId
             }
             if (eventType) {
-                // 错误类事件分组处理: error 包含 error, exception, unhandledrejection
+                // 错误类事件分组处理
                 if (eventType === 'error') {
+                    // 全部错误
                     whereConditions.push(`event_type IN ('error', 'exception', 'unhandledrejection')`)
+                } else if (eventType === 'runtime_error') {
+                    // JS运行时错误: 使用 event_name
+                    whereConditions.push(`event_type = 'error' AND event_name = 'runtime_error'`)
+                } else if (eventType === 'http_error') {
+                    // HTTP错误: 使用 event_name
+                    whereConditions.push(`event_type = 'error' AND event_name = 'http_error'`)
+                } else if (eventType === 'resource_error') {
+                    // 资源错误: 使用 event_name
+                    whereConditions.push(`event_type = 'error' AND event_name = 'resource_error'`)
+                } else if (eventType === 'unhandled_rejection') {
+                    // Promise拒绝: 使用 event_name
+                    whereConditions.push(`event_type = 'error' AND event_name = 'unhandled_rejection'`)
+                } else if (eventType === 'http_performance') {
+                    // HTTP性能: 使用 event_name
+                    whereConditions.push(`event_type = 'performance' AND event_name = 'http_performance'`)
+                } else if (eventType === 'resource_timing') {
+                    // 资源性能: 使用 event_name
+                    whereConditions.push(`event_type = 'performance' AND event_name = 'resource_timing'`)
+                } else if (
+                    eventType === 'LCP' ||
+                    eventType === 'FCP' ||
+                    eventType === 'CLS' ||
+                    eventType === 'TTFB' ||
+                    eventType === 'FID' ||
+                    eventType === 'INP'
+                ) {
+                    // Web Vitals: 使用 event_name
+                    whereConditions.push(`event_type = 'webVital' AND event_name = {eventType:String}`)
+                    queryParams.eventType = eventType
                 } else if (eventType === 'error:js') {
-                    // JS错误: event_type = 'error' 且没有 http_url 和 resource_url
+                    // 向后兼容: JS错误 (旧逻辑)
                     whereConditions.push(`event_type = 'error' AND http_url = '' AND resource_url = ''`)
                 } else if (eventType === 'error:http') {
-                    // HTTP错误: event_type = 'error' 且有 http_url
+                    // 向后兼容: HTTP错误 (旧逻辑)
                     whereConditions.push(`event_type = 'error' AND http_url != ''`)
                 } else if (eventType === 'error:resource') {
-                    // 资源错误: event_type = 'error' 且有 resource_url
+                    // 向后兼容: 资源错误 (旧逻辑)
                     whereConditions.push(`event_type = 'error' AND resource_url != ''`)
                 } else {
+                    // 其他类型: 直接匹配 event_type
                     whereConditions.push(`event_type = {eventType:String}`)
                     queryParams.eventType = eventType
                 }
