@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom'
 
 import { DashboardGrid, TimeRangePicker, WidgetBuilder } from '@/components/dashboard'
 import type { DashboardWidget } from '@/types/dashboard'
-import { AppSelector } from '@/components/layout/AppSelector'
 import { Button } from '@/components/ui/button'
 import { useCurrentAppId } from '@/hooks/useCurrentApp'
 import { useDashboard, useDashboards, useResetWidgets } from '@/hooks/useDashboard'
@@ -189,9 +188,6 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    {/* 应用选择器 */}
-                    <AppSelector />
-
                     {/* 时间范围选择器 */}
                     <TimeRangePicker />
 
