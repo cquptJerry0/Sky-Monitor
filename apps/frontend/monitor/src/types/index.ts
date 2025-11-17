@@ -71,6 +71,14 @@ export type {
     QueryResultDataPoint,
     QueryResult,
     ExecuteQueryResponse,
+    // Widget 模板相关
+    WidgetTemplateType,
+    TemplateCategory,
+    TimeGranularity,
+    TemplateParams,
+    WidgetTemplateMeta,
+    TemplateListResponse,
+    CreateWidgetFromTemplateDto,
 } from './dashboard'
 
 // ==================== Chart 相关类型 ====================
