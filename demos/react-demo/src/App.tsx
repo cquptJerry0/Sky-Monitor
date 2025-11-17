@@ -1,18 +1,24 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { AppProvider } from './contexts/AppContext'
-import { AppContent } from './components/AppContent'
-import { PerformanceTestPage } from './pages/PerformanceTestPage'
+import { Layout } from './components/layout'
+import { HomePage } from './pages/HomePage'
+import { ProductDetailPage } from './pages/ProductDetailPage'
+import { CartPage } from './pages/CartPage'
+import { CheckoutPage } from './pages/CheckoutPage'
+import { Toaster } from './components/ui/toaster'
 
 function App() {
     return (
-        <AppProvider>
-            <BrowserRouter>
+        <BrowserRouter>
+            <Layout>
                 <Routes>
-                    <Route path="/" element={<AppContent />} />
-                    <Route path="/performance" element={<PerformanceTestPage />} />
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/product/:id" element={<ProductDetailPage />} />
+                    <Route path="/cart" element={<CartPage />} />
+                    <Route path="/checkout" element={<CheckoutPage />} />
                 </Routes>
-            </BrowserRouter>
-        </AppProvider>
+            </Layout>
+            <Toaster />
+        </BrowserRouter>
     )
 }
 
