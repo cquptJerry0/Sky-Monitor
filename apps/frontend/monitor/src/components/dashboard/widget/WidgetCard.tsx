@@ -3,6 +3,7 @@ import { Edit2, Trash2, MoreVertical } from 'lucide-react'
 import { WidgetPreview } from './WidgetPreview'
 import { useExecuteQuery, useDeleteWidget } from '@/hooks/useDashboard'
 import { useDashboardStore } from '@/stores/dashboard.store'
+import { useCurrentAppId } from '@/hooks/useCurrentApp'
 import type { DashboardWidget } from '@/types/dashboard'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import {
@@ -27,7 +28,8 @@ interface WidgetCardProps {
  * 负责执行查询并渲染 Widget
  */
 export function WidgetCard({ widget, onEdit }: WidgetCardProps) {
-    const { timeRange, selectedAppId } = useDashboardStore()
+    const { timeRange } = useDashboardStore()
+    const currentAppId = useCurrentAppId()
     const [showDeleteDialog, setShowDeleteDialog] = useState(false)
     const deleteWidget = useDeleteWidget()
 
@@ -40,7 +42,7 @@ export function WidgetCard({ widget, onEdit }: WidgetCardProps) {
                       start: timeRange.start.toISOString(),
                       end: timeRange.end.toISOString(),
                   },
-                  appId: selectedAppId || undefined,
+                  appId: currentAppId || undefined,
               }
             : null
     )

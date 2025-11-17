@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useCreateWidget, useUpdateWidget } from '@/hooks/useDashboard'
 import { useCreateWidgetFromTemplate } from '@/hooks/useWidgetTemplate'
-import { useDashboardStore } from '@/stores/dashboard.store'
+import { useCurrentAppId } from '@/hooks/useCurrentApp'
 import type { CreateWidgetDto, DashboardWidget, TemplateParams, WidgetTemplateMeta, WidgetType } from '@/types/dashboard'
 
 interface WidgetBuilderProps {
@@ -26,7 +26,7 @@ interface WidgetBuilderProps {
 type BuilderMode = 'select-template' | 'edit-params' | 'sql-editor'
 
 export function WidgetBuilder({ dashboardId, open, onOpenChange, editingWidget }: WidgetBuilderProps) {
-    const { selectedAppId } = useDashboardStore()
+    const currentAppId = useCurrentAppId()
     const createWidget = useCreateWidget()
     const updateWidget = useUpdateWidget()
     const createFromTemplate = useCreateWidgetFromTemplate()
@@ -149,7 +149,7 @@ export function WidgetBuilder({ dashboardId, open, onOpenChange, editingWidget }
 
                     <TemplateParamsEditor
                         template={selectedTemplate}
-                        appId={selectedAppId || ''}
+                        appId={currentAppId || ''}
                         onConfirm={handleConfirmTemplate}
                         onCancel={() => setMode('select-template')}
                     />

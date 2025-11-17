@@ -58,7 +58,7 @@ import type {
 export const dashboardKeys = {
     all: ['dashboards'] as const,
     lists: () => [...dashboardKeys.all, 'list'] as const,
-    list: () => [...dashboardKeys.lists()] as const,
+    list: (appId?: string) => [...dashboardKeys.lists(), appId] as const,
     details: () => [...dashboardKeys.all, 'detail'] as const,
     detail: (id: string) => [...dashboardKeys.details(), id] as const,
     widgets: (dashboardId: string) => [...dashboardKeys.detail(dashboardId), 'widgets'] as const,
@@ -70,18 +70,19 @@ export const dashboardKeys = {
  * 获取 Dashboard 列表
  *
  * ## 返回数据
- * - Dashboard[]: 所有 Dashboard 列表
+ * - Dashboard[]: Dashboard 列表 (如果提供appId则只返回该应用的dashboard)
  *   - id: Dashboard ID
  *   - name: Dashboard 名称
  *   - description: Dashboard 描述
  *   - widgets: Widget[] (包含所有 Widget 配置)
  *
+ * @param appId 应用ID (可选,如果提供则只返回该应用的dashboard)
  * @returns TanStack Query 结果对象
  */
-export function useDashboards() {
+export function useDashboards(appId?: string) {
     return useQuery({
-        queryKey: dashboardKeys.list(),
-        queryFn: () => dashboardApi.listDashboards(),
+        queryKey: dashboardKeys.list(appId),
+        queryFn: () => dashboardApi.listDashboards(appId),
     })
 }
 

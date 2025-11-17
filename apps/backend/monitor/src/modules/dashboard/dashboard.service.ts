@@ -50,10 +50,18 @@ export class DashboardService {
 
     /**
      * 获取用户的所有 Dashboard
+     * @param userId 用户ID
+     * @param appId 应用ID (可选,如果提供则只返回该应用的dashboard)
      */
-    async listDashboards(userId: number) {
+    async listDashboards(userId: number, appId?: string) {
+        const where: any = { userId }
+
+        if (appId) {
+            where.appId = appId
+        }
+
         const dashboards = await this.dashboardRepository.find({
-            where: { userId },
+            where,
             order: { createdAt: 'DESC' },
         })
 

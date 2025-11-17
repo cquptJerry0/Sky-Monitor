@@ -30,9 +30,11 @@ export const dashboardApi = {
 
     /**
      * 获取用户的所有 Dashboard
+     * @param appId 应用ID (可选,如果提供则只返回该应用的dashboard)
      */
-    listDashboards: async (): Promise<Dashboard[]> => {
-        return await client.get<Dashboard[]>('/dashboards')
+    listDashboards: async (appId?: string): Promise<Dashboard[]> => {
+        const params = appId ? { appId } : {}
+        return await client.get<Dashboard[]>('/dashboards', { params })
     },
 
     /**

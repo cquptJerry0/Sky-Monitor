@@ -44,11 +44,11 @@ export class DashboardController {
 
     /**
      * 获取用户的所有 Dashboard
-     * GET /dashboards
+     * GET /dashboards?appId=xxx (可选)
      */
     @Get()
-    async listDashboards(@Request() req) {
-        const dashboards = await this.dashboardService.listDashboards(req.user.id)
+    async listDashboards(@Request() req, @Query('appId') appId?: string) {
+        const dashboards = await this.dashboardService.listDashboards(req.user.id, appId)
         return { data: dashboards, success: true }
     }
 

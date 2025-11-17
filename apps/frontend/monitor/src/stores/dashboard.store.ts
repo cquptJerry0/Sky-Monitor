@@ -22,9 +22,6 @@ interface DashboardState {
     timeRange: TimeRange
     timeRangePreset: TimeRangePreset
 
-    // 选中的应用
-    selectedAppId: string | null
-
     // 当前 Dashboard ID
     currentDashboardId: string | null
 
@@ -35,7 +32,6 @@ interface DashboardState {
     // Actions
     setTimeRange: (timeRange: TimeRange, preset?: TimeRangePreset) => void
     setTimeRangePreset: (preset: TimeRangePreset) => void
-    setSelectedAppId: (appId: string | null) => void
     setCurrentDashboardId: (dashboardId: string | null) => void
     setAutoRefresh: (enabled: boolean) => void
     setAutoRefreshInterval: (interval: number) => void
@@ -86,7 +82,6 @@ export const useDashboardStore = create<DashboardState>()(
             // 默认值: 最近 24 小时
             timeRange: getPresetTimeRange('last_24h'),
             timeRangePreset: 'last_24h',
-            selectedAppId: null,
             currentDashboardId: null,
             autoRefresh: false,
             autoRefreshInterval: 30,
@@ -96,8 +91,6 @@ export const useDashboardStore = create<DashboardState>()(
 
             setTimeRangePreset: preset =>
                 set({ timeRange: getPresetTimeRange(preset), timeRangePreset: preset }, false, 'setTimeRangePreset'),
-
-            setSelectedAppId: appId => set({ selectedAppId: appId }, false, 'setSelectedAppId'),
 
             setCurrentDashboardId: dashboardId => set({ currentDashboardId: dashboardId }, false, 'setCurrentDashboardId'),
 

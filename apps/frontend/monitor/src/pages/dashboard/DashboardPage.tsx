@@ -5,7 +5,7 @@ import { DashboardGrid, TimeRangePicker, WidgetBuilder } from '@/components/dash
 import type { DashboardWidget } from '@/types/dashboard'
 import { AppSelector } from '@/components/layout/AppSelector'
 import { Button } from '@/components/ui/button'
-import { useCurrentApp } from '@/hooks/useCurrentApp'
+import { useCurrentAppId } from '@/hooks/useCurrentApp'
 import { useCreateDashboard, useDashboard, useDashboards } from '@/hooks/useDashboard'
 import { useDashboardStore } from '@/stores/dashboard.store'
 
@@ -27,28 +27,32 @@ import { useDashboardStore } from '@/stores/dashboard.store'
  *
  * ## 状态管理
  * - **全局状态** (useDashboardStore):
- *   - selectedAppId: 当前选中的应用 ID
  *   - currentDashboardId: 当前选中的 Dashboard ID
  *   - timeRange: 时间范围 (start, end)
  *   - timeRangePreset: 时间范围预设 (1h, 24h, 7d, 30d, custom)
+ * - **全局状态** (useAppStore):
+ *   - currentAppId: 当前选中的应用 ID (统一使用全局状态)
  * - **本地状态**:
  *   - widgetBuilderOpen: Widget 构建器弹窗状态
  *
  * ## 关键逻辑
- * - **自动同步应用**: 当 currentApp 变化时，自动更新 selectedAppId
  * - **自动选择 Dashboard**: 当 Dashboard 列表加载完成且没有选中 Dashboard 时，自动选择第一个
  * - **空状态处理**: 没有 Dashboard 时显示创建提示，没有 Widget 时显示添加提示
  */
 export default function DashboardPage() {
-    const { currentApp } = useCurrentApp()
-    const { selectedAppId, setSelectedAppId, currentDashboardId, setCurrentDashboardId } = useDashboardStore()
+    const currentAppId = useCurrentAppId()
+    const { currentDashboardId, setCurrentDashboardId } = useDashboardStore()
 
     // Widget Builder 弹窗状态
     const [widgetBuilderOpen, setWidgetBuilderOpen] = useState(false)
     const [editingWidget, setEditingWidget] = useState<DashboardWidget | null>(null)
 
-    // 获取 Dashboard 列表
-    const { data: dashboards, isLoading: isDashboardsLoading } = useDashboards()
+    // 跟踪appId切换状态
+    const [isAppChanging, setIsAppChanging] = useState(false)
+    const [previousAppId, setPreviousAppId] = useState<string | null>(currentAppId)
+
+    // 获取 Dashboard 列表 (按当前appId过滤)
+    const { data: dashboards, isLoading: isDashboardsLoading, isFetching: isDashboardsFetching } = useDashboards(currentAppId || undefined)
 
     // 获取当前 Dashboard 详情 (包含 Widgets)
     const { data: currentDashboard, isLoading: isDashboardLoading } = useDashboard(currentDashboardId)
@@ -57,18 +61,25 @@ export default function DashboardPage() {
     const createDashboard = useCreateDashboard()
 
     /**
-     * 同步当前应用到 Dashboard Store
-     *
-     * ## 为什么需要同步?
-     * - currentApp 来自全局应用选择器 (AppSelector)
-     * - Dashboard Store 需要知道当前应用 ID 来过滤 Widget 查询
-     * - 确保 Dashboard 和应用选择器状态一致
+     * 当appId变化时,清空当前选中的dashboard并标记为切换中
+     * 让自动选择逻辑重新选择第一个dashboard
      */
     useEffect(() => {
-        if (currentApp?.appId && currentApp.appId !== selectedAppId) {
-            setSelectedAppId(currentApp.appId)
+        if (currentAppId !== previousAppId) {
+            setIsAppChanging(true)
+            setCurrentDashboardId(null)
+            setPreviousAppId(currentAppId)
         }
-    }, [currentApp, selectedAppId, setSelectedAppId])
+    }, [currentAppId, previousAppId, setCurrentDashboardId])
+
+    /**
+     * 当dashboard列表加载完成后,取消切换状态
+     */
+    useEffect(() => {
+        if (isAppChanging && !isDashboardsLoading && !isDashboardsFetching) {
+            setIsAppChanging(false)
+        }
+    }, [isAppChanging, isDashboardsLoading, isDashboardsFetching])
 
     /**
      * 自动选择第一个 Dashboard
@@ -102,6 +113,7 @@ export default function DashboardPage() {
         await createDashboard.mutateAsync({
             name: '我的仪表盘',
             description: '自定义监控仪表盘',
+            appId: currentAppId || undefined,
         })
     }
 
@@ -121,10 +133,11 @@ export default function DashboardPage() {
         setEditingWidget(null)
     }
 
-    if (isDashboardsLoading) {
+    // 显示loading状态 (初次加载或切换app)
+    if (isDashboardsLoading || isAppChanging) {
         return (
             <div className="flex items-center justify-center h-96">
-                <div className="text-muted-foreground">加载中...</div>
+                <div className="text-muted-foreground">{isAppChanging ? '切换应用中...' : '加载中...'}</div>
             </div>
         )
     }

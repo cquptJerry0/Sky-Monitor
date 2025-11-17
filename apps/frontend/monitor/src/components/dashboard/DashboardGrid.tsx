@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { Responsive, WidthProvider, type Layout } from 'react-grid-layout'
 import type { Layouts } from 'react-grid-layout'
+import { toast } from 'sonner'
 
 import { WidgetCard } from './widget/WidgetCard'
 import { useUpdateWidgetsLayout } from '@/hooks/useDashboard'
@@ -103,6 +104,10 @@ export function DashboardGrid({ dashboardId, widgets, onEditWidget }: DashboardG
      * - react-grid-layout 自带防抖，不需要额外处理
      * - mutation 成功后自动失效 Dashboard 缓存，触发重新加载
      *
+     * ## 用户反馈
+     * - 保存成功时显示toast提示
+     * - 保存失败时显示错误信息
+     *
      * @param _currentLayout - 当前断点的布局 (未使用)
      * @param allLayouts - 所有断点的布局
      */
@@ -118,10 +123,20 @@ export function DashboardGrid({ dashboardId, widgets, onEditWidget }: DashboardG
             },
         }))
 
-        updateWidgetsLayout.mutate({
-            dashboardId,
-            layouts: layoutUpdates,
-        })
+        updateWidgetsLayout.mutate(
+            {
+                dashboardId,
+                layouts: layoutUpdates,
+            },
+            {
+                onSuccess: () => {
+                    toast.success('布局已保存')
+                },
+                onError: error => {
+                    toast.error(`保存失败: ${error.message}`)
+                },
+            }
+        )
     }
 
     return (
