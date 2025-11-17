@@ -70,6 +70,28 @@ export class EventsController {
     }
 
     /**
+     * 获取应用的用户列表
+     * GET /api/events/users
+     * 注意: 必须放在 @Get(':id') 之前,否则会被匹配为 id 参数
+     */
+    @Get('users')
+    @ApiOperation({ summary: '获取应用的用户列表' })
+    @ApiQuery({ name: 'appId', required: true, description: '应用ID' })
+    async getUsersByApp(@Query('appId') appId: string, @Request() req?: any) {
+        // 验证权限
+        await this.validateUserOwnsApp(appId, req.user.id)
+
+        const users = await this.eventsService.getUsersByApp(appId)
+
+        return {
+            success: true,
+            data: {
+                users,
+            },
+        }
+    }
+
+    /**
      * 根据 replayId 查询所有关联的错误事件
      * GET /api/events/replays/:replayId/errors
      */
@@ -269,27 +291,6 @@ export class EventsController {
         return {
             success: true,
             data: result,
-        }
-    }
-
-    /**
-     * 获取应用的用户列表
-     * GET /api/events/users
-     */
-    @Get('users')
-    @ApiOperation({ summary: '获取应用的用户列表' })
-    @ApiQuery({ name: 'appId', required: true, description: '应用ID' })
-    async getUsersByApp(@Query('appId') appId: string, @Request() req?: any) {
-        // 验证权限
-        await this.validateUserOwnsApp(appId, req.user.id)
-
-        const users = await this.eventsService.getUsersByApp(appId)
-
-        return {
-            success: true,
-            data: {
-                users,
-            },
         }
     }
 
