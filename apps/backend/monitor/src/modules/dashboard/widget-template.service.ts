@@ -65,9 +65,9 @@ export class WidgetTemplateService {
         const template = this.getTemplateByType(type)
         const errors: string[] = []
 
-        // 验证 appId
-        if (!params.appId || (Array.isArray(params.appId) && params.appId.length === 0)) {
-            errors.push('appId is required')
+        // 验证 appId (如果提供了,则验证不能为空数组)
+        if (params.appId !== undefined && Array.isArray(params.appId) && params.appId.length === 0) {
+            errors.push('appId cannot be an empty array')
         }
 
         // 验证 timeGranularity

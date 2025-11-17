@@ -175,7 +175,7 @@ export type ExecuteQueryDto = z.infer<typeof executeQuerySchema>
  * 模板参数 Schema
  */
 export const templateParamsSchema = z.object({
-    appId: z.union([z.string(), z.array(z.string())]),
+    appId: z.union([z.string(), z.array(z.string())]).optional(),
     timeGranularity: z.enum(['minute', 'hour', 'day']).optional(),
     limit: z.number().int().min(1).max(100).optional(),
 })
@@ -189,7 +189,7 @@ export const createWidgetFromTemplateSchema = z.object({
     dashboardId: z.string().uuid(),
     templateType: z.string(),
     params: templateParamsSchema,
-    layout: layoutConfigSchema,
+    layout: layoutConfigSchema.partial(),
 })
 
 export type CreateWidgetFromTemplateDto = z.infer<typeof createWidgetFromTemplateSchema>

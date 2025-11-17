@@ -324,6 +324,9 @@ export class DashboardService {
         // 获取模板元数据
         const template = this.widgetTemplateService.getTemplateByType(payload.templateType as any)
 
+        // 默认布局配置
+        const defaultLayout = { x: 0, y: 0, w: 6, h: 4 }
+
         // 创建 Widget
         const widget = new DashboardWidgetEntity({
             dashboardId: payload.dashboardId,
@@ -331,7 +334,7 @@ export class DashboardService {
             widgetType: template.widgetType,
             queries,
             displayConfig: {},
-            layout: payload.layout,
+            layout: { ...defaultLayout, ...payload.layout },
         })
 
         return await this.widgetRepository.save(widget)

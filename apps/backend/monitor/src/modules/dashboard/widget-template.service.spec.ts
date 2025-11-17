@@ -20,10 +20,10 @@ describe('WidgetTemplateService', () => {
             expect(result.templates.length).toBeGreaterThan(0)
         })
 
-        it('应该返回 5 个核心模板', () => {
+        it('应该返回 15 个预设模板', () => {
             const result = service.getAllTemplates()
 
-            expect(result.templates.length).toBe(5)
+            expect(result.templates.length).toBe(15)
         })
 
         it('每个模板应该包含必要的元数据', () => {
@@ -167,15 +167,13 @@ describe('WidgetTemplateService', () => {
     })
 
     describe('validateTemplateParams', () => {
-        it('应该验证 appId 是否存在', () => {
-            const params: TemplateParams = {
-                appId: '',
-            }
+        it('应该允许 appId 为 undefined', () => {
+            const params: TemplateParams = {}
 
             const result = service.validateTemplateParams('web_vitals_trend', params)
 
-            expect(result.valid).toBe(false)
-            expect(result.errors.length).toBeGreaterThan(0)
+            expect(result.valid).toBe(true)
+            expect(result.errors.length).toBe(0)
         })
 
         it('应该验证空数组 appId', () => {
@@ -186,7 +184,7 @@ describe('WidgetTemplateService', () => {
             const result = service.validateTemplateParams('web_vitals_trend', params)
 
             expect(result.valid).toBe(false)
-            expect(result.errors).toContain('appId is required')
+            expect(result.errors).toContain('appId cannot be an empty array')
         })
 
         it('应该验证 timeGranularity 是否有效', () => {

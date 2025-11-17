@@ -251,7 +251,7 @@ export type TimeGranularity = 'minute' | 'hour' | 'day'
  * 模板参数
  */
 export interface TemplateParams {
-    appId: string | string[]
+    appId?: string | string[]
     timeGranularity?: TimeGranularity
     limit?: number
 }
@@ -295,5 +295,5 @@ export interface CreateWidgetFromTemplateDto {
     dashboardId: string
     templateType: WidgetTemplateType
     params: TemplateParams
-    layout: LayoutConfig
+    layout?: Partial<LayoutConfig>
 }
