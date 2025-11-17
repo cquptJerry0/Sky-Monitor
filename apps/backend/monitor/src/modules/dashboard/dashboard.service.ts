@@ -19,6 +19,7 @@ import {
 import { QueryBuilderService } from './query-builder.service'
 import { WidgetTemplateService } from './widget-template.service'
 import type { TemplateCategory, WidgetTemplateMeta } from './widget-template.types'
+import { generateDefaultWidgets } from '../application/default-widgets.config'
 
 @Injectable()
 export class DashboardService {
@@ -346,5 +347,41 @@ export class DashboardService {
         })
 
         return await this.widgetRepository.save(widget)
+    }
+
+    /**
+     * 恢复默认 Widget
+     * 1. 删除当前 Dashboard 的所有 Widget
+     * 2. 重新创建默认的 4 个 Widget
+     */
+    async resetWidgets(dashboardId: string, userId: number) {
+        const dashboard = await this.dashboardRepository.findOne({
+            where: { id: dashboardId, userId },
+        })
+
+        if (!dashboard) {
+            throw new NotFoundException('Dashboard not found')
+        }
+
+        if (!dashboard.appId) {
+            throw new BadRequestException('只有关联应用的 Dashboard 才能恢复默认 Widget')
+        }
+
+        await this.widgetRepository.delete({ dashboardId })
+
+        const defaultWidgets = generateDefaultWidgets(dashboardId, dashboard.appId)
+
+        const widgets = this.widgetRepository.create(
+            defaultWidgets.map(widgetConfig => ({
+                dashboardId,
+                ...widgetConfig,
+            })) as any
+        )
+
+        const savedWidgets = await this.widgetRepository.save(widgets)
+
+        this.logger.log(`Reset ${savedWidgets.length} default widgets for dashboard: ${dashboardId}`)
+
+        return savedWidgets
     }
 }

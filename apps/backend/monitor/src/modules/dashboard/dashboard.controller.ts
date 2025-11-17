@@ -173,4 +173,14 @@ export class DashboardController {
         const widget = await this.dashboardService.createWidgetFromTemplate(body, req.user.id)
         return { data: widget, success: true }
     }
+
+    /**
+     * 恢复默认 Widget
+     * POST /dashboards/:dashboardId/reset-widgets
+     */
+    @Post(':dashboardId/reset-widgets')
+    async resetWidgets(@Param('dashboardId') dashboardId: string, @Request() req) {
+        const widgets = await this.dashboardService.resetWidgets(dashboardId, req.user.id)
+        return { data: widgets, success: true }
+    }
 }

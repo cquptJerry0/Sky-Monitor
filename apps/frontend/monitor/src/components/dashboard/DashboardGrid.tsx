@@ -1,11 +1,11 @@
 import { useMemo } from 'react'
 import { Responsive, WidthProvider, type Layout } from 'react-grid-layout'
 import type { Layouts } from 'react-grid-layout'
-import { toast } from 'sonner'
 
 import { WidgetCard } from './widget/WidgetCard'
 import { useUpdateWidgetsLayout } from '@/hooks/useDashboard'
 import type { DashboardWidget } from '@/types/dashboard'
+import { useToast } from '@/hooks/use-toast'
 
 const ResponsiveGridLayout = WidthProvider(Responsive)
 
@@ -52,6 +52,7 @@ interface DashboardGridProps {
  */
 export function DashboardGrid({ dashboardId, widgets, onEditWidget }: DashboardGridProps) {
     const updateWidgetsLayout = useUpdateWidgetsLayout()
+    const { toast } = useToast()
 
     /**
      * 转换为 react-grid-layout 的 Layouts 格式
@@ -130,10 +131,16 @@ export function DashboardGrid({ dashboardId, widgets, onEditWidget }: DashboardG
             },
             {
                 onSuccess: () => {
-                    toast.success('布局已保存')
+                    toast({
+                        title: '布局已保存',
+                    })
                 },
                 onError: error => {
-                    toast.error(`保存失败: ${error.message}`)
+                    toast({
+                        title: '保存失败',
+                        description: error instanceof Error ? error.message : '保存失败',
+                        variant: 'destructive',
+                    })
                 },
             }
         )

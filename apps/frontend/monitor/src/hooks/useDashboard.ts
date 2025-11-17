@@ -308,3 +308,17 @@ export function useExecuteQuery(data: ExecuteQueryDto | null) {
         staleTime: 0, // 不缓存，每次都重新请求最新数据
     })
 }
+
+/**
+ * 恢复默认 Widget
+ */
+export function useResetWidgets() {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: (dashboardId: string) => dashboardApi.resetWidgets(dashboardId),
+        onSuccess: (_, dashboardId) => {
+            queryClient.invalidateQueries({ queryKey: dashboardKeys.detail(dashboardId) })
+        },
+    })
+}

@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react'
+import { Plus, RotateCcw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import { DashboardGrid, TimeRangePicker, WidgetBuilder } from '@/components/dashboard'
@@ -6,8 +6,9 @@ import type { DashboardWidget } from '@/types/dashboard'
 import { AppSelector } from '@/components/layout/AppSelector'
 import { Button } from '@/components/ui/button'
 import { useCurrentAppId } from '@/hooks/useCurrentApp'
-import { useCreateDashboard, useDashboard, useDashboards } from '@/hooks/useDashboard'
+import { useCreateDashboard, useDashboard, useDashboards, useResetWidgets } from '@/hooks/useDashboard'
 import { useDashboardStore } from '@/stores/dashboard.store'
+import { useToast } from '@/hooks/use-toast'
 
 /**
  * Dashboard 页面
@@ -42,6 +43,7 @@ import { useDashboardStore } from '@/stores/dashboard.store'
 export default function DashboardPage() {
     const currentAppId = useCurrentAppId()
     const { currentDashboardId, setCurrentDashboardId } = useDashboardStore()
+    const { toast } = useToast()
 
     // Widget Builder 弹窗状态
     const [widgetBuilderOpen, setWidgetBuilderOpen] = useState(false)
@@ -59,6 +61,9 @@ export default function DashboardPage() {
 
     // 创建 Dashboard mutation
     const createDashboard = useCreateDashboard()
+
+    // 恢复默认 Widget mutation
+    const resetWidgets = useResetWidgets()
 
     /**
      * 当appId变化时,清空当前选中的dashboard并标记为切换中
@@ -133,6 +138,31 @@ export default function DashboardPage() {
         setEditingWidget(null)
     }
 
+    /**
+     * 恢复默认 Widget
+     */
+    const handleResetWidgets = async () => {
+        if (!currentDashboardId) return
+
+        if (!confirm('确定要恢复默认Widget吗? 这将删除当前所有Widget并重新创建默认的4个Widget。')) {
+            return
+        }
+
+        try {
+            await resetWidgets.mutateAsync(currentDashboardId)
+            toast({
+                title: '恢复成功',
+                description: '已恢复默认Widget',
+            })
+        } catch (error) {
+            toast({
+                title: '恢复失败',
+                description: error instanceof Error ? error.message : '恢复失败',
+                variant: 'destructive',
+            })
+        }
+    }
+
     // 显示loading状态 (初次加载或切换app)
     if (isDashboardsLoading || isAppChanging) {
         return (
@@ -173,6 +203,17 @@ export default function DashboardPage() {
 
                     {/* 时间范围选择器 */}
                     <TimeRangePicker />
+
+                    {/* 恢复默认 Widget 按钮 */}
+                    <Button
+                        variant="outline"
+                        onClick={handleResetWidgets}
+                        disabled={resetWidgets.isPending || !currentDashboard?.appId}
+                        title={!currentDashboard?.appId ? '只有关联应用的Dashboard才能恢复默认Widget' : '恢复默认Widget'}
+                    >
+                        <RotateCcw className="mr-2 h-4 w-4" />
+                        恢复默认
+                    </Button>
 
                     {/* 添加 Widget 按钮 */}
                     <Button onClick={() => setWidgetBuilderOpen(true)}>

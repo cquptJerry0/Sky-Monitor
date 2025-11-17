@@ -116,4 +116,11 @@ export const dashboardApi = {
     createWidgetFromTemplate: async (data: CreateWidgetFromTemplateDto): Promise<DashboardWidget> => {
         return await client.post<DashboardWidget>('/dashboards/widgets/from-template', data)
     },
+
+    /**
+     * 恢复默认 Widget
+     */
+    resetWidgets: async (dashboardId: string): Promise<DashboardWidget[]> => {
+        return await client.post<DashboardWidget[]>(`/dashboards/${dashboardId}/reset-widgets`)
+    },
 }
