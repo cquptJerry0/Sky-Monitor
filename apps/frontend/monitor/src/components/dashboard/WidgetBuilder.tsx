@@ -1,12 +1,10 @@
-import { ArrowLeft, Code2, Sliders } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { v4 as uuidv4 } from 'uuid'
 
-import { QueryBuilder } from './QueryBuilder'
 import { SqlQueryBuilder } from './SqlQueryBuilder'
 import { TemplateParamsEditor } from './TemplateParamsEditor'
 import { TemplateSelector } from './TemplateSelector'
-import type { DashboardWidget } from './types'
+import type { DashboardWidget } from './dashboard.types'
 import { WidgetPreview } from './WidgetPreview'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -14,11 +12,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useDebounce } from '@/hooks/useDebounce'
 import { useCreateWidget, useUpdateWidget } from '@/hooks/useDashboard'
 import { useCreateWidgetFromTemplate } from '@/hooks/useWidgetTemplate'
 import { useDashboardStore } from '@/stores/dashboard.store'
-import type { CreateWidgetDto, QueryConfig, TemplateParams, WidgetTemplateMeta, WidgetType } from '@/types/dashboard'
+import type { CreateWidgetDto, TemplateParams, WidgetTemplateMeta, WidgetType } from '@/types/dashboard'
 
 interface WidgetBuilderProps {
     dashboardId: string
@@ -27,8 +24,7 @@ interface WidgetBuilderProps {
     editingWidget?: DashboardWidget | null
 }
 
-type BuilderMode = 'select-template' | 'edit-params' | 'custom-query'
-type QueryMode = 'builder' | 'sql'
+type BuilderMode = 'select-template' | 'edit-params' | 'sql-editor'
 
 export function WidgetBuilder({ dashboardId, open, onOpenChange, editingWidget }: WidgetBuilderProps) {
     const { selectedAppId } = useDashboardStore()
@@ -39,45 +35,24 @@ export function WidgetBuilder({ dashboardId, open, onOpenChange, editingWidget }
     const isEditMode = !!editingWidget
 
     const [mode, setMode] = useState<BuilderMode>('select-template')
-    const [queryMode, setQueryMode] = useState<QueryMode>('builder')
     const [selectedTemplate, setSelectedTemplate] = useState<WidgetTemplateMeta | null>(null)
 
     const [title, setTitle] = useState('')
     const [widgetType, setWidgetType] = useState<WidgetType>('line')
-    const [query, setQuery] = useState<QueryConfig>({
-        id: uuidv4(),
-        fields: ['count()'],
-        conditions: [],
-        groupBy: [],
-        legend: '查询 1',
-    })
     const [rawSql, setRawSql] = useState('')
-
-    const debouncedQuery = useDebounce(query, 500)
 
     useEffect(() => {
         if (editingWidget && open) {
-            setMode('custom-query')
+            setMode('sql-editor')
             setTitle(editingWidget.title)
             setWidgetType(editingWidget.widgetType)
-            if (editingWidget.queries && editingWidget.queries.length > 0) {
-                const firstQuery = editingWidget.queries[0]
-                if (firstQuery) {
-                    setQuery(firstQuery)
-                }
-            }
+            setRawSql('')
         } else if (!open) {
             setMode('select-template')
             setSelectedTemplate(null)
             setTitle('')
             setWidgetType('line')
-            setQuery({
-                id: uuidv4(),
-                fields: ['count()'],
-                conditions: [],
-                groupBy: [],
-                legend: '查询 1',
-            })
+            setRawSql('')
         }
     }, [editingWidget, open])
 
@@ -99,7 +74,7 @@ export function WidgetBuilder({ dashboardId, open, onOpenChange, editingWidget }
     }
 
     const handleSubmit = async () => {
-        if (!title.trim()) {
+        if (!title.trim() || !rawSql.trim()) {
             return
         }
 
@@ -108,14 +83,14 @@ export function WidgetBuilder({ dashboardId, open, onOpenChange, editingWidget }
                 id: editingWidget.id,
                 title,
                 widgetType,
-                queries: [query],
+                rawSql,
             })
         } else {
             const widgetData: CreateWidgetDto = {
                 dashboardId,
                 title,
                 widgetType,
-                queries: [query],
+                rawSql,
                 layout: {
                     x: 0,
                     y: 0,
@@ -141,8 +116,8 @@ export function WidgetBuilder({ dashboardId, open, onOpenChange, editingWidget }
                         <TemplateSelector onSelect={handleSelectTemplate} />
 
                         <div className="flex justify-center pt-4 border-t">
-                            <Button variant="outline" onClick={() => setMode('custom-query')}>
-                                或使用自定义查询
+                            <Button variant="outline" onClick={() => setMode('sql-editor')}>
+                                或使用 SQL 编辑器
                             </Button>
                         </div>
                     </div>
@@ -185,7 +160,7 @@ export function WidgetBuilder({ dashboardId, open, onOpenChange, editingWidget }
                                 <ArrowLeft className="h-4 w-4" />
                             </Button>
                         )}
-                        <DialogTitle>{isEditMode ? '编辑 Widget' : '自定义 Widget'}</DialogTitle>
+                        <DialogTitle>{isEditMode ? '编辑 Widget' : 'SQL 编辑器'}</DialogTitle>
                     </div>
                 </DialogHeader>
 
@@ -215,39 +190,12 @@ export function WidgetBuilder({ dashboardId, open, onOpenChange, editingWidget }
 
                     <Tabs defaultValue="query" className="w-full">
                         <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="query">查询配置</TabsTrigger>
+                            <TabsTrigger value="query">SQL 查询</TabsTrigger>
                             <TabsTrigger value="preview">预览</TabsTrigger>
                         </TabsList>
 
                         <TabsContent value="query" className="space-y-4">
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center gap-2">
-                                    <Button
-                                        variant={queryMode === 'builder' ? 'default' : 'outline'}
-                                        size="sm"
-                                        onClick={() => setQueryMode('builder')}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <Sliders className="h-4 w-4" />
-                                        可视化构建器
-                                    </Button>
-                                    <Button
-                                        variant={queryMode === 'sql' ? 'default' : 'outline'}
-                                        size="sm"
-                                        onClick={() => setQueryMode('sql')}
-                                        className="flex items-center gap-2"
-                                    >
-                                        <Code2 className="h-4 w-4" />
-                                        SQL 编辑器
-                                    </Button>
-                                </div>
-                            </div>
-
-                            {queryMode === 'builder' ? (
-                                <QueryBuilder query={query} onChange={setQuery} />
-                            ) : (
-                                <SqlQueryBuilder sql={rawSql} onChange={setRawSql} />
-                            )}
+                            <SqlQueryBuilder sql={rawSql} onChange={setRawSql} />
                         </TabsContent>
 
                         <TabsContent value="preview">
@@ -260,7 +208,10 @@ export function WidgetBuilder({ dashboardId, open, onOpenChange, editingWidget }
                     <Button variant="outline" onClick={() => onOpenChange(false)}>
                         取消
                     </Button>
-                    <Button onClick={handleSubmit} disabled={!title.trim() || createWidget.isPending || updateWidget.isPending}>
+                    <Button
+                        onClick={handleSubmit}
+                        disabled={!title.trim() || !rawSql.trim() || createWidget.isPending || updateWidget.isPending}
+                    >
                         {isEditMode ? (updateWidget.isPending ? '保存中...' : '保存') : createWidget.isPending ? '创建中...' : '创建'}
                     </Button>
                 </DialogFooter>
