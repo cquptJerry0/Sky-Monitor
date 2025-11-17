@@ -159,21 +159,25 @@ export const webVitalFields: DetailField[] = [
     {
         label: '指标值',
         key: 'value',
-        type: 'number',
+        type: 'text',
         extract: e => {
             // 优先使用 perf_value,否则从 event_data 中提取
-            if (e.perf_value !== undefined && e.perf_value !== 0) {
-                const name = e.event_name
-                if (name === 'CLS') {
-                    return e.perf_value.toFixed(3)
-                }
-                return `${Math.round(e.perf_value)}ms`
-            }
+            let name = e.event_name
+            let value = e.perf_value
+
             const data = typeof e.event_data === 'string' ? JSON.parse(e.event_data) : e.event_data
-            const value = data?.value
+
+            // 如果后端字段为空,从 event_data 提取
+            if (!name && data?.name) {
+                name = data.name as string
+            }
+            if ((value === undefined || value === 0) && data?.value !== undefined) {
+                value = data.value as number
+            }
+
             if (value === undefined || value === null) return '-'
 
-            const name = e.event_name || data?.name
+            // 格式化数值显示
             if (name === 'CLS') {
                 return value.toFixed(3)
             }

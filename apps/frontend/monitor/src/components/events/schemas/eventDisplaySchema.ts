@@ -81,6 +81,9 @@ export function extractEventMessage(event: Event): EventMessage {
         if ((value === undefined || value === 0) && eventData?.value !== undefined) {
             value = eventData.value as number
         }
+        if (!rating && eventData?.rating) {
+            rating = eventData.rating as string
+        }
 
         // 如果还是没有数据,尝试显示原始 event_data
         if (!name && !value) {
