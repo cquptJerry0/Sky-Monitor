@@ -4,7 +4,7 @@
 
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth, useLogout, useLogoutAll } from '@/hooks/useAuth'
+import { useAuth, useLogout, useLogoutAll, useCurrentUser } from '@/hooks/useAuth'
 import { ROUTES } from '@/utils/constants'
 import {
     DropdownMenu,
@@ -34,6 +34,9 @@ export function UserMenu() {
     const { mutate: logout } = useLogout()
     const { mutate: logoutAll } = useLogoutAll()
     const [showLogoutAllDialog, setShowLogoutAllDialog] = useState(false)
+
+    // 获取当前用户信息
+    useCurrentUser()
 
     if (!user) {
         return null
