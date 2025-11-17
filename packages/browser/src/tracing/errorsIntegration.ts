@@ -150,6 +150,7 @@ export class Errors implements Integration {
 
             const event: BrowserErrorEvent = {
                 type: 'error',
+                name: 'runtime_error',
                 message: fullMessage,
                 lineno,
                 colno,
@@ -197,6 +198,7 @@ export class Errors implements Integration {
 
             const errorEvent: BrowserErrorEvent = {
                 type: 'error',
+                name: 'unhandled_rejection',
                 message,
                 stack: reason?.stack || error.stack,
                 // 使用 Unix 毫秒时间戳,与 rrweb 事件时间戳格式一致

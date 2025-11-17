@@ -90,6 +90,7 @@ export class ResourceErrorIntegration implements Integration {
 
         const resourceEvent: BrowserErrorEvent = {
             type: 'error',
+            name: 'resource_error',
             message: `Failed to load ${tagName}: ${url}`,
             timestamp: new Date().toISOString(),
             errorFingerprint: fingerprint,

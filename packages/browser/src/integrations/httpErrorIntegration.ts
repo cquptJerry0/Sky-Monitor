@@ -334,6 +334,7 @@ export class HttpErrorIntegration implements Integration {
 
         const event: BrowserErrorEvent = {
             type: 'error',
+            name: 'http_error',
             message: `HTTP ${status} ${statusText}: ${method} ${url}`,
             timestamp: new Date().toISOString(),
             errorFingerprint: fingerprint,
