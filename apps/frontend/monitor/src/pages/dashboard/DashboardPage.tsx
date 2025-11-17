@@ -1,14 +1,16 @@
 import { Plus, RotateCcw } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import { DashboardGrid, TimeRangePicker, WidgetBuilder } from '@/components/dashboard'
 import type { DashboardWidget } from '@/types/dashboard'
 import { AppSelector } from '@/components/layout/AppSelector'
 import { Button } from '@/components/ui/button'
 import { useCurrentAppId } from '@/hooks/useCurrentApp'
-import { useCreateDashboard, useDashboard, useDashboards, useResetWidgets } from '@/hooks/useDashboard'
+import { useDashboard, useDashboards, useResetWidgets } from '@/hooks/useDashboard'
 import { useDashboardStore } from '@/stores/dashboard.store'
 import { useToast } from '@/hooks/use-toast'
+import { ROUTES } from '@/utils/constants'
 
 /**
  * Dashboard 页面
@@ -41,6 +43,7 @@ import { useToast } from '@/hooks/use-toast'
  * - **空状态处理**: 没有 Dashboard 时显示创建提示，没有 Widget 时显示添加提示
  */
 export default function DashboardPage() {
+    const navigate = useNavigate()
     const currentAppId = useCurrentAppId()
     const { currentDashboardId, setCurrentDashboardId } = useDashboardStore()
     const { toast } = useToast()
@@ -58,9 +61,6 @@ export default function DashboardPage() {
 
     // 获取当前 Dashboard 详情 (包含 Widgets)
     const { data: currentDashboard, isLoading: isDashboardLoading } = useDashboard(currentDashboardId)
-
-    // 创建 Dashboard mutation
-    const createDashboard = useCreateDashboard()
 
     // 恢复默认 Widget mutation
     const resetWidgets = useResetWidgets()
@@ -106,21 +106,6 @@ export default function DashboardPage() {
             }
         }
     }, [dashboards, currentDashboardId, setCurrentDashboardId])
-
-    /**
-     * 创建默认 Dashboard
-     *
-     * ## 使用场景
-     * - 用户首次进入 Dashboard 页面
-     * - 没有任何 Dashboard 时显示创建按钮
-     */
-    const handleCreateDashboard = async () => {
-        await createDashboard.mutateAsync({
-            name: '我的仪表盘',
-            description: '自定义监控仪表盘',
-            appId: currentAppId || undefined,
-        })
-    }
 
     /**
      * 编辑 Widget
@@ -172,18 +157,24 @@ export default function DashboardPage() {
         )
     }
 
-    // 如果没有 Dashboard,显示创建提示
+    // 如果没有 Dashboard,引导用户去创建/选择应用
     if (!dashboards || dashboards.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center h-96 space-y-4">
-                <div className="text-center">
-                    <h2 className="text-2xl font-bold mb-2">欢迎使用仪表盘</h2>
-                    <p className="text-muted-foreground">创建你的第一个仪表盘,开始自定义监控视图</p>
+                <div className="text-center space-y-2">
+                    <h2 className="text-2xl font-bold">暂无监控面板</h2>
+                    {!currentAppId ? (
+                        <p className="text-muted-foreground">请先创建或选择一个应用,系统会自动为您生成默认监控面板</p>
+                    ) : (
+                        <p className="text-muted-foreground">当前应用暂无监控面板,请联系管理员</p>
+                    )}
                 </div>
-                <Button onClick={handleCreateDashboard} disabled={createDashboard.isPending}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    创建仪表盘
-                </Button>
+                {!currentAppId && (
+                    <Button onClick={() => navigate(ROUTES.PROJECTS)}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        前往应用管理
+                    </Button>
+                )}
             </div>
         )
     }
