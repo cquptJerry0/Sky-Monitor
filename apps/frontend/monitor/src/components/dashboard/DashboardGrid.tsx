@@ -4,7 +4,7 @@ import type { Layouts } from 'react-grid-layout'
 
 import { WidgetCard } from './WidgetCard'
 import { useUpdateWidgetsLayout } from '@/hooks/useDashboard'
-import type { DashboardWidget } from '@/components/dashboard/types'
+import type { DashboardWidget } from '@/components/dashboard/dashboard.types'
 
 const ResponsiveGridLayout = WidthProvider(Responsive)
 

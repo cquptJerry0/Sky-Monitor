@@ -37,7 +37,7 @@ import type {
     UpdateDashboardDto,
     UpdateWidgetDto,
     UpdateWidgetsLayoutDto,
-} from '@/components/dashboard/types'
+} from '@/components/dashboard/dashboard.types'
 
 /**
  * Query Keys 工厂函数

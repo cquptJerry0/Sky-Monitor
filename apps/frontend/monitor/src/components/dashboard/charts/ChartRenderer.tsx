@@ -5,7 +5,7 @@ import { BarChartWidget } from './BarChartWidget'
 import { BigNumberWidget } from './BigNumberWidget'
 import { LineChartWidget } from './LineChartWidget'
 import { TableChartWidget } from './TableChartWidget'
-import type { ExecuteQueryResponse, WidgetType } from '@/components/dashboard/types'
+import type { ExecuteQueryResponse, WidgetType } from '@/components/dashboard/dashboard.types'
 
 interface ChartRendererProps {
     widgetType: WidgetType
