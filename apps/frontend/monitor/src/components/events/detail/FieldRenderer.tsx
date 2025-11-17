@@ -11,6 +11,7 @@ import {
     getWebVitalRatingBadgeColor,
     getDeviceTypeBadgeColor,
     getSourceMapStatusBadgeColor,
+    getEventNameBadgeColor,
 } from '@/utils/badgeUtils'
 import type { FieldType } from '../schemas/eventFieldSchema'
 
@@ -29,6 +30,9 @@ export function FieldRenderer({ type, value, fieldKey }: FieldRendererProps) {
         const strValue = String(val)
         if (!key) return ''
 
+        if (key === 'event_name') {
+            return getEventNameBadgeColor(strValue)
+        }
         if (key.includes('status') && !isNaN(Number(strValue))) {
             return getHttpStatusBadgeColor(Number(strValue))
         }

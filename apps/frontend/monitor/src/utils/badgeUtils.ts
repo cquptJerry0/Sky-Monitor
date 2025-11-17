@@ -154,3 +154,24 @@ export function getSourceMapStatusBadgeColor(status: string): string {
             return 'bg-gray-500 text-white border-gray-600'
     }
 }
+
+export function getEventNameBadgeColor(eventName: string): string {
+    const colorMap: Record<string, string> = {
+        // 错误类 - 红色系
+        runtime_error: 'bg-red-600 text-white border-red-700',
+        http_error: 'bg-orange-600 text-white border-orange-700',
+        resource_error: 'bg-rose-600 text-white border-rose-700',
+        unhandled_rejection: 'bg-pink-600 text-white border-pink-700',
+        // 性能类 - 绿色系
+        http_performance: 'bg-green-600 text-white border-green-700',
+        resource_timing: 'bg-emerald-600 text-white border-emerald-700',
+        // Web Vitals - 蓝紫色系
+        LCP: 'bg-blue-600 text-white border-blue-700',
+        FCP: 'bg-cyan-600 text-white border-cyan-700',
+        CLS: 'bg-purple-600 text-white border-purple-700',
+        TTFB: 'bg-indigo-600 text-white border-indigo-700',
+        FID: 'bg-violet-600 text-white border-violet-700',
+        INP: 'bg-fuchsia-600 text-white border-fuchsia-700',
+    }
+    return colorMap[eventName] || 'bg-gray-500 text-white border-gray-600'
+}
