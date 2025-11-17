@@ -2,6 +2,7 @@
  * 顶部栏组件
  */
 
+import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { AppSelector } from './AppSelector'
 import { UserMenu } from './UserMenu'
@@ -43,18 +44,18 @@ export function Header() {
                 <Breadcrumb>
                     <BreadcrumbList>
                         {breadcrumbs.map((crumb, index) => (
-                            <BreadcrumbItem key={index}>
-                                {index < breadcrumbs.length - 1 ? (
-                                    <>
+                            <React.Fragment key={index}>
+                                <BreadcrumbItem>
+                                    {index < breadcrumbs.length - 1 ? (
                                         <BreadcrumbLink asChild>
                                             <Link to={crumb.path!}>{crumb.label}</Link>
                                         </BreadcrumbLink>
-                                        <BreadcrumbSeparator />
-                                    </>
-                                ) : (
-                                    <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-                                )}
-                            </BreadcrumbItem>
+                                    ) : (
+                                        <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                                    )}
+                                </BreadcrumbItem>
+                                {index < breadcrumbs.length - 1 && <BreadcrumbSeparator />}
+                            </React.Fragment>
                         ))}
                     </BreadcrumbList>
                 </Breadcrumb>
