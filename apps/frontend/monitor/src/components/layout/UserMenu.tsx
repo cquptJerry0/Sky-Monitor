@@ -24,6 +24,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { User, LogOut, Settings, Shield } from 'lucide-react'
 
@@ -47,8 +48,13 @@ export function UserMenu() {
         <>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-                        <User className="w-5 h-5" />
+                    <Button variant="ghost" className="h-10 w-10 rounded-full p-0">
+                        <Avatar className="h-8 w-8">
+                            <AvatarImage src={user.avatar} alt={user.username} />
+                            <AvatarFallback className="bg-primary text-primary-foreground">
+                                {user.username?.charAt(0).toUpperCase() || 'U'}
+                            </AvatarFallback>
+                        </Avatar>
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 bg-popover border-border">
