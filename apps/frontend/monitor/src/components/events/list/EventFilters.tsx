@@ -1,12 +1,13 @@
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { X, Search } from 'lucide-react'
 import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { eventsAPI } from '@/api'
 import { useCurrentApp } from '@/hooks/useCurrentApp'
+import { EventTypeTreeSelect } from './EventTypeTreeSelect'
 
 export interface EventFiltersState {
     eventType: string
@@ -80,27 +81,7 @@ export function EventFilters({ filters, onFiltersChange }: EventFiltersProps) {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div className="space-y-2">
                     <Label htmlFor="eventType">事件类型</Label>
-                    <Select value={localFilters.eventType} onValueChange={value => handleFilterChange('eventType', value)}>
-                        <SelectTrigger id="eventType">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">全部事件</SelectItem>
-                            <SelectGroup>
-                                <SelectLabel>错误事件</SelectLabel>
-                                <SelectItem value="error">全部错误</SelectItem>
-                                <SelectItem value="error:js">JS错误</SelectItem>
-                                <SelectItem value="error:http">HTTP错误</SelectItem>
-                                <SelectItem value="error:resource">资源错误</SelectItem>
-                                <SelectItem value="exception">异常</SelectItem>
-                                <SelectItem value="unhandledrejection">Promise拒绝</SelectItem>
-                            </SelectGroup>
-                            <SelectItem value="webVital">Web Vitals</SelectItem>
-                            <SelectItem value="performance">性能事件</SelectItem>
-                            <SelectItem value="message">日志消息</SelectItem>
-                            <SelectItem value="custom">自定义事件</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <EventTypeTreeSelect value={localFilters.eventType} onChange={value => handleFilterChange('eventType', value)} />
                 </div>
 
                 <div className="space-y-2">
