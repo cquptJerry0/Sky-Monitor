@@ -189,6 +189,8 @@ export const webVitalFields: DetailField[] = [
         key: 'rating',
         type: 'badge',
         extract: e => {
+            // 优先使用 perf_rating,否则从 event_data 中提取
+            if (e.perf_rating) return e.perf_rating
             const data = typeof e.event_data === 'string' ? JSON.parse(e.event_data) : e.event_data
             return data?.rating || '-'
         },

@@ -92,6 +92,7 @@ export class ResourceErrorIntegration implements Integration {
             type: 'error',
             name: 'resource_error',
             message: `Failed to load ${tagName}: ${url}`,
+            path: typeof window !== 'undefined' ? window.location.pathname : '',
             timestamp: new Date().toISOString(),
             errorFingerprint: fingerprint,
             release,

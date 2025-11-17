@@ -97,8 +97,8 @@ export function EventTypeTreeSelect({ value, onChange }: EventTypeTreeSelectProp
                     <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[240px] p-0" align="start">
-                <div className="max-h-[300px] overflow-y-auto p-1">
+            <PopoverContent className="w-auto min-w-[240px] p-0" align="start">
+                <div className="p-1">
                     {eventTypeOptions.map(option => {
                         if (option.children) {
                             const isExpanded = expandedGroups.has(option.value)

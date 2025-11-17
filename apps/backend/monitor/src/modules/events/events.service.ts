@@ -166,7 +166,10 @@ export class EventsService {
                     -- Performance (用于显示消息)
                     perf_category,
                     perf_value,
-                    perf_is_slow
+                    perf_is_slow,
+
+                    -- Web Vitals rating (从 event_data 中提取)
+                    JSONExtractString(event_data, 'rating') as perf_rating
                 FROM monitor_events
                 ${whereClause}
                 ORDER BY timestamp DESC

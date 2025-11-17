@@ -82,6 +82,7 @@ export interface Event {
     perf_category?: string
     perf_value?: number
     perf_is_slow?: boolean
+    perf_rating?: string
 
     // 会话相关字段
     session_id?: string

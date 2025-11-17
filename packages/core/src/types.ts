@@ -184,6 +184,7 @@ export interface PerformanceEvent extends BaseEvent {
 export interface MessageEvent extends BaseEvent {
     type: 'message'
     message: string
+    path?: string
 }
 
 /**

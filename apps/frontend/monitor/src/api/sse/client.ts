@@ -41,7 +41,6 @@ export function createSSEConnection(endpoint: string, options: SSEOptions) {
 
                 // 忽略心跳消息
                 if (data.type === 'heartbeat') {
-                    console.log('[SSE] Heartbeat received:', data.timestamp)
                     return
                 }
 
@@ -62,7 +61,6 @@ export function createSSEConnection(endpoint: string, options: SSEOptions) {
             // 重试逻辑
             if (retryCount < SSE_CONFIG.MAX_RETRIES) {
                 retryCount++
-                console.log(`SSE reconnecting... (${retryCount}/${SSE_CONFIG.MAX_RETRIES})`)
                 return SSE_CONFIG.RETRY_DELAY
             }
 
@@ -77,7 +75,6 @@ export function createSSEConnection(endpoint: string, options: SSEOptions) {
         // 连接打开
         async onopen(response) {
             if (response.ok) {
-                console.log('SSE connected:', endpoint)
                 options.onOpen?.()
             } else {
                 console.error('SSE connection failed:', response.status, response.statusText)
@@ -87,14 +84,12 @@ export function createSSEConnection(endpoint: string, options: SSEOptions) {
 
         // 连接关闭
         onclose() {
-            console.log('SSE closed:', endpoint)
             options.onClose?.()
         },
     })
 
     // 返回清理函数
     return () => {
-        console.log('SSE aborting:', endpoint)
         controller.abort()
     }
 }

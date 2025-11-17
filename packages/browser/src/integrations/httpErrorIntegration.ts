@@ -336,6 +336,7 @@ export class HttpErrorIntegration implements Integration {
             type: 'error',
             name: 'http_error',
             message: `HTTP ${status} ${statusText}: ${method} ${url}`,
+            path: typeof window !== 'undefined' ? window.location.pathname : '',
             timestamp: new Date().toISOString(),
             errorFingerprint: fingerprint,
             release,

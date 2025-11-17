@@ -14,7 +14,7 @@ export default defineConfig([
         // 生产环境可以通过环境变量控制
         esbuildOptions(options) {
             // 只移除 debugger,保留 console.warn
-            options.drop = ['debugger']
+            options.drop = ['console', 'debugger']
         },
     },
     {
@@ -30,7 +30,7 @@ export default defineConfig([
         // 生产环境可以通过环境变量控制
         esbuildOptions(options) {
             // 只移除 debugger,保留 console.warn
-            options.drop = ['debugger']
+            options.drop = ['console', 'debugger']
         },
     },
 ])

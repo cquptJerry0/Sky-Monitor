@@ -129,7 +129,6 @@ export class Errors implements Integration {
     private handleError(message: string | Event, source?: string, lineno?: number, colno?: number, error?: Error): void {
         // 递归防护: 防止无限循环
         if (Errors.isCapturing) {
-            console.warn('[Sky-Monitor] Recursive error detected, skipping to prevent infinite loop')
             return
         }
 
@@ -141,7 +140,6 @@ export class Errors implements Integration {
 
             // 过滤 SDK 自身错误
             if (error && this.isSdkError(error)) {
-                console.warn('[Sky-Monitor] SDK internal error filtered:', fullMessage)
                 return
             }
 
@@ -152,6 +150,7 @@ export class Errors implements Integration {
                 type: 'error',
                 name: 'runtime_error',
                 message: fullMessage,
+                path: typeof window !== 'undefined' ? window.location.pathname : '',
                 lineno,
                 colno,
                 stack: error ? enhanceStack(error) : undefined,
@@ -176,7 +175,6 @@ export class Errors implements Integration {
     private handleRejection(event: PromiseRejectionEvent): void {
         // 递归防护: 防止无限循环
         if (Errors.isCapturing) {
-            console.warn('[Sky-Monitor] Recursive promise rejection detected, skipping to prevent infinite loop')
             return
         }
 
@@ -189,7 +187,6 @@ export class Errors implements Integration {
 
             // 过滤 SDK 自身错误
             if (this.isSdkError(error)) {
-                console.warn('[Sky-Monitor] SDK internal promise rejection filtered:', message)
                 return
             }
 
@@ -200,6 +197,7 @@ export class Errors implements Integration {
                 type: 'error',
                 name: 'unhandled_rejection',
                 message,
+                path: typeof window !== 'undefined' ? window.location.pathname : '',
                 stack: reason?.stack || error.stack,
                 // 使用 Unix 毫秒时间戳,与 rrweb 事件时间戳格式一致
                 timestamp: Date.now() as any,
@@ -227,14 +225,12 @@ export class Errors implements Integration {
         // 获取当前客户端实例
         const client = getCurrentClient()
         if (!client) {
-            console.warn('[ErrorsIntegration] No client found')
             return event
         }
 
         // 获取 SessionReplayIntegration
         const replayIntegration = client.getIntegration<SessionReplayIntegration>('SessionReplay')
         if (!replayIntegration) {
-            console.warn('[ErrorsIntegration] No SessionReplayIntegration found')
             return event
         }
 

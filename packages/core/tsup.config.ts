@@ -12,8 +12,6 @@ export default defineConfig([
         clean: true,
         minify: true,
         outDir: 'build/cjs',
-        external: ['vitest'],
-        // 生产环境移除 console.log 和 debugger
         esbuildOptions(options) {
             options.drop = ['console', 'debugger']
         },
@@ -29,8 +27,6 @@ export default defineConfig([
         clean: true,
         minify: true,
         outDir: 'build/esm',
-        external: ['vitest'],
-        // 生产环境移除 console.log 和 debugger
         esbuildOptions(options) {
             options.drop = ['console', 'debugger']
         },

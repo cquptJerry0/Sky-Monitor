@@ -13,6 +13,7 @@ export type {
     ApplicationType,
     Application,
     Admin,
+    EventUser,
     EventType,
     SourceMapStatus,
     AlertRuleType,

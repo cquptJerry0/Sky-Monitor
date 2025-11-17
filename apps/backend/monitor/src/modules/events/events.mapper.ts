@@ -85,6 +85,7 @@ interface DatabaseEvent {
     perf_is_slow: number
     perf_success: number
     perf_metrics: string
+    perf_rating: string
 
     // 元数据
     dedup_count: number
@@ -225,6 +226,8 @@ export function mapEventForFrontend(event: DatabaseEvent): any {
     } else if (event.event_type === 'webVital') {
         // Metrics Integration: Web Vitals
         mapped.value = event.perf_value
+        mapped.perf_value = event.perf_value
+        mapped.perf_rating = event.perf_rating
     }
 
     return mapped

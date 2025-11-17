@@ -25,12 +25,7 @@
         "build:transpile": "tsup",
         "build:types": "tsc -p tsconfig.types.json",
         "clean": "rimraf build",
-        "typecheck": "tsc --noEmit",
-        "test": "vitest",
-        "test:run": "vitest run",
-        "test:watch": "vitest watch",
-        "test:coverage": "vitest run --coverage",
-        "test:ui": "vitest --ui"
+        "typecheck": "tsc --noEmit"
     },
     "keywords": [],
     "author": "",
@@ -43,10 +38,6 @@
         "rrweb": "2.0.0-alpha.4"
     },
     "devDependencies": {
-        "@types/pako": "^2.0.4",
-        "@vitest/coverage-v8": "^1.0.0",
-        "@vitest/ui": "^1.0.0",
-        "jsdom": "^24.0.0",
-        "vitest": "^1.0.0"
+        "@types/pako": "^2.0.4"
     }
 }

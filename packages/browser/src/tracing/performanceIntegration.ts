@@ -184,6 +184,7 @@ export class PerformanceIntegration implements Integration {
                 type: 'performance',
                 name: 'http_performance',
                 category: 'http',
+                path: typeof window !== 'undefined' ? window.location.pathname : '',
                 url: request.url,
                 method: request.method,
                 status,

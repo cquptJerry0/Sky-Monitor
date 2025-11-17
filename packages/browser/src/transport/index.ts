@@ -36,7 +36,6 @@ export class BrowserTransport extends BaseTransport {
                 // HTTP 错误，触发错误回调并抛出异常
                 // 这样 OfflineTransport 可以捕获异常并存储到 IndexedDB
                 const error = new Error(`HTTP error! status: ${response.status}`)
-                console.error(`[BrowserTransport] HTTP error! status: ${response.status}`)
                 this.triggerError(error)
                 throw error
             }
@@ -48,14 +47,12 @@ export class BrowserTransport extends BaseTransport {
             // 重试逻辑（指数退避）
             if (retries < this.maxRetries) {
                 const delay = Math.min(1000 * Math.pow(2, retries), 10000)
-                console.warn(`[BrowserTransport] Request failed, retrying in ${delay}ms (attempt ${retries + 1}/${this.maxRetries})`)
                 await new Promise(resolve => setTimeout(resolve, delay))
                 return this.send(data, retries + 1)
             }
 
             // 重试次数用尽，触发错误回调并抛出异常
             // 这样 OfflineTransport 可以捕获异常并存储到 IndexedDB
-            console.error('[BrowserTransport] Request failed after retries:', error)
             this.triggerError(error)
             throw error
         }

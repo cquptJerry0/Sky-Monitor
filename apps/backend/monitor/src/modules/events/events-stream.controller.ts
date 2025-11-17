@@ -56,9 +56,7 @@ export class EventsStreamController {
                     }
                 }
             }),
-            finalize(() => {
-                console.log(`[SSE] Connection closed for appId: ${appId}, type: ${type || 'all'}`)
-            })
+            finalize(() => {})
         )
     }
 
@@ -102,9 +100,7 @@ export class EventsStreamController {
                     }
                 }
             }),
-            finalize(() => {
-                console.log(`[SSE] Error stream connection closed for appId: ${appId}`)
-            })
+            finalize(() => {})
         )
     }
 
@@ -148,9 +144,7 @@ export class EventsStreamController {
                     }
                 }
             }),
-            finalize(() => {
-                console.log(`[SSE] Performance stream connection closed for appId: ${appId}`)
-            })
+            finalize(() => {})
         )
     }
 
@@ -194,9 +188,7 @@ export class EventsStreamController {
                     }
                 }
             }),
-            finalize(() => {
-                console.log(`[SSE] Web vitals stream connection closed for appId: ${appId}`)
-            })
+            finalize(() => {})
         )
     }
 
@@ -228,9 +220,7 @@ export class EventsStreamController {
                     }
                 }
             }),
-            finalize(() => {
-                console.log(`[SSE] Stats stream connection closed for appId: ${appId}`)
-            })
+            finalize(() => {})
         )
     }
 
@@ -272,9 +262,7 @@ export class EventsStreamController {
                     }
                 }
             }),
-            finalize(() => {
-                console.log(`[SSE] SourceMap progress stream connection closed for eventId: ${eventId}`)
-            })
+            finalize(() => {})
         )
     }
 }

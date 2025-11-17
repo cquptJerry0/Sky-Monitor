@@ -62,8 +62,6 @@ export class OfflineTransport implements Transport {
                 storeName: options.storeName,
                 maxQueueSize: options.maxQueueSize,
             })
-        } else {
-            console.warn('[OfflineTransport] IndexedDB not supported, offline caching disabled')
         }
 
         this.setupNetworkListener()
@@ -122,7 +120,6 @@ export class OfflineTransport implements Transport {
      */
     private async saveToStorage(data: Record<string, unknown>): Promise<void> {
         if (!this.storage) {
-            console.warn('[OfflineTransport] IndexedDB not available, cannot save event')
             return
         }
 
@@ -136,7 +133,7 @@ export class OfflineTransport implements Transport {
 
             await this.storage.store(item)
         } catch (error) {
-            console.error('[OfflineTransport] Failed to save to IndexedDB:', error)
+            // 静默失败
         }
     }
 
@@ -160,7 +157,6 @@ export class OfflineTransport implements Transport {
                 await this.storage.remove(item.id)
             } catch (error) {
                 // 发送失败，增加重试次数
-                console.error('[OfflineTransport] Error processing queue item:', error)
                 item.retryCount++
 
                 // 最多重试3次

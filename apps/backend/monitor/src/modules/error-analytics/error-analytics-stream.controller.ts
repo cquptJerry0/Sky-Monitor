@@ -47,9 +47,7 @@ export class ErrorAnalyticsStreamController {
                     }
                 }
             }),
-            finalize(() => {
-                console.log(`[SSE] Error spikes stream connection closed for appId: ${appId}`)
-            })
+            finalize(() => {})
         )
     }
 
@@ -87,9 +85,7 @@ export class ErrorAnalyticsStreamController {
                     }
                 }
             }),
-            finalize(() => {
-                console.log(`[SSE] Error trends stream connection closed for appId: ${appId}, fingerprint: ${fingerprint || 'all'}`)
-            })
+            finalize(() => {})
         )
     }
 }

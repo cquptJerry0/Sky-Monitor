@@ -26,6 +26,7 @@ export function captureMessage(message: string): void {
         client.captureEvent({
             type: 'message',
             message,
+            path: typeof window !== 'undefined' ? window.location.pathname : '',
             timestamp: getChinaTimestamp(),
         })
     }

@@ -21,6 +21,10 @@ export default defineConfig({
     },
     build: {
         sourcemap: true, // 生成 SourceMap
+        minify: 'esbuild',
+    },
+    esbuild: {
+        drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
     },
     define: {
         // 将 release 版本注入到代码中

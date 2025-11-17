@@ -61,6 +61,7 @@ export interface ResourceErrorDetails {
  * 浏览器错误事件（扩展 ErrorEvent）
  */
 export interface BrowserErrorEvent extends ErrorEvent {
+    path?: string
     lineno?: number
     colno?: number
     errorFingerprint?: ErrorFingerprint

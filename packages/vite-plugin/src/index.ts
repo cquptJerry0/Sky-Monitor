@@ -26,16 +26,12 @@ export function skyMonitorPlugin(options: SkyMonitorPluginOptions): Plugin {
             const distDir = path.resolve(process.cwd(), 'dist')
 
             if (!fs.existsSync(distDir)) {
-                console.log('[Sky Monitor] No dist directory found, skipping source map upload')
                 return
             }
-
-            console.log(`[Sky Monitor] Uploading source maps for release: ${release}`)
 
             const mapFiles = findMapFiles(distDir)
 
             if (mapFiles.length === 0) {
-                console.log('[Sky Monitor] No source map files found')
                 return
             }
 
@@ -130,7 +126,6 @@ async function uploadSourceMap(
 
             res.on('end', () => {
                 if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
-                    console.log(`  Uploaded: ${fileName}`)
                     resolve()
                 } else {
                     reject(new Error(`Upload failed with status ${res.statusCode}: ${data}`))

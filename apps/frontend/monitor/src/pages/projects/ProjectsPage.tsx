@@ -75,11 +75,6 @@ export default function ProjectsPage() {
     const createMutation = useCreateApplication()
     const deleteMutation = useDeleteApplication()
 
-    console.log('[应用列表] 应用数据:', applications)
-    console.log('[应用列表] 应用数量:', applications.length)
-    console.log('[应用列表] 加载状态:', isLoading)
-    console.log('[应用列表] 错误:', error)
-
     // 创建应用
     const handleCreateApp = async () => {
         if (!newAppName.trim()) {
@@ -119,7 +114,6 @@ export default function ProjectsPage() {
 
     // 选择应用
     const handleSelectApp = (app: Application) => {
-        console.log('[选择应用] 选择应用', app)
         setCurrentAppId(app.appId)
 
         toast({
@@ -142,12 +136,8 @@ export default function ProjectsPage() {
     const handleConfirmDelete = async () => {
         if (!deleteTarget) return
 
-        console.log('[删除应用] 开始删除', deleteTarget)
-
         try {
             await deleteMutation.mutateAsync({ appId: deleteTarget.appId })
-
-            console.log('[删除应用] 删除成功')
 
             toast({
                 title: '删除成功',
