@@ -31,11 +31,53 @@ export type EventType =
     | 'custom'
 
 /**
+ * 错误事件名称 (二级分类)
+ * 用于区分不同类型的错误事件
+ */
+export type ErrorEventName =
+    | 'runtime_error' // JS运行时错误
+    | 'http_error' // HTTP请求错误 (4xx/5xx)
+    | 'resource_error' // 资源加载错误
+    | 'unhandled_rejection' // Promise rejection
+
+/**
+ * 性能事件名称 (二级分类)
+ * 用于区分不同类型的性能事件
+ */
+export type PerformanceEventName =
+    | 'http_performance' // HTTP请求性能
+    | 'resource_timing' // 资源加载性能
+
+/**
+ * WebVital 事件名称 (二级分类)
+ * Web Vitals 核心指标
+ */
+export type WebVitalEventName =
+    | 'LCP' // Largest Contentful Paint
+    | 'FCP' // First Contentful Paint
+    | 'CLS' // Cumulative Layout Shift
+    | 'TTFB' // Time to First Byte
+    | 'FID' // First Input Delay
+    | 'INP' // Interaction to Next Paint
+
+/**
+ * 事件名称联合类型
+ * 包含所有预定义的事件名称,也支持自定义字符串
+ */
+export type EventName = ErrorEventName | PerformanceEventName | WebVitalEventName | string
+
+/**
  * 基础事件接口
  * 所有事件的通用字段
  */
 export interface BaseEvent {
     type: EventType
+    /**
+     * 事件名称 (二级分类)
+     * 用于在同一 type 下进一步区分事件子类型
+     * 例如: type='error' 时, name 可以是 'runtime_error', 'http_error', 'resource_error' 等
+     */
+    name?: string
     timestamp?: string
     level?: EventLevel
     release?: string
