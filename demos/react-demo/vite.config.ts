@@ -1,3 +1,4 @@
+import path from 'path'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { skyMonitorPlugin } from '@sky-monitor/vite-plugin'
@@ -16,6 +17,11 @@ export default defineConfig({
             deleteAfterUpload: false, // 保留 map 文件方便调试
         }),
     ],
+    resolve: {
+        alias: {
+            '@': path.resolve(__dirname, './src'),
+        },
+    },
     server: {
         port: 5433,
     },
