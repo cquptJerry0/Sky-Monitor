@@ -4,11 +4,13 @@ import type { CreateWidgetDto } from '../dashboard/dashboard.dto'
  * 默认 Widget 配置
  * 为每个新创建的 Application 自动生成这些 Widget
  *
- * 新设计原则:
- * - 顶部: 4个关键指标卡片 (BigNumber)
- * - 中部: Web Vitals 性能趋势图 (优化版)
- * - 底部: 错误趋势 + 浏览器分布
- * - 布局: 12列网格,响应式设计
+ * 新布局设计 (12列 x 10行):
+ * 第一行 (h: 4):
+ *   - 左侧 (w: 7): 4个关键指标 2x2 网格
+ *   - 右侧 (w: 5): 事件类型分布饼图
+ * 第二行 (h: 6):
+ *   - 左侧 (w: 7): Web Vitals 性能趋势
+ *   - 右侧 (w: 5): 错误类型雷达图
  */
 
 /**
@@ -19,7 +21,7 @@ import type { CreateWidgetDto } from '../dashboard/dashboard.dto'
  */
 export function generateDefaultWidgets(_dashboardId: string, appId: string): Omit<CreateWidgetDto, 'dashboardId'>[] {
     return [
-        // 第一行: 4个关键指标卡片 (每个3列宽)
+        // 第一行左侧: 4个关键指标卡片 (2x2网格, 共7列宽)
         {
             title: '总事件数',
             widgetType: 'big_number',
@@ -30,7 +32,7 @@ export function generateDefaultWidgets(_dashboardId: string, appId: string): Omi
                     conditions: [{ field: 'app_id', operator: '=', value: appId }],
                 },
             ],
-            layout: { x: 0, y: 0, w: 3, h: 3 },
+            layout: { x: 0, y: 0, w: 3, h: 2 },
         },
         {
             title: '错误总数',
@@ -45,7 +47,7 @@ export function generateDefaultWidgets(_dashboardId: string, appId: string): Omi
                     ],
                 },
             ],
-            layout: { x: 3, y: 0, w: 3, h: 3 },
+            layout: { x: 3, y: 0, w: 4, h: 2 },
         },
         {
             title: '活跃用户',
@@ -60,7 +62,7 @@ export function generateDefaultWidgets(_dashboardId: string, appId: string): Omi
                     ],
                 },
             ],
-            layout: { x: 6, y: 0, w: 3, h: 3 },
+            layout: { x: 0, y: 2, w: 3, h: 2 },
         },
         {
             title: '平均 LCP',
@@ -79,10 +81,30 @@ export function generateDefaultWidgets(_dashboardId: string, appId: string): Omi
             displayConfig: {
                 unit: 'ms',
             },
-            layout: { x: 9, y: 0, w: 3, h: 3 },
+            layout: { x: 3, y: 2, w: 4, h: 2 },
         },
 
-        // 第二行: Web Vitals 性能趋势 (全宽)
+        // 第一行右侧: 事件类型分布饼图
+        {
+            title: '事件类型分布',
+            widgetType: 'pie',
+            queries: [
+                {
+                    id: 'event-type-distribution',
+                    fields: ['event_type', 'count() as count'],
+                    conditions: [{ field: 'app_id', operator: '=', value: appId }],
+                    groupBy: ['event_type'],
+                    orderBy: [{ field: 'count()', direction: 'DESC' }],
+                    limit: 10,
+                },
+            ],
+            displayConfig: {
+                showLegend: true,
+            },
+            layout: { x: 7, y: 0, w: 5, h: 4 },
+        },
+
+        // 第二行左侧: Web Vitals 性能趋势 (7列宽)
         {
             title: 'Web Vitals 性能趋势',
             widgetType: 'line',
@@ -144,28 +166,10 @@ export function generateDefaultWidgets(_dashboardId: string, appId: string): Omi
                 yAxis: { unit: 'ms', min: 0 },
                 showLegend: true,
             },
-            layout: { x: 0, y: 3, w: 12, h: 6 },
+            layout: { x: 0, y: 4, w: 7, h: 6 },
         },
 
-        // 第三行: 事件类型分布饼图 + 错误类型雷达图
-        {
-            title: '事件类型分布',
-            widgetType: 'pie',
-            queries: [
-                {
-                    id: 'event-type-distribution',
-                    fields: ['event_type', 'count() as count'],
-                    conditions: [{ field: 'app_id', operator: '=', value: appId }],
-                    groupBy: ['event_type'],
-                    orderBy: [{ field: 'count()', direction: 'DESC' }],
-                    limit: 10,
-                },
-            ],
-            displayConfig: {
-                showLegend: true,
-            },
-            layout: { x: 0, y: 9, w: 6, h: 5 },
-        },
+        // 第二行右侧: 错误类型雷达图
         {
             title: '错误类型分布',
             widgetType: 'radar',
@@ -185,7 +189,7 @@ export function generateDefaultWidgets(_dashboardId: string, appId: string): Omi
             displayConfig: {
                 showLegend: false,
             },
-            layout: { x: 6, y: 9, w: 6, h: 5 },
+            layout: { x: 7, y: 4, w: 5, h: 6 },
         },
     ]
 }
