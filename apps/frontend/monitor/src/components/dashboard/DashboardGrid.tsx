@@ -41,6 +41,11 @@ interface DashboardGridProps {
  * - xs (480-768px): 宽度固定为 4 列
  * - xxs (<480px): 宽度固定为 2 列
  *
+ * ## 布局行为 (参考 ilert 最佳实践)
+ * - **compactType="vertical"**: 自动垂直压缩,填充空白区域
+ * - **preventCollision={false}**: 允许拖拽时重叠,提供更自由的布局体验
+ * - 这种配置平衡了自动整理和手动控制,是业界推荐的方式
+ *
  * ## 布局保存
  * - 只保存 lg 断点的布局 (其他断点自动计算)
  * - 拖拽或调整大小后自动触发保存
@@ -48,7 +53,7 @@ interface DashboardGridProps {
  *
  * ## 拖拽手柄
  * - 使用 `.widget-drag-handle` 类名标记拖拽区域
- * - 只能通过标题栏拖拽，避免误操作
+ * - 只能通过标题栏拖拽,避免误操作
  */
 export function DashboardGrid({ dashboardId, widgets, onEditWidget }: DashboardGridProps) {
     const updateWidgetsLayout = useUpdateWidgetsLayout()
@@ -157,7 +162,7 @@ export function DashboardGrid({ dashboardId, widgets, onEditWidget }: DashboardG
             draggableHandle=".widget-drag-handle"
             resizeHandle={<div className="react-resizable-handle react-resizable-handle-se" />}
             compactType="vertical"
-            preventCollision={true}
+            preventCollision={false}
             isDraggable
             isResizable
         >
