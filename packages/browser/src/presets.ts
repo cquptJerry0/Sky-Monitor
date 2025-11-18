@@ -91,8 +91,9 @@ export function createMonitoringConfig(options: MonitoringPresetOptions) {
                 mode: 'onError',
                 beforeErrorDuration: 60,
                 afterErrorDuration: 10,
-                checkoutEveryNms: 30000,
-                maxSegments: 3,
+                // 激进方案: 每 3 秒生成新快照 + 路由变化监听
+                checkoutEveryNms: 3000,
+                maxSegments: 20,
                 maskAllInputs: true,
             })
         )

@@ -177,14 +177,20 @@ export class SessionReplayIntegration implements Integration {
     private static lastErrorTime = 0
     private static errorDebounceMs = 100
 
+    // 路由变化监听
+    private lastUrl: string = ''
+    private urlCheckInterval?: any
+
     constructor(options: SessionReplayOptions = {}) {
         this.options = {
             mode: options.mode ?? 'onError',
             sampleRate: options.sampleRate ?? 0.1,
             beforeErrorDuration: options.beforeErrorDuration ?? 60,
             afterErrorDuration: options.afterErrorDuration ?? 10,
-            checkoutEveryNms: options.checkoutEveryNms ?? 30000,
-            maxSegments: options.maxSegments ?? 3,
+            // 激进方案: 每 3 秒生成一次新快照,确保百分百能录到
+            checkoutEveryNms: options.checkoutEveryNms ?? 3000,
+            // 保留 20 个段 (60 秒历史)
+            maxSegments: options.maxSegments ?? 20,
             maskAllInputs: options.maskAllInputs ?? true,
             maskTextClass: options.maskTextClass ?? 'sky-monitor-mask',
             blockClass: options.blockClass ?? 'sky-monitor-block',
@@ -279,8 +285,8 @@ export class SessionReplayIntegration implements Integration {
                 },
 
                 // ========== 核心配置: checkoutEveryNms ==========
-                // 每隔 N 毫秒生成一次新的 FullSnapshot
-                // 确保 DOM 快照的新鲜度,解决 SPA 路由跳转等场景
+                // 激进方案: 每 3 秒生成一次新的 FullSnapshot
+                // 确保 DOM 快照的新鲜度,百分百能录到页面内容
                 checkoutEveryNms: this.options.checkoutEveryNms,
 
                 // 隐私保护配置
@@ -302,6 +308,7 @@ export class SessionReplayIntegration implements Integration {
             })
 
             this.startInitializationTimeout()
+            this.startUrlMonitoring()
         } catch (error) {
             this.isRecording = false
         }
@@ -328,6 +335,41 @@ export class SessionReplayIntegration implements Integration {
         if (this.initializationTimeout) {
             clearTimeout(this.initializationTimeout)
             this.initializationTimeout = undefined
+        }
+    }
+
+    /**
+     * 启动 URL 监听
+     * 检测 SPA 路由变化,手动触发 checkout 生成新快照
+     */
+    private startUrlMonitoring(): void {
+        if (typeof window === 'undefined') return
+
+        // 记录初始 URL
+        this.lastUrl = window.location.href
+
+        // 每 500ms 检查一次 URL 变化
+        this.urlCheckInterval = setInterval(() => {
+            const currentUrl = window.location.href
+            if (currentUrl !== this.lastUrl) {
+                this.lastUrl = currentUrl
+                // URL 变化时,创建新的事件段
+                this.eventsMatrix.push([])
+                // 清理过旧的段
+                if (this.eventsMatrix.length > this.options.maxSegments) {
+                    this.eventsMatrix.shift()
+                }
+            }
+        }, 500)
+    }
+
+    /**
+     * 停止 URL 监听
+     */
+    private stopUrlMonitoring(): void {
+        if (this.urlCheckInterval) {
+            clearInterval(this.urlCheckInterval)
+            this.urlCheckInterval = undefined
         }
     }
 
@@ -720,6 +762,9 @@ export class SessionReplayIntegration implements Integration {
 
         // 停止录制
         this.stopRecordingSession()
+
+        // 停止 URL 监听
+        this.stopUrlMonitoring()
 
         // 清理定时器
         if (this.errorTimer) {
