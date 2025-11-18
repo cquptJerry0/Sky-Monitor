@@ -295,6 +295,11 @@ export class SessionReplayIntegration implements Integration {
                 blockClass: this.options.blockClass,
                 ignoreClass: this.options.ignoreClass,
 
+                // 自定义输入脱敏配置 - 只脱敏密码字段
+                maskInputOptions: {
+                    password: true, // 脱敏 type="password" 的输入框
+                },
+
                 // 性能优化配置
                 sampling: {
                     mousemove: 50,

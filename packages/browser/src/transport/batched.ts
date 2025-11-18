@@ -6,6 +6,7 @@ import { BaseTransport, Transport, TransportCallbacks, getChinaTimestamp } from 
 export interface BatchedTransportOptions {
     batchSize?: number // 批次大小，默认20
     flushInterval?: number // 刷新间隔(ms)，默认5000
+    batchDelay?: number // 批次之间的延迟(ms)，默认1000
 }
 
 /**
@@ -17,6 +18,7 @@ export class BatchedTransport extends BaseTransport {
     private timer: number | null = null
     private readonly batchSize: number
     private readonly flushInterval: number
+    private readonly batchDelay: number
     private isFlushing: boolean = false
 
     constructor(
@@ -27,6 +29,7 @@ export class BatchedTransport extends BaseTransport {
         super(callbacks)
         this.batchSize = options.batchSize ?? 20
         this.flushInterval = options.flushInterval ?? 5000
+        this.batchDelay = options.batchDelay ?? 1000
 
         this.setupUnloadHandler()
     }
@@ -52,6 +55,7 @@ export class BatchedTransport extends BaseTransport {
 
     /**
      * 刷新队列（发送批量事件）
+     * 支持批次间延迟,避免瞬间发送大量请求
      */
     async flush(): Promise<void> {
         if (this.queue.length === 0) {
@@ -79,6 +83,11 @@ export class BatchedTransport extends BaseTransport {
                     })
 
                     this.triggerSuccess()
+
+                    // 如果还有更多批次要发送,等待 batchDelay 毫秒
+                    if (this.queue.length > 0) {
+                        await new Promise(resolve => setTimeout(resolve, this.batchDelay))
+                    }
                 } catch (error) {
                     // 失败时，将事件放回队列头部
                     this.queue = [...eventsToSend, ...this.queue]

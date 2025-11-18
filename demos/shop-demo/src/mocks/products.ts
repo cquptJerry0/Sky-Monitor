@@ -18,7 +18,7 @@ export const products: Product[] = [
         name: 'iPhone 15 Pro',
         price: 7999,
         originalPrice: 8999,
-        image: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=400&h=400&fit=crop',
+        image: 'https://images.unsplash.com/photsdasdasdasdo-169504hkhjkjh8133142-1a20484d2569?w=400&h=400&fit=crop',
         category: '手机',
         rating: 4.8,
         reviews: 1234,
