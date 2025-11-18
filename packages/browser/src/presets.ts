@@ -38,9 +38,23 @@ export interface MonitoringPresetOptions {
 
     // 采样配置
     sampling?: {
-        errorSampleRate?: number // 错误采样率,默认 1.0
-        performanceSampleRate?: number // 性能采样率,默认 1.0
-        webVitalSampleRate?: number // Web Vitals采样率,默认 1.0
+        // 错误类事件
+        errorSampleRate?: number // 错误事件采样率,默认 1.0
+        exceptionSampleRate?: number // 异常事件采样率,默认继承 errorSampleRate
+        unhandledrejectionSampleRate?: number // Promise 拒绝采样率,默认继承 errorSampleRate
+
+        // 性能类事件
+        performanceSampleRate?: number // 性能事件采样率,默认 0.3
+        webVitalSampleRate?: number // Web Vitals 采样率,默认继承 performanceSampleRate
+
+        // 用户行为类事件
+        breadcrumbSampleRate?: number // 面包屑采样率,默认 0.1
+        messageSampleRate?: number // 消息事件采样率,默认 1.0
+        transactionSampleRate?: number // 事务事件采样率,默认继承 performanceSampleRate
+        customSampleRate?: number // 自定义事件采样率,默认 0.5
+
+        // 默认采样率
+        defaultSampleRate?: number // 未配置事件类型的默认采样率,默认 1.0
     }
 
     // 传输配置
@@ -179,9 +193,23 @@ export function createMonitoringConfig(options: MonitoringPresetOptions) {
     // 11. SamplingIntegration - 采样
     integrations.push(
         new SamplingIntegration({
+            // 错误类事件
             errorSampleRate: sampling.errorSampleRate ?? 1.0,
+            exceptionSampleRate: sampling.exceptionSampleRate,
+            unhandledrejectionSampleRate: sampling.unhandledrejectionSampleRate,
+
+            // 性能类事件
             performanceSampleRate: sampling.performanceSampleRate ?? 1.0,
-            webVitalSampleRate: sampling.webVitalSampleRate ?? 1.0,
+            webVitalSampleRate: sampling.webVitalSampleRate,
+
+            // 用户行为类事件
+            breadcrumbSampleRate: sampling.breadcrumbSampleRate,
+            messageSampleRate: sampling.messageSampleRate,
+            transactionSampleRate: sampling.transactionSampleRate,
+            customSampleRate: sampling.customSampleRate,
+
+            // 默认采样率
+            defaultSampleRate: sampling.defaultSampleRate,
         })
     )
 

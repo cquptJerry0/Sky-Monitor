@@ -154,18 +154,23 @@ export function RRWebPlayer({
             }
 
             // 归一化时间戳: 将所有事件的时间戳转换为相对时间(从 0 开始)
-            const firstEventTime = events[0].timestamp
+            const firstEventTime = events[0]?.timestamp ?? 0
             const normalizedEvents = events.map(event => ({
                 ...event,
                 timestamp: event.timestamp - firstEventTime,
             }))
 
+            const firstEvent = events[0]
+            const lastEvent = events[events.length - 1]
+            const normalizedFirstEvent = normalizedEvents[0]
+            const normalizedLastEvent = normalizedEvents[normalizedEvents.length - 1]
+
             console.log('[RRWebPlayer] 时间戳归一化:', {
-                原始第一个事件时间: new Date(events[0].timestamp).toISOString(),
-                原始最后事件时间: new Date(events[events.length - 1].timestamp).toISOString(),
-                归一化第一个事件时间: normalizedEvents[0].timestamp,
-                归一化最后事件时间: normalizedEvents[normalizedEvents.length - 1].timestamp,
-                总时长ms: normalizedEvents[normalizedEvents.length - 1].timestamp,
+                原始第一个事件时间: firstEvent ? new Date(firstEvent.timestamp).toISOString() : 'N/A',
+                原始最后事件时间: lastEvent ? new Date(lastEvent.timestamp).toISOString() : 'N/A',
+                归一化第一个事件时间: normalizedFirstEvent?.timestamp ?? 0,
+                归一化最后事件时间: normalizedLastEvent?.timestamp ?? 0,
+                总时长ms: normalizedLastEvent?.timestamp ?? 0,
             })
 
             // 清理旧的播放器 DOM
