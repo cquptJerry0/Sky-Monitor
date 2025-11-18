@@ -16,16 +16,19 @@ export type CreateApplicationDto = z.infer<typeof createApplicationSchema>
 /**
  * 更新应用的数据传输对象
  */
-export const updateApplicationSchema = z
-    .object({
-        appId: z.string(),
-        name: z.string().optional(),
-        url: z.string().url({ message: '请输入有效的 URL 地址' }).optional().or(z.literal('')),
-        description: z.string().optional(),
-    })
-    .required()
+export const updateApplicationSchema = z.object({
+    appId: z.string(),
+    name: z.string().optional(),
+    url: z.string().url({ message: '请输入有效的 URL 地址' }).optional().or(z.literal('')),
+    description: z.string().optional(),
+})
 
-export type UpdateApplicationDto = z.infer<typeof updateApplicationSchema>
+export interface UpdateApplicationDto {
+    appId: string
+    name?: string
+    url?: string
+    description?: string
+}
 
 /**
  * 删除应用的数据传输对象
