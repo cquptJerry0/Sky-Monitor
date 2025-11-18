@@ -50,7 +50,6 @@ export interface MonitoringPresetOptions {
         // 用户行为类事件
         breadcrumbSampleRate?: number // 面包屑采样率,默认 0.1
         messageSampleRate?: number // 消息事件采样率,默认 1.0
-        transactionSampleRate?: number // 事务事件采样率,默认继承 performanceSampleRate
         customSampleRate?: number // 自定义事件采样率,默认 0.5
 
         // 默认采样率
@@ -205,7 +204,6 @@ export function createMonitoringConfig(options: MonitoringPresetOptions) {
             // 用户行为类事件
             breadcrumbSampleRate: sampling.breadcrumbSampleRate,
             messageSampleRate: sampling.messageSampleRate,
-            transactionSampleRate: sampling.transactionSampleRate,
             customSampleRate: sampling.customSampleRate,
 
             // 默认采样率

@@ -17,7 +17,6 @@ export interface SamplingConfig {
     // 用户行为类事件
     breadcrumbSampleRate?: number // 面包屑采样率，推荐 0.1 (10%)
     messageSampleRate?: number // 消息事件采样率，推荐 1.0 (100%)
-    transactionSampleRate?: number // 事务事件采样率，推荐 0.3 (30%)
     customSampleRate?: number // 自定义事件采样率，推荐 0.5 (50%)
 
     // 默认采样率（用于未配置的事件类型）
@@ -56,7 +55,6 @@ export class SamplingIntegration implements Integration {
             // 用户行为类事件
             breadcrumbSampleRate: config.breadcrumbSampleRate ?? 0.1,
             messageSampleRate: config.messageSampleRate ?? 1.0,
-            transactionSampleRate: config.transactionSampleRate ?? config.performanceSampleRate ?? 0.3,
             customSampleRate: config.customSampleRate ?? 0.5,
 
             // 默认采样率
@@ -125,8 +123,6 @@ export class SamplingIntegration implements Integration {
             // 用户行为类事件
             case 'message':
                 return this.normalizedConfig.messageSampleRate
-            case 'transaction':
-                return this.normalizedConfig.transactionSampleRate
             case 'custom':
                 return this.normalizedConfig.customSampleRate
 

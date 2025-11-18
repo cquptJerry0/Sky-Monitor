@@ -4,7 +4,7 @@
     "version": "0.0.0",
     "type": "module",
     "scripts": {
-        "start:dev": "vite",
+        "start:dev": "vite preview",
         "dev": "vite",
         "build": "tsc -b && vite build",
         "build:prod": "RELEASE_VERSION=v1.0.0-$(date +%s) tsc -b && vite build",

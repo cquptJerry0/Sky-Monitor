@@ -48,23 +48,22 @@ const config = createMonitoringConfig({
         enableLongTask: true,
     },
     sampling: {
-        // 错误类事件 (推荐 100%)
-        errorSampleRate: 1.0, // 错误事件采样率
-        exceptionSampleRate: 1.0, // 异常事件采样率
-        unhandledrejectionSampleRate: 1.0, // Promise 拒绝采样率
+        // 错误类事件 (100%)
+        errorSampleRate: 1.0,
+        exceptionSampleRate: 1.0,
+        unhandledrejectionSampleRate: 1.0,
 
-        // 性能类事件 (推荐 30%-50%)
-        performanceSampleRate: 0.3, // HTTP 性能事件采样率
-        webVitalSampleRate: 0.5, // Web Vitals 采样率
+        // 性能类事件 (30%-50%)
+        performanceSampleRate: 0.3,
+        webVitalSampleRate: 0.5,
 
         // 用户行为类事件
-        breadcrumbSampleRate: 0.1, // 面包屑采样率 (推荐 10%)
-        messageSampleRate: 1.0, // 消息事件采样率
-        transactionSampleRate: 0.3, // 事务事件采样率
-        customSampleRate: 0.5, // 自定义事件采样率
+        breadcrumbSampleRate: 0.1, // 面包屑数据量大,降低采样
+        messageSampleRate: 1.0,
+        customSampleRate: 1.0, // 自定义事件100%上报(用于测试)
 
-        // 默认采样率 (未配置的事件类型使用此值)
-        defaultSampleRate: 1.0, // 默认 100%
+        // 默认采样率
+        defaultSampleRate: 1.0,
     },
     transport: {
         batchSize: 20,
