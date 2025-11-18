@@ -137,6 +137,10 @@ export function RRWebPlayer({
      * ## 时长计算
      * duration = lastEvent.timestamp - firstEvent.timestamp
      * 所有时间都是相对于第一个事件的时间戳
+     *
+     * ## 时间戳归一化
+     * rrweb-player 的时间显示会使用事件的绝对时间戳,导致显示如 "09:04:48" 这样的时间
+     * 需要将所有事件的时间戳转换为相对时间(从 0 开始),这样播放器才会显示 "00:00" 开始的时间
      */
     useEffect(() => {
         if (!containerRef.current || events.length === 0) return
@@ -149,6 +153,21 @@ export function RRWebPlayer({
                 return
             }
 
+            // 归一化时间戳: 将所有事件的时间戳转换为相对时间(从 0 开始)
+            const firstEventTime = events[0].timestamp
+            const normalizedEvents = events.map(event => ({
+                ...event,
+                timestamp: event.timestamp - firstEventTime,
+            }))
+
+            console.log('[RRWebPlayer] 时间戳归一化:', {
+                原始第一个事件时间: new Date(events[0].timestamp).toISOString(),
+                原始最后事件时间: new Date(events[events.length - 1].timestamp).toISOString(),
+                归一化第一个事件时间: normalizedEvents[0].timestamp,
+                归一化最后事件时间: normalizedEvents[normalizedEvents.length - 1].timestamp,
+                总时长ms: normalizedEvents[normalizedEvents.length - 1].timestamp,
+            })
+
             // 清理旧的播放器 DOM
             if (containerRef.current) {
                 containerRef.current.innerHTML = ''
@@ -158,7 +177,7 @@ export function RRWebPlayer({
             const player = new rrwebPlayer({
                 target: containerRef.current,
                 props: {
-                    events: events as any, // rrweb 事件数组
+                    events: normalizedEvents as any, // 使用归一化后的事件数组
                     width: playerSize.width, // 播放器宽度
                     height: playerSize.height, // 播放器高度
                     autoPlay, // 是否自动播放
@@ -394,7 +413,15 @@ export function RRWebPlayer({
                                             </Badge>
                                             <span className="text-xs text-muted-foreground flex items-center gap-1">
                                                 <Clock className="h-3 w-3" />
-                                                {new Date(Number(error.timestamp)).toLocaleString()}
+                                                {(() => {
+                                                    const errorTime = Number(error.timestamp)
+                                                    const firstEvent = events[0]
+                                                    if (firstEvent) {
+                                                        const relativeTime = errorTime - firstEvent.timestamp
+                                                        return formatTime(relativeTime)
+                                                    }
+                                                    return '-'
+                                                })()}
                                             </span>
                                         </div>
                                         <p className="text-sm font-medium text-foreground">{error.message}</p>
@@ -405,6 +432,29 @@ export function RRWebPlayer({
                                                 {error.colno && `:${error.colno}`}
                                             </p>
                                         )}
+                                        {/* 错误时间轴 */}
+                                        <div className="mt-3">
+                                            <div className="relative h-2 rounded-full bg-muted">
+                                                {/* 进度条背景 */}
+                                                <div
+                                                    className="absolute top-0 left-0 h-2 rounded-full bg-primary/20"
+                                                    style={{
+                                                        width: `${getErrorPosition(error.timestamp)}%`,
+                                                    }}
+                                                />
+                                                {/* 错误标记点 */}
+                                                <div
+                                                    className="absolute top-0 h-2 w-2 rounded-full bg-destructive shadow-md"
+                                                    style={{
+                                                        left: `calc(${getErrorPosition(error.timestamp)}% - 4px)`,
+                                                    }}
+                                                />
+                                            </div>
+                                            <div className="flex justify-between mt-1 text-xs text-muted-foreground">
+                                                <span>00:00</span>
+                                                <span>{formatTime(duration)}</span>
+                                            </div>
+                                        </div>
                                     </div>
                                     <Button
                                         variant="default"

@@ -1,4 +1,4 @@
-import { Settings, Bug, Zap } from 'lucide-react'
+import { Settings, Bug, Zap, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Slider } from '@/components/ui/slider'
@@ -14,6 +14,7 @@ import {
     simulateCustomError,
 } from '@/utils/errorSimulator'
 import { simulateLongTask, simulateSlowAPI, measurePerformance } from '@/utils/performanceSimulator'
+import { captureEvent, captureMessage } from '@/sdk'
 
 export function SdkDebugPanel() {
     const {
@@ -32,28 +33,24 @@ export function SdkDebugPanel() {
     } = useSdkConfigStore()
 
     const handleTriggerError = (type: string) => {
-        try {
-            switch (type) {
-                case 'js':
-                    simulateJavaScriptError()
-                    break
-                case 'promise':
-                    simulatePromiseRejection()
-                    toast({ title: '已触发 Promise 拒绝' })
-                    break
-                case 'type':
-                    simulateTypeError()
-                    break
-                case 'network':
-                    simulateNetworkError()
-                    toast({ title: '已触发网络错误' })
-                    break
-                case 'custom':
-                    simulateCustomError()
-                    break
-            }
-        } catch (error) {
-            toast({ title: '错误已触发', description: (error as Error).message })
+        switch (type) {
+            case 'js':
+                simulateJavaScriptError()
+                break
+            case 'promise':
+                simulatePromiseRejection()
+                toast({ title: '已触发 Promise 拒绝' })
+                break
+            case 'type':
+                simulateTypeError()
+                break
+            case 'network':
+                simulateNetworkError()
+                toast({ title: '已触发网络错误' })
+                break
+            case 'custom':
+                simulateCustomError()
+                break
         }
     }
 
@@ -69,6 +66,39 @@ export function SdkDebugPanel() {
                 toast({ title: '慢速 API 调用完成' })
                 break
         }
+    }
+
+    const handleBatchTest = (type: string) => {
+        const count = 100
+        const startTime = performance.now()
+
+        switch (type) {
+            case 'custom-events':
+                for (let i = 0; i < count; i++) {
+                    captureEvent({
+                        type: 'custom',
+                        name: 'batch_test_event',
+                        message: `批量测试自定义事件 #${i + 1}`,
+                        extra: {
+                            index: i,
+                            timestamp: Date.now(),
+                            testData: `测试数据 ${i}`,
+                        },
+                    })
+                }
+                break
+            case 'messages':
+                for (let i = 0; i < count; i++) {
+                    captureMessage(`批量测试消息事件 #${i + 1}`)
+                }
+                break
+        }
+
+        const duration = performance.now() - startTime
+        toast({
+            title: '批量事件已发送',
+            description: `发送了 ${count} 个事件,耗时 ${duration.toFixed(2)}ms`,
+        })
     }
 
     return (
@@ -194,6 +224,22 @@ export function SdkDebugPanel() {
 
                     <Separator />
 
+                    <div>
+                        <h3 className="mb-3 text-sm font-medium">批量测试</h3>
+                        <div className="grid grid-cols-2 gap-2">
+                            <Button variant="outline" size="sm" onClick={() => handleBatchTest('custom-events')}>
+                                <Send className="mr-1 h-3 w-3" />
+                                100个自定义事件
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => handleBatchTest('messages')}>
+                                <Send className="mr-1 h-3 w-3" />
+                                100个消息事件
+                            </Button>
+                        </div>
+                    </div>
+
+                    <Separator />
+
                     <div className="rounded-lg bg-muted p-4 text-sm">
                         <p className="mb-2 font-medium">说明</p>
                         <ul className="space-y-1 text-muted-foreground">
@@ -201,6 +247,7 @@ export function SdkDebugPanel() {
                             <li>100% 表示所有事件都会上报</li>
                             <li>50% 表示随机上报一半的事件</li>
                             <li>配置会保存在本地存储中</li>
+                            <li>批量测试会发送100个事件测试批量上报</li>
                         </ul>
                     </div>
                 </div>

@@ -32,11 +32,8 @@ export function simulateSlowRender() {
 }
 
 export async function simulateSlowAPI(delay: number = 3000) {
-    return new Promise(resolve => {
-        setTimeout(() => {
-            resolve({ data: 'Slow API response' })
-        }, delay)
-    })
+    const response = await fetch(`https://httpbin.org/delay/${Math.ceil(delay / 1000)}`)
+    return response.json()
 }
 
 export function simulateLayoutThrashing() {

@@ -17,11 +17,7 @@ export function simulateReferenceError() {
 }
 
 export function simulateNetworkError() {
-    fetch('https://nonexistent-domain-12345.com/api/data')
-        .then(response => response.json())
-        .catch(error => {
-            console.error('Network error:', error)
-        })
+    fetch('https://nonexistent-domain-12345.com/api/data').then(response => response.json())
 }
 
 export function simulateResourceError() {

@@ -41,6 +41,7 @@ const config = createMonitoringConfig({
         enablePerformance: true,
         enableSession: true,
         enableResourceTiming: true,
+        enableLongTask: true,
     },
     sampling: {
         errorSampleRate: 1.0,

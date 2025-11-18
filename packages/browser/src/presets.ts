@@ -7,6 +7,7 @@ import { ResourceErrorIntegration } from './integrations/resourceErrorIntegratio
 import { PerformanceIntegration } from './tracing/performanceIntegration'
 import { SessionIntegration } from './integrations/session'
 import { ResourceTimingIntegration } from './integrations/resourceTiming'
+import { LongTaskIntegration } from './integrations/longTask'
 import { SamplingIntegration } from '@sky-monitor/monitor-sdk-core'
 import { DeduplicationIntegration } from '@sky-monitor/monitor-sdk-core'
 import type { Integration } from '@sky-monitor/monitor-sdk-core'
@@ -32,6 +33,7 @@ export interface MonitoringPresetOptions {
         enablePerformance?: boolean // 启用性能监控,默认 true
         enableSession?: boolean // 启用会话追踪,默认 true
         enableResourceTiming?: boolean // 启用资源性能,默认 true
+        enableLongTask?: boolean // 启用长任务监控,默认 true
     }
 
     // 采样配置
@@ -154,10 +156,27 @@ export function createMonitoringConfig(options: MonitoringPresetOptions) {
 
     // 9. ResourceTimingIntegration - 资源性能
     if (features.enableResourceTiming !== false) {
-        integrations.push(new ResourceTimingIntegration())
+        integrations.push(
+            new ResourceTimingIntegration({
+                enableObserver: true,
+                reportAllResources: false,
+                reportTiming: 'load',
+            })
+        )
     }
 
-    // 10. SamplingIntegration - 采样
+    // 10. LongTaskIntegration - 长任务监控
+    if (features.enableLongTask !== false) {
+        integrations.push(
+            new LongTaskIntegration({
+                threshold: 50,
+                reportAllTasks: true,
+                includeAttribution: true,
+            })
+        )
+    }
+
+    // 11. SamplingIntegration - 采样
     integrations.push(
         new SamplingIntegration({
             errorSampleRate: sampling.errorSampleRate ?? 1.0,
@@ -166,7 +185,7 @@ export function createMonitoringConfig(options: MonitoringPresetOptions) {
         })
     )
 
-    // 11. DeduplicationIntegration - 去重(必须放在最后)
+    // 12. DeduplicationIntegration - 去重(必须放在最后)
     integrations.push(
         new DeduplicationIntegration({
             timeWindow: 60000,
