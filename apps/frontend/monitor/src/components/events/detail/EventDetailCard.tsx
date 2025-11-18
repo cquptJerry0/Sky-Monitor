@@ -131,7 +131,7 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
                                 events={replayDetail.events}
                                 relatedErrors={replayDetail.relatedErrors}
                                 autoPlay={false}
-                                showController={true}
+                                showController={false}
                             />
                         )}
                     </CardContent>

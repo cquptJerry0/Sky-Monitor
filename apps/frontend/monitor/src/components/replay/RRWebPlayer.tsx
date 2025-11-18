@@ -80,15 +80,37 @@ export function RRWebPlayer({
             return { valid: false, message: 'Replay 数据不完整 (事件数量过少)' }
         }
 
+        // 统计事件类型分布
+        const eventTypeCount = events.reduce(
+            (acc, e) => {
+                acc[e.type] = (acc[e.type] || 0) + 1
+                return acc
+            },
+            {} as Record<number, number>
+        )
+
+        // 详细日志
+        console.log('[RRWebPlayer] 事件验证:', {
+            总事件数: events.length,
+            事件类型分布: eventTypeCount,
+            前5个事件类型: events.slice(0, 5).map(e => ({ type: e.type, timestamp: e.timestamp })),
+            时间戳范围: {
+                第一个: events[0]?.timestamp,
+                最后一个: events[events.length - 1]?.timestamp,
+            },
+        })
+
         // 检查是否有 Meta 事件 (type: 4)
         const hasMeta = events.some(e => e.type === 4)
         if (!hasMeta) {
+            console.error('[RRWebPlayer] 缺少 Meta 事件 (type=4)')
             return { valid: false, message: 'Replay 数据缺少 Meta 事件 (type: 4)' }
         }
 
         // 检查是否有 FullSnapshot 事件 (type: 2)
         const hasFullSnapshot = events.some(e => e.type === 2)
         if (!hasFullSnapshot) {
+            console.error('[RRWebPlayer] 缺少 FullSnapshot 事件 (type=2)')
             return { valid: false, message: 'Replay 数据缺少 FullSnapshot 事件 (type: 2)' }
         }
 
@@ -145,6 +167,17 @@ export function RRWebPlayer({
     useEffect(() => {
         if (!containerRef.current || events.length === 0) return
 
+        // 调试: 输出 relatedErrors
+        console.log('[RRWebPlayer] useEffect - relatedErrors:', {
+            错误数量: relatedErrors.length,
+            错误列表: relatedErrors.map(e => ({
+                id: e.id,
+                message: e.message,
+                timestamp: e.timestamp,
+                timestampType: typeof e.timestamp,
+            })),
+        })
+
         try {
             // 验证 rrweb 事件
             const validation = validateEvents(events)
@@ -168,9 +201,12 @@ export function RRWebPlayer({
             console.log('[RRWebPlayer] 时间戳归一化:', {
                 原始第一个事件时间: firstEvent ? new Date(firstEvent.timestamp).toISOString() : 'N/A',
                 原始最后事件时间: lastEvent ? new Date(lastEvent.timestamp).toISOString() : 'N/A',
+                原始第一个事件时间戳: firstEvent?.timestamp,
+                原始最后事件时间戳: lastEvent?.timestamp,
                 归一化第一个事件时间: normalizedFirstEvent?.timestamp ?? 0,
                 归一化最后事件时间: normalizedLastEvent?.timestamp ?? 0,
                 总时长ms: normalizedLastEvent?.timestamp ?? 0,
+                总时长格式化: formatTime(normalizedLastEvent?.timestamp ?? 0),
             })
 
             // 清理旧的播放器 DOM
@@ -314,6 +350,16 @@ export function RRWebPlayer({
         const errorTime = Number(errorTimestamp)
         const startTime = firstEvent.timestamp
         const relativeTime = errorTime - startTime
+
+        // 调试日志
+        console.log('[RRWebPlayer] 计算错误位置:', {
+            错误时间戳: errorTimestamp,
+            错误时间: errorTime,
+            会话开始时间: startTime,
+            相对时间ms: relativeTime,
+            会话总时长ms: duration,
+            位置百分比: ((relativeTime / duration) * 100).toFixed(2) + '%',
+        })
 
         // 确保位置在 0-100 之间
         const position = (relativeTime / duration) * 100
