@@ -189,6 +189,7 @@ export function WidgetBuilder({ dashboardId, open, onOpenChange, editingWidget }
                                     <SelectItem value="line">折线图</SelectItem>
                                     <SelectItem value="bar">柱状图</SelectItem>
                                     <SelectItem value="area">面积图</SelectItem>
+                                    <SelectItem value="radar">雷达图</SelectItem>
                                     <SelectItem value="table">表格</SelectItem>
                                     <SelectItem value="big_number">大数字</SelectItem>
                                 </SelectContent>

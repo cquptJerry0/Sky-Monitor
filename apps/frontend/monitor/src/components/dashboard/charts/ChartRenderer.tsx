@@ -38,6 +38,8 @@ export function ChartRenderer({ widgetType, data }: ChartRendererProps) {
             return <TableChartWidget data={data} />
         case 'big_number':
             return <BigNumberWidget data={data} />
+        case 'radar':
+            return <RadarChartWidget data={data} />
         default:
             return <div className="text-muted-foreground">不支持的图表类型: {widgetType}</div>
     }
@@ -79,6 +81,8 @@ export function getChartIcon(widgetType: WidgetType) {
             return TableIcon
         case 'big_number':
             return HashIcon
+        case 'radar':
+            return RadarIcon
         default:
             return LineChartIcon
     }

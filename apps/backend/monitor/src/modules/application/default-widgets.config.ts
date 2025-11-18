@@ -147,7 +147,7 @@ export function generateDefaultWidgets(_dashboardId: string, appId: string): Omi
             layout: { x: 0, y: 3, w: 12, h: 6 },
         },
 
-        // 第三行: 错误趋势 + 浏览器分布
+        // 第三行: 错误趋势 + 错误类型雷达图
         {
             title: '错误趋势',
             widgetType: 'area',
@@ -171,19 +171,19 @@ export function generateDefaultWidgets(_dashboardId: string, appId: string): Omi
             layout: { x: 0, y: 9, w: 6, h: 5 },
         },
         {
-            title: '浏览器分布',
-            widgetType: 'bar',
+            title: '错误类型分布',
+            widgetType: 'radar',
             queries: [
                 {
-                    id: 'browser-distribution',
-                    fields: ['device_browser', 'count() as count'],
+                    id: 'error-type-distribution',
+                    fields: ['event_type', 'count() as count'],
                     conditions: [
                         { field: 'app_id', operator: '=', value: appId },
-                        { field: 'device_browser', operator: '!=', value: '' },
+                        { field: 'event_type', operator: 'IN', value: ['error', 'exception', 'unhandledrejection'] },
                     ],
-                    groupBy: ['device_browser'],
+                    groupBy: ['event_type'],
                     orderBy: [{ field: 'count()', direction: 'DESC' }],
-                    limit: 10,
+                    limit: 5,
                 },
             ],
             displayConfig: {

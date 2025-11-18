@@ -1,4 +1,4 @@
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from 'recharts'
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Legend } from 'recharts'
 
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 import type { ExecuteQueryResponse } from '@/types/dashboard'
@@ -31,6 +31,7 @@ export function RadarChartWidget({ data }: RadarChartWidgetProps) {
                 <PolarRadiusAxis angle={90} tick={{ fill: '#94a3b8', fontSize: 10 }} />
                 <Radar name="错误数量" dataKey="value" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.5} strokeWidth={2} />
                 <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                <Legend />
             </RadarChart>
         </ChartContainer>
     )

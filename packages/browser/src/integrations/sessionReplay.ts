@@ -302,19 +302,8 @@ export class SessionReplayIntegration implements Integration {
 
                 // 性能优化配置
                 sampling: {
-                    mousemove: 50, // 鼠标移动采样间隔(ms)
-                    // 启用所有鼠标交互录制
-                    mouseInteraction: {
-                        MouseUp: true,
-                        MouseDown: true,
-                        Click: true,
-                        ContextMenu: true,
-                        DblClick: true,
-                        Focus: true,
-                        Blur: true,
-                        TouchStart: true,
-                        TouchEnd: true,
-                    },
+                    mousemove: true, // 录制所有鼠标移动,确保轨迹流畅
+                    mouseInteraction: true, // 录制所有鼠标交互
                     scroll: 150, // 滚动采样间隔(ms)
                     input: 'last', // 只记录最后的输入值
                 },
