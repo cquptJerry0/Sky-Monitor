@@ -179,7 +179,11 @@ export function generateDefaultWidgets(_dashboardId: string, appId: string): Omi
                     fields: ['event_type', 'count() as count'],
                     conditions: [
                         { field: 'app_id', operator: '=', value: appId },
-                        { field: 'event_type', operator: 'IN', value: ['error', 'exception', 'unhandledrejection'] },
+                        {
+                            field: 'event_type',
+                            operator: 'IN',
+                            value: ['error', 'exception', 'unhandledrejection', 'network', 'timeout'],
+                        },
                     ],
                     groupBy: ['event_type'],
                     orderBy: [{ field: 'count()', direction: 'DESC' }],
