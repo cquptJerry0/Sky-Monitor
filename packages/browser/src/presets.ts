@@ -94,7 +94,7 @@ export function createMonitoringConfig(options: MonitoringPresetOptions) {
                 // 激进方案: 每 3 秒生成新快照 + 路由变化监听
                 checkoutEveryNms: 3000,
                 maxSegments: 20,
-                maskAllInputs: true,
+                maskAllInputs: false, // 不脱敏所有输入框
             })
         )
     }

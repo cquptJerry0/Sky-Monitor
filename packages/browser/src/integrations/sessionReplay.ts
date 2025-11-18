@@ -298,7 +298,7 @@ export class SessionReplayIntegration implements Integration {
                 // 性能优化配置
                 sampling: {
                     mousemove: 50,
-                    mouseInteraction: false,
+                    mouseInteraction: true, // 启用鼠标点击等交互录制
                     scroll: 150,
                     input: 'last',
                 },
@@ -611,28 +611,25 @@ export class SessionReplayIntegration implements Integration {
         }
 
         // ========== 合并最近的事件段 ==========
+        // 计算需要合并多少个段才能覆盖 beforeErrorDuration
+        // 例如: beforeErrorDuration=60秒, checkoutEveryNms=3秒, 需要 60/3=20 个段
+        const segmentsNeeded = Math.ceil((this.options.beforeErrorDuration * 1000) / this.options.checkoutEveryNms)
+
+        // 合并最近 N 个段 (至少合并所有段)
+        const segmentsToMerge = Math.min(segmentsNeeded, this.eventsMatrix.length)
+        const startIndex = Math.max(0, this.eventsMatrix.length - segmentsToMerge)
+
         let eventsToSend: eventWithTime[] = []
-
-        if (this.eventsMatrix.length === 1) {
-            // 只有一个段,直接使用
-            const segment = this.eventsMatrix[0]
-            if (!segment) {
-                console.error('[SessionReplay] 事件段为空')
-                return
+        for (let i = startIndex; i < this.eventsMatrix.length; i++) {
+            const segment = this.eventsMatrix[i]
+            if (segment) {
+                eventsToSend = eventsToSend.concat(segment)
             }
-            eventsToSend = segment
-        } else {
-            // 多个段,合并最近的两个段
-            const len = this.eventsMatrix.length
-            const segment1 = this.eventsMatrix[len - 2]
-            const segment2 = this.eventsMatrix[len - 1]
+        }
 
-            if (!segment1 || !segment2) {
-                console.error('[SessionReplay] 事件段不存在')
-                return
-            }
-
-            eventsToSend = segment1.concat(segment2)
+        if (eventsToSend.length === 0) {
+            console.error('[SessionReplay] 没有事件可上报')
+            return
         }
 
         // ========== 验证事件链完整性 ==========
@@ -683,16 +680,6 @@ export class SessionReplayIntegration implements Integration {
 
         const duration = this.calculateDuration(filteredEvents)
         const eventCount = filteredEvents.length
-
-        console.warn('[SessionReplay] 准备上报事件', {
-            replayId: this.currentReplayId,
-            totalSegments: this.eventsMatrix.length,
-            mergedEvents: eventsToSend.length,
-            filteredEvents: eventCount,
-            duration,
-            timeRange: `${new Date(startTime).toISOString()} ~ ${new Date(errorTime).toISOString()}`,
-            first3Types: filteredEvents.slice(0, 3).map(e => e.type),
-        })
 
         /**
          * 上报录制数据
