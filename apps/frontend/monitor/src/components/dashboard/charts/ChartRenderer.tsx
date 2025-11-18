@@ -1,10 +1,12 @@
-import { AreaChartIcon, BarChartIcon, HashIcon, LineChartIcon, TableIcon } from 'lucide-react'
+import { AreaChartIcon, BarChartIcon, HashIcon, LineChartIcon, TableIcon, RadarIcon } from 'lucide-react'
 
 import { AreaChartWidget } from './AreaChartWidget'
 import { BarChartWidget } from './BarChartWidget'
 import { BigNumberWidget } from './BigNumberWidget'
 import { LineChartWidget } from './LineChartWidget'
+import { RadarChartWidget } from './RadarChartWidget'
 import { TableChartWidget } from './TableChartWidget'
+import { WebVitalsChartWidget } from './WebVitalsChartWidget'
 import type { ExecuteQueryResponse, WidgetType } from '@/types/dashboard'
 
 interface ChartRendererProps {
@@ -17,9 +19,16 @@ interface ChartRendererProps {
  * 根据 widgetType 渲染不同的图表类型
  */
 export function ChartRenderer({ widgetType, data }: ChartRendererProps) {
+    // 检查是否是 Web Vitals 图表
+    const isWebVitals = isWebVitalsChart(data)
+
     // 根据 widgetType 渲染不同的图表
     switch (widgetType) {
         case 'line':
+            // 如果是 Web Vitals 数据,使用专用图表
+            if (isWebVitals) {
+                return <WebVitalsChartWidget data={data} />
+            }
             return <LineChartWidget data={data} />
         case 'bar':
             return <BarChartWidget data={data} />
@@ -32,6 +41,27 @@ export function ChartRenderer({ widgetType, data }: ChartRendererProps) {
         default:
             return <div className="text-muted-foreground">不支持的图表类型: {widgetType}</div>
     }
+}
+
+/**
+ * 判断是否是 Web Vitals 图表
+ * 通过检查 title 或 legend 中是否包含 Web Vitals 相关关键词
+ */
+function isWebVitalsChart(data: ExecuteQueryResponse): boolean {
+    // 检查标题
+    if (data.title?.toLowerCase().includes('web vitals')) {
+        return true
+    }
+
+    // 检查是否有多个 Web Vitals 指标
+    const webVitalsKeywords = ['lcp', 'fcp', 'ttfb', 'inp', 'fid', 'cls']
+    const matchCount = data.results.filter(result => {
+        const legend = result.legend?.toLowerCase() || ''
+        return webVitalsKeywords.some(keyword => legend.includes(keyword))
+    }).length
+
+    // 如果有 2 个或以上的 Web Vitals 指标,认为是 Web Vitals 图表
+    return matchCount >= 2
 }
 
 /**

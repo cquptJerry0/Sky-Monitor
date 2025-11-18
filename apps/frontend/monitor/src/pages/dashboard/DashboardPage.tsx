@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { DashboardGrid, TimeRangePicker, WidgetBuilder } from '@/components/dashboard'
+import { EmptyAppState } from '@/components/empty'
 import type { DashboardWidget } from '@/types/dashboard'
 import { Button } from '@/components/ui/button'
 import {
@@ -176,15 +177,15 @@ export default function DashboardPage() {
     // 如果没有应用或当前应用无效,引导用户去创建应用
     if (applications.length === 0 || !currentAppExists) {
         return (
-            <div className="flex flex-col items-center justify-center h-96 space-y-4">
-                <div className="text-center space-y-2">
-                    <h2 className="text-2xl font-bold">暂无监控面板</h2>
-                    <p className="text-muted-foreground">请先创建一个应用,系统会自动为您生成默认监控面板</p>
+            <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold">监控面板</h1>
+                        <p className="mt-1 text-muted-foreground">查看应用监控数据</p>
+                    </div>
                 </div>
-                <Button onClick={() => navigate(ROUTES.PROJECTS)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    创建应用
-                </Button>
+
+                <EmptyAppState title="暂无监控面板" description="请先创建一个应用,系统会自动为您生成默认监控面板。" />
             </div>
         )
     }

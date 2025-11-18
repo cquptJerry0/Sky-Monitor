@@ -18,11 +18,12 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { Card, CardContent } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
 import { useApplications, useCreateApplication, useUpdateApplication, useDeleteApplication } from '@/hooks/useApplicationQuery'
 import { useAppStore } from '@/stores/app.store'
 import { ROUTES } from '@/utils/constants'
-import { Plus, Trash2, Loader2, Copy, ExternalLink, Pencil, ShoppingCart, Code } from 'lucide-react'
+import { Plus, Trash2, Loader2, Copy, ExternalLink, Pencil, ShoppingCart, Code, Inbox } from 'lucide-react'
 import type { Application, ApplicationType } from '@/api/types'
 import { FaReact, FaVuejs } from 'react-icons/fa'
 import { SiJavascript } from 'react-icons/si'
@@ -450,13 +451,19 @@ export default function ProjectsPage() {
 
             {/* 应用列表 */}
             {applications.length === 0 ? (
-                <div className="text-center py-12 bg-secondary border border-border rounded-lg">
-                    <p className="text-muted-foreground mb-4">还没有应用，创建一个开始监控吧</p>
-                    <Button onClick={() => setIsCreateDialogOpen(true)}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        创建第一个应用
-                    </Button>
-                </div>
+                <Card>
+                    <CardContent className="py-16">
+                        <div className="flex flex-col items-center justify-center text-center">
+                            <Inbox className="h-16 w-16 text-muted-foreground mb-4" />
+                            <h3 className="text-lg font-semibold mb-2">还没有应用</h3>
+                            <p className="text-muted-foreground mb-6 max-w-md">创建一个应用开始监控你的前端应用性能和错误。</p>
+                            <Button onClick={() => setIsCreateDialogOpen(true)}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                创建第应用
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {applications.map(app => {

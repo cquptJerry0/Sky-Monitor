@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { EventFilters, EventListRow, EventListSkeleton, EventStats } from '@/components/events'
+import { EmptyAppState } from '@/components/empty'
 import type { EventFiltersState } from '@/components/events'
 import { PAGINATION, ROUTES } from '@/utils/constants'
-import { AlertCircle, RefreshCw, Plus, Inbox } from 'lucide-react'
+import { AlertCircle, RefreshCw } from 'lucide-react'
 import type { Event } from '@/api/types'
 
 export default function EventsPage() {
@@ -98,21 +99,7 @@ export default function EventsPage() {
                     </div>
                 </div>
 
-                <Card>
-                    <CardContent className="py-16">
-                        <div className="flex flex-col items-center justify-center text-center">
-                            <Inbox className="h-16 w-16 text-muted-foreground mb-4" />
-                            <h3 className="text-lg font-semibold mb-2">请先选择应用</h3>
-                            <p className="text-muted-foreground mb-6 max-w-md">
-                                你需要先选择一个应用才能查看事件数据。请在顶部导航栏选择应用,或创建一个新应用。
-                            </p>
-                            <Button onClick={() => navigate(ROUTES.APPLICATIONS)}>
-                                <Plus className="mr-2 h-4 w-4" />
-                                创建应用
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
+                <EmptyAppState />
             </div>
         )
     }

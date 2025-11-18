@@ -20,10 +20,23 @@ function getTimeGroupFunction(granularity: 'minute' | 'hour' | 'day' = 'hour'): 
 /**
  * 生成 app_id 条件
  */
-function getAppIdConditions(appId: string | string[]) {
-    if (Array.isArray(appId)) {
-        return appId.map(id => ({ field: 'app_id', operator: '=' as const, value: id }))
+function getAppIdConditions(appId?: string | string[]) {
+    if (!appId) {
+        return []
     }
+
+    if (Array.isArray(appId)) {
+        const validIds = appId.filter(id => id && id.trim() !== '')
+        if (validIds.length === 0) {
+            return []
+        }
+        return validIds.map(id => ({ field: 'app_id', operator: '=' as const, value: id }))
+    }
+
+    if (appId.trim() === '') {
+        return []
+    }
+
     return [{ field: 'app_id', operator: '=' as const, value: appId }]
 }
 

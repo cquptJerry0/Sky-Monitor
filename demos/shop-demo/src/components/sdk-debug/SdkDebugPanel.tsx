@@ -141,33 +141,6 @@ export function SdkDebugPanel() {
 
                 <div className="mt-6 space-y-6">
                     <div>
-                        <div className="flex items-center justify-between">
-                            <label className="text-sm font-medium">错误监控</label>
-                            <Switch checked={enableErrorMonitoring} onCheckedChange={setEnableErrorMonitoring} />
-                        </div>
-                    </div>
-
-                    <Separator />
-
-                    <div>
-                        <div className="flex items-center justify-between">
-                            <label className="text-sm font-medium">性能监控</label>
-                            <Switch checked={enablePerformanceMonitoring} onCheckedChange={setEnablePerformanceMonitoring} />
-                        </div>
-                    </div>
-
-                    <Separator />
-
-                    <div>
-                        <div className="flex items-center justify-between">
-                            <label className="text-sm font-medium">Session Replay</label>
-                            <Switch checked={enableSessionReplay} onCheckedChange={setEnableSessionReplay} />
-                        </div>
-                    </div>
-
-                    <Separator />
-
-                    <div>
                         <h3 className="mb-3 text-sm font-medium">错误模拟</h3>
                         <div className="grid grid-cols-2 gap-2">
                             <Button variant="outline" size="sm" onClick={() => handleTriggerError('js')}>
