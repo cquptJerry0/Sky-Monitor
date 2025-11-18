@@ -182,7 +182,7 @@ export function generateDefaultWidgets(_dashboardId: string, appId: string): Omi
                         {
                             field: 'event_type',
                             operator: 'IN',
-                            value: ['error', 'exception', 'unhandledrejection', 'network', 'timeout'],
+                            value: ['error', 'unhandledrejection', 'httpError', 'resourceError'],
                         },
                     ],
                     groupBy: ['event_type'],

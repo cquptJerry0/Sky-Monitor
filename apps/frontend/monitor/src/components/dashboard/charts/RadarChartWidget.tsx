@@ -71,10 +71,9 @@ function transformData(data: ExecuteQueryResponse): TransformedData[] {
 
     const errorTypeMap: Record<string, string> = {
         error: 'JS Error',
-        exception: 'Exception',
-        unhandledrejection: 'Promise',
-        network: 'Network',
-        timeout: 'Timeout',
+        unhandledrejection: 'Promise Rejection',
+        httpError: 'HTTP Error',
+        resourceError: 'Resource Error',
     }
 
     const items = result.data
