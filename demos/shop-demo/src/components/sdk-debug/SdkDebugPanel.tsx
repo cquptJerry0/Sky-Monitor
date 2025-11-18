@@ -111,7 +111,10 @@ export function SdkDebugPanel() {
                 break
             case 'messages':
                 for (let i = 0; i < count; i++) {
-                    captureMessage(`批量测试消息事件 [批次${batchId}] #${i + 1}`) // 唯一消息避免去重
+                    // 在消息中加入时间戳和随机数,避免被去重
+                    // DeduplicationIntegration 的 normalizeMessage 不会标准化纯数字
+                    const uniqueId = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
+                    captureMessage(`批量测试消息事件 [批次${batchId}] #${i + 1} [${uniqueId}]`)
                 }
                 break
         }

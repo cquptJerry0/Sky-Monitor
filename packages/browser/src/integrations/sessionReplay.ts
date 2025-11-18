@@ -302,10 +302,21 @@ export class SessionReplayIntegration implements Integration {
 
                 // 性能优化配置
                 sampling: {
-                    mousemove: 50,
-                    mouseInteraction: true, // 启用鼠标点击等交互录制
-                    scroll: 150,
-                    input: 'last',
+                    mousemove: 50, // 鼠标移动采样间隔(ms)
+                    // 启用所有鼠标交互录制
+                    mouseInteraction: {
+                        MouseUp: true,
+                        MouseDown: true,
+                        Click: true,
+                        ContextMenu: true,
+                        DblClick: true,
+                        Focus: true,
+                        Blur: true,
+                        TouchStart: true,
+                        TouchEnd: true,
+                    },
+                    scroll: 150, // 滚动采样间隔(ms)
+                    input: 'last', // 只记录最后的输入值
                 },
 
                 recordCanvas: this.options.recordCanvas,
