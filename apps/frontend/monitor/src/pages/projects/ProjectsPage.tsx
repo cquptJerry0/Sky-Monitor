@@ -22,7 +22,7 @@ import { useToast } from '@/hooks/use-toast'
 import { useApplications, useCreateApplication, useDeleteApplication } from '@/hooks/useApplicationQuery'
 import { useAppStore } from '@/stores/app.store'
 import { ROUTES } from '@/utils/constants'
-import { Plus, Trash2, Loader2, Copy } from 'lucide-react'
+import { Plus, Trash2, Loader2, Copy, ExternalLink, TestTube2 } from 'lucide-react'
 import type { Application, ApplicationType } from '@/api/types'
 import { FaReact, FaVuejs } from 'react-icons/fa'
 import { SiJavascript } from 'react-icons/si'
@@ -67,6 +67,7 @@ export default function ProjectsPage() {
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
     const [newAppName, setNewAppName] = useState('')
     const [newAppType, setNewAppType] = useState<ApplicationType>('react')
+    const [newAppUrl, setNewAppUrl] = useState('')
     const [showDeleteDialog, setShowDeleteDialog] = useState(false)
     const [deleteTarget, setDeleteTarget] = useState<Application | null>(null)
 
@@ -90,6 +91,7 @@ export default function ProjectsPage() {
             const result = await createMutation.mutateAsync({
                 name: newAppName,
                 type: newAppType,
+                url: newAppUrl.trim() || undefined,
             })
 
             toast({
@@ -100,6 +102,7 @@ export default function ProjectsPage() {
             setIsCreateDialogOpen(false)
             setNewAppName('')
             setNewAppType('react')
+            setNewAppUrl('')
             refetch()
         } catch (error) {
             console.error('[创建应用] 创建失败', error)
@@ -167,6 +170,19 @@ export default function ProjectsPage() {
             title: '已复制',
             description: 'AppId 已复制到剪贴板',
         })
+    }
+
+    // 快速测试
+    const handleQuickTest = (appId: string, e: React.MouseEvent) => {
+        e.stopPropagation()
+        const demoUrl = `http://localhost:5433?appId=${appId}`
+        window.open(demoUrl, '_blank')
+    }
+
+    // 访问应用
+    const handleVisitApp = (url: string, e: React.MouseEvent) => {
+        e.stopPropagation()
+        window.open(url, '_blank')
     }
 
     if (isLoading) {
@@ -255,6 +271,21 @@ export default function ProjectsPage() {
                                 </div>
                             </div>
 
+                            {/* 应用 URL */}
+                            <div className="space-y-2">
+                                <Label htmlFor="app-url" className="text-foreground">
+                                    应用 URL (可选)
+                                </Label>
+                                <Input
+                                    id="app-url"
+                                    value={newAppUrl}
+                                    onChange={e => setNewAppUrl(e.target.value)}
+                                    placeholder="https://example.com"
+                                    className="bg-background border-input text-foreground"
+                                />
+                                <p className="text-xs text-muted-foreground">填写应用访问地址,方便快速跳转</p>
+                            </div>
+
                             {/* 创建按钮 */}
                             <Button onClick={handleCreateApp} disabled={createMutation.isPending} className="w-full">
                                 {createMutation.isPending ? (
@@ -322,7 +353,20 @@ export default function ProjectsPage() {
                                     </Button>
                                 </div>
 
-                                <div className="flex items-center gap-2">
+                                {/* 应用 URL */}
+                                {app.url && (
+                                    <div className="mb-3">
+                                        <button
+                                            onClick={e => handleVisitApp(app.url!, e)}
+                                            className="text-sm text-primary hover:underline flex items-center gap-1"
+                                        >
+                                            <ExternalLink className="h-3 w-3" />
+                                            {app.url}
+                                        </button>
+                                    </div>
+                                )}
+
+                                <div className="flex items-center gap-2 mb-3">
                                     <span className="px-2 py-1 text-xs bg-secondary border border-border rounded text-muted-foreground flex items-center gap-1.5">
                                         <TypeIcon className="h-3.5 w-3.5" style={{ color: typeColor }} />
                                         {typeLabel}
@@ -330,6 +374,25 @@ export default function ProjectsPage() {
                                     <span className="text-xs text-muted-foreground">
                                         创建于 {format(new Date(app.createdAt), 'yyyy/MM/dd', { locale: zhCN })}
                                     </span>
+                                </div>
+
+                                {/* 操作按钮 */}
+                                <div className="flex gap-2 pt-3 border-t border-border">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={e => {
+                                            e.stopPropagation()
+                                            handleSelectApp(app)
+                                        }}
+                                        className="flex-1"
+                                    >
+                                        查看监控
+                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={e => handleQuickTest(app.appId, e)} className="flex-1">
+                                        <TestTube2 className="h-3.5 w-3.5 mr-1" />
+                                        快速测试
+                                    </Button>
                                 </div>
                             </div>
                         )

@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS application (
     type VARCHAR(20) NOT NULL CHECK (type IN ('vanilla', 'react', 'vue')),
     name VARCHAR(255) NOT NULL,
     description TEXT,
+    url VARCHAR(500),
     "userId" INTEGER NOT NULL,
     "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP,
