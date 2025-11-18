@@ -254,6 +254,15 @@ export class BreadcrumbIntegration implements Integration {
     }
 
     /**
+     * 判断是否是 SDK 自己的请求
+     * 防止记录 SDK 上报请求的面包屑,导致噪音
+     */
+    private isSdkRequest(url: string): boolean {
+        const sdkEndpoints = ['/api/monitoring/', '/batch', '/critical', '/replay', '/session']
+        return sdkEndpoints.some(endpoint => url.includes(endpoint))
+    }
+
+    /**
      * 监听 Fetch 请求
      *
      * 拦截 fetch 方法
@@ -264,11 +273,17 @@ export class BreadcrumbIntegration implements Integration {
 
         this.originalFetch = window.fetch
         const originalFetch = this.originalFetch
+        const isSdkRequest = this.isSdkRequest.bind(this)
 
         window.fetch = function (...args: Parameters<typeof fetch>): Promise<Response> {
             const startTime = Date.now()
             const url = typeof args[0] === 'string' ? args[0] : args[0] instanceof Request ? args[0].url : String(args[0])
             const method = (args[1]?.method || 'GET').toUpperCase()
+
+            // 过滤 SDK 自己的请求
+            if (isSdkRequest(url)) {
+                return originalFetch(...args)
+            }
 
             return originalFetch(...args)
                 .then((response: Response) => {
@@ -402,6 +417,7 @@ export class BreadcrumbIntegration implements Integration {
 
         const originalXHROpen = this.originalXHROpen
         const originalXHRSend = this.originalXHRSend
+        const isSdkRequest = this.isSdkRequest.bind(this)
 
         /**
          * 拦截 open 方法
@@ -433,6 +449,11 @@ export class BreadcrumbIntegration implements Integration {
             const breadcrumbData = xhr.__breadcrumb__
 
             if (breadcrumbData) {
+                // 过滤 SDK 自己的请求
+                if (isSdkRequest(breadcrumbData.url)) {
+                    return originalXHRSend.call(this, body)
+                }
+
                 /**
                  * 监听请求完成
                  * 记录请求结果
