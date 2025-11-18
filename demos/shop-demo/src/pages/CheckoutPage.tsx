@@ -43,28 +43,27 @@ export function CheckoutPage() {
         try {
             const order = await createOrder(items, formData)
 
-            const paymentResult = await payOrder(order.id)
+            // 支付失败会抛出错误,让 SDK 捕获
+            await payOrder(order.id)
 
-            if (paymentResult.success) {
-                toast({
-                    title: '支付成功',
-                    description: `订单号: ${order.id}`,
-                })
-                clearCart()
-                navigate('/')
-            } else {
-                toast({
-                    title: '支付失败',
-                    description: paymentResult.message || '请重试',
-                    variant: 'destructive',
-                })
-            }
-        } catch (error) {
+            // 支付成功
             toast({
-                title: '订单创建失败',
-                description: '请稍后重试',
+                title: '支付成功',
+                description: `订单号: ${order.id}`,
+            })
+            clearCart()
+            navigate('/')
+        } catch (error) {
+            // 不要在这里 catch,让错误向上传播给 SDK
+            // 但是要给用户友好的提示
+            const errorMessage = error instanceof Error ? error.message : '支付失败,请稍后重试'
+            toast({
+                title: '支付失败',
+                description: errorMessage,
                 variant: 'destructive',
             })
+            // 重新抛出错误,让 SDK 捕获
+            throw error
         } finally {
             setLoading(false)
         }
