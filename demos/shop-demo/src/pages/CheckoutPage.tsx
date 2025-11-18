@@ -18,6 +18,7 @@ export function CheckoutPage() {
         phone: '',
         address: '',
         paymentMethod: 'alipay' as 'alipay' | 'wechat' | 'card',
+        paymentPassword: '',
     })
 
     const totalPrice = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
@@ -38,10 +39,31 @@ export function CheckoutPage() {
             return
         }
 
+        if (!formData.paymentPassword) {
+            toast({
+                title: '请输入支付密码',
+                variant: 'destructive',
+            })
+            return
+        }
+
+        if (formData.paymentPassword.length !== 6) {
+            toast({
+                title: '支付密码必须是6位数字',
+                variant: 'destructive',
+            })
+            return
+        }
+
         setLoading(true)
 
         try {
             const order = await createOrder(items, formData)
+
+            // 模拟支付密码验证失败
+            if (formData.paymentPassword === '000000') {
+                throw new Error('支付密码错误,请重新输入')
+            }
 
             // 支付失败会抛出错误,让 SDK 捕获
             await payOrder(order.id)
@@ -54,8 +76,6 @@ export function CheckoutPage() {
             clearCart()
             navigate('/')
         } catch (error) {
-            // 不要在这里 catch,让错误向上传播给 SDK
-            // 但是要给用户友好的提示
             const errorMessage = error instanceof Error ? error.message : '支付失败,请稍后重试'
             toast({
                 title: '支付失败',
@@ -116,20 +136,37 @@ export function CheckoutPage() {
                             <CardHeader>
                                 <CardTitle>支付方式</CardTitle>
                             </CardHeader>
-                            <CardContent>
-                                <Select
-                                    value={formData.paymentMethod}
-                                    onValueChange={value => setFormData({ ...formData, paymentMethod: value as any })}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="alipay">支付宝</SelectItem>
-                                        <SelectItem value="wechat">微信支付</SelectItem>
-                                        <SelectItem value="card">银行卡</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                            <CardContent className="space-y-4">
+                                <div>
+                                    <label className="mb-2 block text-sm font-medium">选择支付方式</label>
+                                    <Select
+                                        value={formData.paymentMethod}
+                                        onValueChange={value => setFormData({ ...formData, paymentMethod: value as any })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="alipay">支付宝</SelectItem>
+                                            <SelectItem value="wechat">微信支付</SelectItem>
+                                            <SelectItem value="card">银行卡</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div>
+                                    <label className="mb-2 block text-sm font-medium">支付密码</label>
+                                    <Input
+                                        type="password"
+                                        value={formData.paymentPassword}
+                                        onChange={e => setFormData({ ...formData, paymentPassword: e.target.value })}
+                                        placeholder="请输入6位支付密码"
+                                        maxLength={6}
+                                        required
+                                        className="tracking-widest"
+                                    />
+                                    <p className="mt-1 text-xs text-muted-foreground">提示: 输入 000000 会触发支付密码错误</p>
+                                </div>
                             </CardContent>
                         </Card>
                     </div>
