@@ -5,7 +5,7 @@ import { DashboardEntity } from './dashboard.entity'
 /**
  * Widget 可视化类型
  */
-export type WidgetType = 'line' | 'bar' | 'area' | 'table' | 'world_map' | 'big_number'
+export type WidgetType = 'line' | 'bar' | 'area' | 'table' | 'world_map' | 'big_number' | 'radar'
 
 /**
  * 查询条件

@@ -350,7 +350,7 @@ function CustomLegend({ stats, onLegendClick, hiddenMetrics, performanceScore }:
         <div className="flex flex-col gap-3 pt-4">
             <div className="flex flex-wrap gap-4 justify-center">
                 <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">性能评分</span>
+                    {/* <span className="text-xs text-muted-foreground">性能评分</span>
                     <span className="text-lg font-bold" style={{ color: performanceScore.color }}>
                         {performanceScore.score}
                     </span>
@@ -359,7 +359,7 @@ function CustomLegend({ stats, onLegendClick, hiddenMetrics, performanceScore }:
                         style={{ backgroundColor: performanceScore.color + '20', color: performanceScore.color }}
                     >
                         {performanceScore.grade}
-                    </span>
+                    </span> */}
                 </div>
                 {metrics.map(({ key, label, color }) => {
                     const stat = stats[key]
