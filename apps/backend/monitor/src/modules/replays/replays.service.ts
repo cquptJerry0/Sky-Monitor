@@ -30,7 +30,7 @@ export class ReplaysService {
                     original_size as originalSize,
                     compressed_size as compressedSize,
                     trigger,
-                    toUnixTimestamp(timestamp) * 1000 as timestamp,
+                    toUnixTimestamp(toTimezone(timestamp, 'UTC')) * 1000 as timestamp,
                     created_at as createdAt
                 FROM session_replays
                 WHERE replay_id = {replayId:String}
@@ -135,13 +135,15 @@ export class ReplaysService {
                     event_type as eventType,
                     error_message as message,
                     error_stack as stack,
-                    toUnixTimestamp(timestamp) * 1000 as timestamp,
+                    toUnixTimestamp(toTimezone(timestamp, 'UTC')) * 1000 as timestamp,
                     http_url as httpUrl,
                     http_status as httpStatus,
                     resource_url as resourceUrl,
                     resource_type as resourceType,
                     path as pageUrl,
-                    user_id as userId
+                    user_id as userId,
+                    lineno,
+                    colno
                 FROM monitor_events
                 WHERE replay_id = {replayId:String}
                   AND app_id = {appId:String}
