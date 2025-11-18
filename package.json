@@ -11,7 +11,7 @@
         "clean:build": "pnpm --filter @sky-monitor/* clean",
         "clean:caches": "rimraf .turbo",
         "clean:all": "run-s clean:build clean:caches",
-        "dev": "run-p dev:server:dsn dev:server:monitor dev:client:monitor",
+        "dev": "run-p dev:server:dsn dev:server:monitor dev:client:monitor dev:demo:shop",
         "dev:server:dsn": "pnpm --filter @sky-monitor/monitor-dsn-server start:dev",
         "dev:server:monitor": "pnpm --filter @sky-monitor/monitor-server start:dev",
         "dev:client:monitor": "pnpm --filter @sky-monitor/monitor-client start:dev",
