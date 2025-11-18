@@ -53,14 +53,14 @@ const config = createMonitoringConfig({
         exceptionSampleRate: 1.0,
         unhandledrejectionSampleRate: 1.0,
 
-        // 性能类事件 (30%-50%)
-        performanceSampleRate: 0.3,
-        webVitalSampleRate: 0.5,
+        // 性能类事件 (100% - 确保慢请求能上报)
+        performanceSampleRate: 1.0,
+        webVitalSampleRate: 1.0,
 
         // 用户行为类事件
         breadcrumbSampleRate: 0.1, // 面包屑数据量大,降低采样
         messageSampleRate: 1.0,
-        customSampleRate: 1.0, // 自定义事件100%上报(用于测试)
+        customSampleRate: 1.0, // 自定义事件100%上报
 
         // 默认采样率
         defaultSampleRate: 1.0,

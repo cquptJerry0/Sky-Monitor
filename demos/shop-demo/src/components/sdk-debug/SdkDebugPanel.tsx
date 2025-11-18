@@ -25,7 +25,7 @@ export function SdkDebugPanel() {
         setEnableSessionReplay,
     } = useSdkConfigStore()
 
-    const handleTriggerError = (type: string) => {
+    const handleTriggerError = async (type: string) => {
         switch (type) {
             case 'js':
                 simulateJavaScriptError()
@@ -44,6 +44,33 @@ export function SdkDebugPanel() {
             case 'custom':
                 simulateCustomError()
                 break
+            case 'http-404':
+                // 触发 404 错误
+                try {
+                    await fetch('https://httpbin.org/status/404')
+                } catch (error) {
+                    // SDK 会自动捕获
+                }
+                toast({ title: '已触发 HTTP 404 错误' })
+                break
+            case 'http-500':
+                // 触发 500 错误
+                try {
+                    await fetch('https://httpbin.org/status/500')
+                } catch (error) {
+                    // SDK 会自动捕获
+                }
+                toast({ title: '已触发 HTTP 500 错误' })
+                break
+            case 'resource-error': {
+                // 触发资源加载错误
+                const img = document.createElement('img')
+                img.src = 'https://invalid-domain-that-does-not-exist-12345.com/image.jpg'
+                document.body.appendChild(img)
+                setTimeout(() => document.body.removeChild(img), 1000)
+                toast({ title: '已触发资源加载错误' })
+                break
+            }
         }
     }
 
@@ -156,6 +183,18 @@ export function SdkDebugPanel() {
                                 <Bug className="mr-1 h-3 w-3" />
                                 网络错误
                             </Button>
+                            <Button variant="outline" size="sm" onClick={() => handleTriggerError('http-404')}>
+                                <Bug className="mr-1 h-3 w-3" />
+                                HTTP 404
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => handleTriggerError('http-500')}>
+                                <Bug className="mr-1 h-3 w-3" />
+                                HTTP 500
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => handleTriggerError('resource-error')}>
+                                <Bug className="mr-1 h-3 w-3" />
+                                资源错误
+                            </Button>
                         </div>
                     </div>
 
@@ -198,6 +237,8 @@ export function SdkDebugPanel() {
                         <ul className="space-y-1 text-muted-foreground">
                             <li>开关控制对应功能的启用/禁用</li>
                             <li>错误模拟用于测试错误捕获功能</li>
+                            <li>HTTP 404/500 测试真实的 HTTP 错误</li>
+                            <li>资源错误测试图片加载失败</li>
                             <li>性能测试用于测试性能监控功能</li>
                             <li>批量测试会发送100个唯一事件</li>
                         </ul>

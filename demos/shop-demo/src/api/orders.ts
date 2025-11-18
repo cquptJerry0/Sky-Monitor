@@ -16,7 +16,13 @@ export interface CheckoutData {
 }
 
 export async function createOrder(items: CartItem[], _checkoutData: CheckoutData): Promise<Order> {
-    await new Promise(resolve => setTimeout(resolve, 500))
+    // 使用真实 HTTP 请求来触发 SDK 的性能监控
+    try {
+        const response = await fetch('https://httpbin.org/delay/1')
+        await response.json()
+    } catch (error) {
+        // 忽略错误,继续创建订单
+    }
 
     const totalPrice = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
 
@@ -32,8 +38,29 @@ export async function createOrder(items: CartItem[], _checkoutData: CheckoutData
 }
 
 export async function payOrder(_orderId: string): Promise<{ success: boolean; message?: string }> {
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // 使用真实 HTTP 请求来触发 SDK 的 HTTP 错误监控
+    // 30% 概率触发 500 错误
+    const shouldFail = Math.random() < 0.3
 
-    // 100% 支付失败 - 抛出错误让 SDK 捕获
-    throw new Error('支付失败: 余额不足')
+    if (shouldFail) {
+        try {
+            // 触发 500 错误
+            const response = await fetch('https://httpbin.org/status/500')
+            if (!response.ok) {
+                throw new Error(`支付失败: HTTP ${response.status}`)
+            }
+        } catch (error) {
+            throw new Error('支付失败: 服务器错误')
+        }
+    } else {
+        // 正常支付流程
+        try {
+            const response = await fetch('https://httpbin.org/delay/1')
+            await response.json()
+        } catch (error) {
+            // 忽略错误
+        }
+    }
+
+    return { success: true }
 }
