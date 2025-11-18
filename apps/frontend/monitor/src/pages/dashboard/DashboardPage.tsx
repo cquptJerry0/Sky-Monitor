@@ -20,6 +20,7 @@ import { useDashboard, useDashboards, useResetWidgets } from '@/hooks/useDashboa
 import { useDashboardStore } from '@/stores/dashboard.store'
 import { useToast } from '@/hooks/use-toast'
 import { ROUTES } from '@/utils/constants'
+import { useApplications } from '@/hooks/useApplicationQuery'
 
 /**
  * Dashboard 页面
@@ -67,6 +68,9 @@ export default function DashboardPage() {
     // 跟踪appId切换状态
     const [isAppChanging, setIsAppChanging] = useState(false)
     const [previousAppId, setPreviousAppId] = useState<string | null>(currentAppId)
+
+    // 获取应用列表,用于验证 currentAppId 是否有效
+    const { data: applications = [], isLoading: isApplicationsLoading } = useApplications()
 
     // 获取 Dashboard 列表 (按当前appId过滤)
     const { data: dashboards, isLoading: isDashboardsLoading, isFetching: isDashboardsFetching } = useDashboards(currentAppId || undefined)
@@ -158,7 +162,7 @@ export default function DashboardPage() {
     }
 
     // 显示loading状态 (初次加载或切换app)
-    if (isDashboardsLoading || isAppChanging) {
+    if (isDashboardsLoading || isAppChanging || isApplicationsLoading) {
         return (
             <div className="flex items-center justify-center h-96">
                 <div className="text-muted-foreground">{isAppChanging ? '切换应用中...' : '加载中...'}</div>
@@ -166,24 +170,33 @@ export default function DashboardPage() {
         )
     }
 
-    // 如果没有 Dashboard,引导用户去创建/选择应用
+    // 检查当前 appId 是否有效
+    const currentAppExists = currentAppId && applications.some(app => app.appId === currentAppId)
+
+    // 如果没有应用或当前应用无效,引导用户去创建应用
+    if (applications.length === 0 || !currentAppExists) {
+        return (
+            <div className="flex flex-col items-center justify-center h-96 space-y-4">
+                <div className="text-center space-y-2">
+                    <h2 className="text-2xl font-bold">暂无监控面板</h2>
+                    <p className="text-muted-foreground">请先创建一个应用,系统会自动为您生成默认监控面板</p>
+                </div>
+                <Button onClick={() => navigate(ROUTES.PROJECTS)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    创建应用
+                </Button>
+            </div>
+        )
+    }
+
+    // 如果有应用但没有 Dashboard,引导用户联系管理员
     if (!dashboards || dashboards.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center h-96 space-y-4">
                 <div className="text-center space-y-2">
                     <h2 className="text-2xl font-bold">暂无监控面板</h2>
-                    {!currentAppId ? (
-                        <p className="text-muted-foreground">请先创建或选择一个应用,系统会自动为您生成默认监控面板</p>
-                    ) : (
-                        <p className="text-muted-foreground">当前应用暂无监控面板,请联系管理员</p>
-                    )}
+                    <p className="text-muted-foreground">当前应用暂无监控面板,请联系管理员</p>
                 </div>
-                {!currentAppId && (
-                    <Button onClick={() => navigate(ROUTES.PROJECTS)}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        前往应用管理
-                    </Button>
-                )}
             </div>
         )
     }
