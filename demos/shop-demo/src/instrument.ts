@@ -8,6 +8,7 @@
  */
 import { init, createMonitoringConfig, setUser } from '@sky-monitor/monitor-sdk-browser'
 import { setSDKClient } from './sdk'
+import { getCurrentUser } from './utils/user'
 
 // 声明全局变量（由 Vite 注入）
 declare const __RELEASE__: string
@@ -24,6 +25,9 @@ const DSN = `http://localhost:8080/api/monitoring/${APP_ID}`
 
 // 获取 release 版本（构建时注入，开发环境使用默认值）
 const RELEASE = typeof __RELEASE__ !== 'undefined' ? __RELEASE__ : '1.0.0-e2e-dev'
+
+// 生成随机用户信息
+const currentUser = getCurrentUser()
 
 // 初始化 Sky Monitor SDK
 const config = createMonitoringConfig({
@@ -63,13 +67,13 @@ init(config)
         setSDKClient(client)
         console.log('[Sky Monitor] SDK initialized successfully')
 
-        // 设置用户信息（用于错误追踪）
+        // 设置随机用户信息
         setUser({
-            id: 'demo-user-123',
-            email: 'demo@skymonitor.com',
-            username: 'demo_user',
+            id: currentUser.id,
+            email: currentUser.email,
+            username: currentUser.username,
         })
-        console.log('[Sky Monitor] User info set')
+        console.log('[Sky Monitor] User info set:', currentUser.username)
     })
     .catch(error => {
         console.error('[Sky Monitor] SDK initialization failed:', error)

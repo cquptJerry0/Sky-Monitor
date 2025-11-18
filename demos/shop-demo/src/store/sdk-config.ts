@@ -35,6 +35,16 @@ export const useSdkConfigStore = create<SdkConfigStore>()(
         }),
         {
             name: 'sdk-config-storage',
+            storage: {
+                getItem: name => {
+                    const str = sessionStorage.getItem(name)
+                    return str ? JSON.parse(str) : null
+                },
+                setItem: (name, value) => {
+                    sessionStorage.setItem(name, JSON.stringify(value))
+                },
+                removeItem: name => sessionStorage.removeItem(name),
+            },
         }
     )
 )

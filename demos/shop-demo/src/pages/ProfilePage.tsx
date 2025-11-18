@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
+import { getCurrentUser } from '@/utils/user'
 
 interface Order {
     id: string
@@ -43,6 +44,8 @@ const statusMap = {
 }
 
 export function ProfilePage() {
+    const user = getCurrentUser()
+
     return (
         <div className="container py-8">
             <h1 className="mb-6 text-2xl font-bold">个人中心</h1>
@@ -54,18 +57,23 @@ export function ProfilePage() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div>
+                            <div className="text-sm text-muted-foreground">姓名</div>
+                            <div className="font-medium">{user.name}</div>
+                        </div>
+                        <Separator />
+                        <div>
                             <div className="text-sm text-muted-foreground">用户名</div>
-                            <div className="font-medium">demo_user</div>
+                            <div className="font-medium">{user.username}</div>
                         </div>
                         <Separator />
                         <div>
                             <div className="text-sm text-muted-foreground">邮箱</div>
-                            <div className="font-medium">demo@skymonitor.com</div>
+                            <div className="font-medium">{user.email}</div>
                         </div>
                         <Separator />
                         <div>
                             <div className="text-sm text-muted-foreground">用户 ID</div>
-                            <div className="font-medium">demo-user-123</div>
+                            <div className="font-medium">{user.id}</div>
                         </div>
                     </CardContent>
                 </Card>

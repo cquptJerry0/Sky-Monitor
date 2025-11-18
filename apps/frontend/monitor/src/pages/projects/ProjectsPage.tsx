@@ -244,9 +244,15 @@ export default function ProjectsPage() {
     }
 
     // 访问应用
-    const handleVisitApp = (url: string, e: React.MouseEvent) => {
+    const handleVisitApp = (app: Application, e: React.MouseEvent) => {
         e.stopPropagation()
-        window.open(url, '_blank')
+        if (!app.url) return
+
+        // 判断是否是 shop-demo URL,如果是则携带 appId 参数
+        const isShopDemo = app.url.includes(env.shopDemoUrl)
+        const finalUrl = isShopDemo ? getShopDemoUrl(app.appId) : app.url
+
+        window.open(finalUrl, '_blank')
     }
 
     if (isLoading) {
@@ -497,7 +503,7 @@ export default function ProjectsPage() {
                                 {app.url && (
                                     <div className="mb-3">
                                         <button
-                                            onClick={e => handleVisitApp(app.url!, e)}
+                                            onClick={e => handleVisitApp(app, e)}
                                             className="text-sm text-primary hover:underline flex items-center gap-1"
                                         >
                                             <ExternalLink className="h-3 w-3" />
