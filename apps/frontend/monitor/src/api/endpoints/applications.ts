@@ -12,6 +12,7 @@ export interface CreateApplicationRequest {
     name: string
     type: ApplicationType
     description?: string
+    url?: string
 }
 
 /**

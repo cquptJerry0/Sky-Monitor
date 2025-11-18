@@ -22,12 +22,13 @@ import { useToast } from '@/hooks/use-toast'
 import { useApplications, useCreateApplication, useDeleteApplication } from '@/hooks/useApplicationQuery'
 import { useAppStore } from '@/stores/app.store'
 import { ROUTES } from '@/utils/constants'
-import { Plus, Trash2, Loader2, Copy, ExternalLink, TestTube2 } from 'lucide-react'
+import { Plus, Trash2, Loader2, Copy, ExternalLink, TestTube2, ShoppingCart, Code } from 'lucide-react'
 import type { Application, ApplicationType } from '@/api/types'
 import { FaReact, FaVuejs } from 'react-icons/fa'
 import { SiJavascript } from 'react-icons/si'
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
+import { env, getShopDemoUrl } from '@/config/env'
 
 // 应用类型配置
 const APP_TYPE_OPTIONS: Array<{
@@ -68,6 +69,7 @@ export default function ProjectsPage() {
     const [newAppName, setNewAppName] = useState('')
     const [newAppType, setNewAppType] = useState<ApplicationType>('react')
     const [newAppUrl, setNewAppUrl] = useState('')
+    const [useQuickDemo, setUseQuickDemo] = useState(true)
     const [showDeleteDialog, setShowDeleteDialog] = useState(false)
     const [deleteTarget, setDeleteTarget] = useState<Application | null>(null)
 
@@ -88,10 +90,12 @@ export default function ProjectsPage() {
         }
 
         try {
+            const appUrl = useQuickDemo ? env.shopDemoUrl : newAppUrl.trim() || undefined
+
             const result = await createMutation.mutateAsync({
                 name: newAppName,
                 type: newAppType,
-                url: newAppUrl.trim() || undefined,
+                url: appUrl,
             })
 
             toast({
@@ -103,7 +107,15 @@ export default function ProjectsPage() {
             setNewAppName('')
             setNewAppType('react')
             setNewAppUrl('')
+            setUseQuickDemo(true)
+
             refetch()
+
+            if (useQuickDemo && result?.appId) {
+                setTimeout(() => {
+                    window.open(getShopDemoUrl(result.appId), '_blank')
+                }, 500)
+            }
         } catch (error) {
             console.error('[创建应用] 创建失败', error)
             const errorMessage = error instanceof Error ? error.message : '创建应用失败'
@@ -175,8 +187,7 @@ export default function ProjectsPage() {
     // 快速测试
     const handleQuickTest = (appId: string, e: React.MouseEvent) => {
         e.stopPropagation()
-        const demoUrl = `http://localhost:5433?appId=${appId}`
-        window.open(demoUrl, '_blank')
+        window.open(getShopDemoUrl(appId), '_blank')
     }
 
     // 访问应用
@@ -271,20 +282,97 @@ export default function ProjectsPage() {
                                 </div>
                             </div>
 
-                            {/* 应用 URL */}
-                            <div className="space-y-2">
-                                <Label htmlFor="app-url" className="text-foreground">
-                                    应用 URL (可选)
-                                </Label>
-                                <Input
-                                    id="app-url"
-                                    value={newAppUrl}
-                                    onChange={e => setNewAppUrl(e.target.value)}
-                                    placeholder="https://example.com"
-                                    className="bg-background border-input text-foreground"
-                                />
-                                <p className="text-xs text-muted-foreground">填写应用访问地址,方便快速跳转</p>
+                            {/* 创建方式选择 */}
+                            <div className="space-y-3">
+                                <Label className="text-foreground">创建方式</Label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {/* 快速演示 */}
+                                    <button
+                                        type="button"
+                                        onClick={() => setUseQuickDemo(true)}
+                                        className={`
+                                            p-4 rounded-lg border-2 transition-all text-left
+                                            ${
+                                                useQuickDemo
+                                                    ? 'border-orange-500 bg-orange-500/10'
+                                                    : 'border-border bg-secondary hover:border-orange-500/50'
+                                            }
+                                        `}
+                                    >
+                                        <div className="flex items-start gap-3">
+                                            <ShoppingCart
+                                                className={`h-5 w-5 mt-0.5 ${useQuickDemo ? 'text-orange-500' : 'text-muted-foreground'}`}
+                                            />
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="text-sm font-semibold text-foreground">快速演示</div>
+                                                    <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500 text-white">推荐</span>
+                                                </div>
+                                                <div className="text-xs text-muted-foreground mt-1">
+                                                    使用官方 Shop Demo 立即体验监控功能
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </button>
+
+                                    {/* 标准创建 */}
+                                    <button
+                                        type="button"
+                                        onClick={() => setUseQuickDemo(false)}
+                                        className={`
+                                            p-4 rounded-lg border-2 transition-all text-left
+                                            ${
+                                                !useQuickDemo
+                                                    ? 'border-primary bg-primary/10'
+                                                    : 'border-border bg-secondary hover:border-primary/50'
+                                            }
+                                        `}
+                                    >
+                                        <div className="flex items-start gap-3">
+                                            <Code
+                                                className={`h-5 w-5 mt-0.5 ${!useQuickDemo ? 'text-primary' : 'text-muted-foreground'}`}
+                                            />
+                                            <div className="flex-1">
+                                                <div className="text-sm font-semibold text-foreground">标准创建</div>
+                                                <div className="text-xs text-muted-foreground mt-1">手动集成 SDK 到您的应用</div>
+                                            </div>
+                                        </div>
+                                    </button>
+                                </div>
                             </div>
+
+                            {/* 应用 URL - 仅在标准创建时显示 */}
+                            {!useQuickDemo && (
+                                <div className="space-y-2">
+                                    <Label htmlFor="app-url" className="text-foreground">
+                                        应用 URL (可选)
+                                    </Label>
+                                    <Input
+                                        id="app-url"
+                                        value={newAppUrl}
+                                        onChange={e => setNewAppUrl(e.target.value)}
+                                        placeholder="https://example.com"
+                                        className="bg-background border-input text-foreground"
+                                    />
+                                    <p className="text-xs text-muted-foreground">填写应用访问地址,方便快速跳转</p>
+                                </div>
+                            )}
+
+                            {/* 快速演示提示 */}
+                            {useQuickDemo && (
+                                <div className="p-4 rounded-lg bg-orange-500/10 border border-orange-500/20">
+                                    <div className="flex items-start gap-3">
+                                        <ShoppingCart className="h-5 w-5 text-orange-500 mt-0.5" />
+                                        <div className="flex-1">
+                                            <div className="text-sm font-medium text-foreground">关于快速演示</div>
+                                            <div className="text-xs text-muted-foreground mt-1">
+                                                创建应用后,将自动打开 Shop Demo 购物车演示应用,您可以立即看到错误监控、性能监控、Session
+                                                Replay 等功能的实际效果。
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* 创建按钮 */}
                             <Button onClick={handleCreateApp} disabled={createMutation.isPending} className="w-full">
