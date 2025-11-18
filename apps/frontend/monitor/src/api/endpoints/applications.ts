@@ -21,6 +21,7 @@ export interface CreateApplicationRequest {
 export interface UpdateApplicationRequest {
     appId: string
     name?: string
+    url?: string
     description?: string
 }
 

@@ -19,10 +19,10 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
-import { useApplications, useCreateApplication, useDeleteApplication } from '@/hooks/useApplicationQuery'
+import { useApplications, useCreateApplication, useUpdateApplication, useDeleteApplication } from '@/hooks/useApplicationQuery'
 import { useAppStore } from '@/stores/app.store'
 import { ROUTES } from '@/utils/constants'
-import { Plus, Trash2, Loader2, Copy, ExternalLink, TestTube2, ShoppingCart, Code } from 'lucide-react'
+import { Plus, Trash2, Loader2, Copy, ExternalLink, Pencil, ShoppingCart, Code } from 'lucide-react'
 import type { Application, ApplicationType } from '@/api/types'
 import { FaReact, FaVuejs } from 'react-icons/fa'
 import { SiJavascript } from 'react-icons/si'
@@ -65,17 +65,28 @@ export default function ProjectsPage() {
     const navigate = useNavigate()
     const { toast } = useToast()
     const { setCurrentAppId } = useAppStore()
+
+    // 创建应用相关状态
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
     const [newAppName, setNewAppName] = useState('')
     const [newAppType, setNewAppType] = useState<ApplicationType>('react')
     const [newAppUrl, setNewAppUrl] = useState('')
     const [useQuickDemo, setUseQuickDemo] = useState(true)
+
+    // 编辑应用相关状态
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+    const [editTarget, setEditTarget] = useState<Application | null>(null)
+    const [editAppName, setEditAppName] = useState('')
+    const [editAppUrl, setEditAppUrl] = useState('')
+
+    // 删除应用相关状态
     const [showDeleteDialog, setShowDeleteDialog] = useState(false)
     const [deleteTarget, setDeleteTarget] = useState<Application | null>(null)
 
     // 获取应用列表 - 已在 hook 中解析为 Application[]
     const { data: applications = [], isLoading, error, refetch } = useApplications()
     const createMutation = useCreateApplication()
+    const updateMutation = useUpdateApplication()
     const deleteMutation = useDeleteApplication()
 
     // 创建应用
@@ -184,10 +195,52 @@ export default function ProjectsPage() {
         })
     }
 
-    // 快速测试
-    const handleQuickTest = (appId: string, e: React.MouseEvent) => {
+    // 编辑应用 - 打开对话框
+    const handleEditClick = (app: Application, e: React.MouseEvent) => {
         e.stopPropagation()
-        window.open(getShopDemoUrl(appId), '_blank')
+        setEditTarget(app)
+        setEditAppName(app.name)
+        setEditAppUrl(app.url || '')
+        setIsEditDialogOpen(true)
+    }
+
+    // 确认编辑应用
+    const handleConfirmEdit = async () => {
+        if (!editTarget) return
+
+        if (!editAppName.trim()) {
+            toast({
+                title: '错误',
+                description: '请输入应用名称',
+                variant: 'destructive',
+            })
+            return
+        }
+
+        try {
+            await updateMutation.mutateAsync({
+                appId: editTarget.appId,
+                name: editAppName.trim(),
+                url: editAppUrl.trim() || undefined,
+            })
+
+            toast({
+                title: '更新成功',
+                description: `应用 "${editAppName}" 已更新`,
+            })
+
+            setIsEditDialogOpen(false)
+            setEditTarget(null)
+            refetch()
+        } catch (error) {
+            console.error('[编辑应用] 更新失败', error)
+            const errorMessage = error instanceof Error ? error.message : '更新应用失败'
+            toast({
+                title: '更新失败',
+                description: errorMessage,
+                variant: 'destructive',
+            })
+        }
     }
 
     // 访问应用
@@ -306,7 +359,6 @@ export default function ProjectsPage() {
                                             <div className="flex-1">
                                                 <div className="flex items-center gap-2">
                                                     <div className="text-sm font-semibold text-foreground">快速演示</div>
-                                                    <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500 text-white">推荐</span>
                                                 </div>
                                                 <div className="text-xs text-muted-foreground mt-1">
                                                     使用官方 Shop Demo 立即体验监控功能
@@ -477,9 +529,9 @@ export default function ProjectsPage() {
                                     >
                                         查看监控
                                     </Button>
-                                    <Button variant="outline" size="sm" onClick={e => handleQuickTest(app.appId, e)} className="flex-1">
-                                        <TestTube2 className="h-3.5 w-3.5 mr-1" />
-                                        快速测试
+                                    <Button variant="outline" size="sm" onClick={e => handleEditClick(app, e)} className="flex-1">
+                                        <Pencil className="h-3.5 w-3.5 mr-1" />
+                                        编辑应用
                                     </Button>
                                 </div>
                             </div>
@@ -487,6 +539,44 @@ export default function ProjectsPage() {
                     })}
                 </div>
             )}
+
+            {/* 编辑应用对话框 */}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>编辑应用</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-app-name">应用名称</Label>
+                            <Input
+                                id="edit-app-name"
+                                value={editAppName}
+                                onChange={e => setEditAppName(e.target.value)}
+                                placeholder="请输入应用名称"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-app-url">应用 URL (可选)</Label>
+                            <Input
+                                id="edit-app-url"
+                                value={editAppUrl}
+                                onChange={e => setEditAppUrl(e.target.value)}
+                                placeholder="https://example.com"
+                            />
+                        </div>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                            取消
+                        </Button>
+                        <Button onClick={handleConfirmEdit} disabled={updateMutation.isPending}>
+                            {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            保存
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             {/* 删除确认对话框 */}
             <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

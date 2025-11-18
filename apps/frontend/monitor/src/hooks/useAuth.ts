@@ -58,8 +58,16 @@ export function useLogout() {
     return useMutation({
         mutationFn: authAPI.logout,
         onSuccess: () => {
+            // 清除认证信息
             clearAuth()
+
+            // 清除所有查询缓存
             queryClient.clear()
+
+            // 清除所有 localStorage (包括其他 store 的持久化数据)
+            localStorage.clear()
+
+            // 跳转到登录页
             window.location.href = '/auth/login'
         },
     })

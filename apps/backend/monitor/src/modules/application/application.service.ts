@@ -57,8 +57,28 @@ export class ApplicationService {
         }
     }
 
-    async update(payload) {
-        return payload
+    async update(payload: { appId: string; name?: string; url?: string; description?: string }, userId: number) {
+        const app = await this.applicationRepository.findOne({
+            where: { appId: payload.appId, userId },
+        })
+
+        if (!app) {
+            throw new NotFoundException('Application not found')
+        }
+
+        if (payload.name !== undefined) {
+            app.name = payload.name
+        }
+
+        if (payload.url !== undefined) {
+            app.url = payload.url
+        }
+
+        if (payload.description !== undefined) {
+            app.description = payload.description
+        }
+
+        return await this.applicationRepository.save(app)
     }
 
     async list(params: { userId: number }) {

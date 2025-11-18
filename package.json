@@ -15,6 +15,7 @@
         "dev:server:dsn": "pnpm --filter @sky-monitor/monitor-dsn-server start:dev",
         "dev:server:monitor": "pnpm --filter @sky-monitor/monitor-server start:dev",
         "dev:client:monitor": "pnpm --filter @sky-monitor/monitor-client start:dev",
+        "dev:demo:shop": "pnpm --filter @sky-monitor/shop-demo start:dev",
         "docker:start": "docker compose -f .devcontainer/docker-compose.yml up -d",
         "docker:stop": "docker compose -f .devcontainer/docker-compose.yml down",
         "docker:deploy": "docker compose -f .devcontainer/docker-compose.deploy.yml up -d",

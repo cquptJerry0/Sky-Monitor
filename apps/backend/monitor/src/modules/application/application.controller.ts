@@ -5,7 +5,14 @@ import { nanoid } from 'nanoid'
 import { AdminEntity } from '../../entities/admin.entity'
 import { ApplicationEntity } from '../../entities/application.entity'
 import { ZodValidationPipe } from '../../pipes/zod-validation.pipe'
-import { CreateApplicationDto, createApplicationSchema, DeleteApplicationDto, deleteApplicationSchema } from './application.dto'
+import {
+    CreateApplicationDto,
+    createApplicationSchema,
+    UpdateApplicationDto,
+    updateApplicationSchema,
+    DeleteApplicationDto,
+    deleteApplicationSchema,
+} from './application.dto'
 import { ApplicationService } from './application.service'
 
 /**
@@ -36,9 +43,10 @@ export class ApplicationController {
     }
 
     @Put()
-    async update(@Body() body) {
-        const newUser = await this.applicationService.update(body)
-        return { data: newUser, success: true }
+    @UsePipes(new ZodValidationPipe(updateApplicationSchema))
+    async update(@Body() body: UpdateApplicationDto, @Request() req) {
+        const updatedApp = await this.applicationService.update(body, req.user.id)
+        return { data: updatedApp, success: true }
     }
 
     @Get()
