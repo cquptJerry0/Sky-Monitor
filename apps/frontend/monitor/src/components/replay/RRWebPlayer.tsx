@@ -100,6 +100,17 @@ export function RRWebPlayer({
             },
         })
 
+        // 输出 Meta 和 FullSnapshot 事件的详细内容
+        const metaEvent = events.find(e => e.type === 4)
+        const fullSnapshotEvent = events.find(e => e.type === 2)
+        console.log('[RRWebPlayer] Meta 事件:', metaEvent)
+        console.log('[RRWebPlayer] FullSnapshot 事件:', {
+            type: fullSnapshotEvent?.type,
+            timestamp: fullSnapshotEvent?.timestamp,
+            hasData: !!fullSnapshotEvent?.data,
+            dataKeys: fullSnapshotEvent?.data ? Object.keys(fullSnapshotEvent.data) : [],
+        })
+
         // 检查是否有 Meta 事件 (type: 4)
         const hasMeta = events.some(e => e.type === 4)
         if (!hasMeta) {
@@ -215,6 +226,14 @@ export function RRWebPlayer({
             }
 
             // 创建新的播放器实例
+            console.log('[RRWebPlayer] 创建播放器实例:', {
+                事件数量: normalizedEvents.length,
+                宽度: playerSize.width,
+                高度: playerSize.height,
+                自动播放: autoPlay,
+                显示控制器: showController,
+            })
+
             const player = new rrwebPlayer({
                 target: containerRef.current,
                 props: {
@@ -229,21 +248,38 @@ export function RRWebPlayer({
                 },
             }) as any
 
+            console.log('[RRWebPlayer] 播放器实例创建完成:', {
+                player: !!player,
+                hasOn: !!(player && player.on),
+                hasPlay: !!(player && player.play),
+            })
+
             playerRef.current = player
 
             // 监听播放器事件
             if (player && player.on) {
+                console.log('[RRWebPlayer] 注册播放器事件监听')
+
                 // 监听当前播放时间变化
                 player.on('ui-update-current-time', (payload: unknown) => {
                     const p = payload as PlayerEventPayload
+                    console.log('[RRWebPlayer] 播放时间更新:', p.currentTime)
                     setCurrentTime(p.currentTime || 0)
                 })
 
                 // 监听播放状态变化 (playing/paused)
                 player.on('ui-update-player-state', (payload: unknown) => {
                     const p = payload as PlayerEventPayload
+                    console.log('[RRWebPlayer] 播放状态变化:', p.state)
                     setIsPlaying(p.state === 'playing')
                 })
+
+                // 监听播放器错误
+                player.on('error', (error: unknown) => {
+                    console.error('[RRWebPlayer] 播放器错误:', error)
+                })
+            } else {
+                console.warn('[RRWebPlayer] 播放器不支持事件监听')
             }
 
             // 计算会话总时长 (最后一个事件 - 第一个事件)
@@ -263,11 +299,28 @@ export function RRWebPlayer({
 
         // 清理函数: 组件卸载或 events 变化时执行
         return () => {
+            console.log('[RRWebPlayer] 清理播放器实例')
+
+            // 关键修复: 调用 rrweb-player 的 $destroy() 方法
+            // rrweb-player 是 Svelte 组件,需要调用 $destroy() 来正确清理
+            // 参考: https://github.com/rrweb-io/rrweb-player/issues/18
+            if (playerRef.current && typeof (playerRef.current as any).$destroy === 'function') {
+                try {
+                    ;(playerRef.current as any).$destroy()
+                    console.log('[RRWebPlayer] 播放器实例已销毁')
+                } catch (error) {
+                    console.warn('[RRWebPlayer] 销毁播放器时出错:', error)
+                }
+            }
+
+            // 清理 DOM
             const container = containerRef.current
             if (container) {
-                container.innerHTML = '' // 清理 DOM
+                container.innerHTML = ''
             }
-            playerRef.current = null // 释放播放器引用
+
+            // 释放播放器引用
+            playerRef.current = null
         }
     }, [events, playerSize.width, playerSize.height, autoPlay, showController])
 

@@ -26,16 +26,16 @@ export class MonitoringService {
      * 格式化时间戳为 ClickHouse DateTime 格式
      * 格式: YYYY-MM-DD HH:mm:ss
      *
-     * 注意: 使用本地时间而不是 UTC 时间
-     * 因为 ClickHouse DateTime 类型会按服务器本地时区解析
+     * 注意: 统一使用 UTC 时间,避免时区问题
+     * 前端会根据用户本地时区自动转换显示
      */
     private formatTimestamp(date: Date): string {
-        const year = date.getFullYear()
-        const month = String(date.getMonth() + 1).padStart(2, '0')
-        const day = String(date.getDate()).padStart(2, '0')
-        const hours = String(date.getHours()).padStart(2, '0')
-        const minutes = String(date.getMinutes()).padStart(2, '0')
-        const seconds = String(date.getSeconds()).padStart(2, '0')
+        const year = date.getUTCFullYear()
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0')
+        const day = String(date.getUTCDate()).padStart(2, '0')
+        const hours = String(date.getUTCHours()).padStart(2, '0')
+        const minutes = String(date.getUTCMinutes()).padStart(2, '0')
+        const seconds = String(date.getUTCSeconds()).padStart(2, '0')
 
         return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
     }

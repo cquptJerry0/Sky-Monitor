@@ -141,9 +141,7 @@ export class ReplaysService {
                     resource_url as resourceUrl,
                     resource_type as resourceType,
                     path as pageUrl,
-                    user_id as userId,
-                    lineno,
-                    colno
+                    user_id as userId
                 FROM monitor_events
                 WHERE replay_id = {replayId:String}
                   AND app_id = {appId:String}

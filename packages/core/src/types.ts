@@ -78,7 +78,12 @@ export interface BaseEvent {
      * 例如: type='error' 时, name 可以是 'runtime_error', 'http_error', 'resource_error' 等
      */
     name?: string
-    timestamp?: string
+    /**
+     * 事件时间戳
+     * - number: Unix 毫秒时间戳 (推荐,避免时区问题)
+     * - string: ISO 8601 格式字符串 (兼容旧版本)
+     */
+    timestamp?: string | number
     level?: EventLevel
     release?: string
     environment?: string

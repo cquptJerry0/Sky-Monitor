@@ -118,8 +118,9 @@ export function mapEventForFrontend(event: DatabaseEvent): any {
         event_data: event.event_data,
         path: event.path,
         user_agent: event.user_agent,
-        timestamp: event.timestamp,
-        created_at: event.created_at,
+        // 将 ClickHouse DateTime 字符串转换为 ISO 格式 (UTC)
+        timestamp: typeof event.timestamp === 'string' ? event.timestamp.replace(' ', 'T') + '.000Z' : event.timestamp,
+        created_at: typeof event.created_at === 'string' ? event.created_at.replace(' ', 'T') + '.000Z' : event.created_at,
 
         // 错误字段
         error_message: event.error_message,

@@ -447,8 +447,10 @@ export class EventsService {
                     message = `资源加载失败 (${row.resource_type || 'unknown'}) - ${row.resource_url}`
                 }
 
-                // 时间戳转换为 ISO 格式（ClickHouse 返回的是 UTC+8）
-                const timestamp = new Date(row.timestamp).toISOString()
+                // 时间戳转换为 ISO 格式
+                // ClickHouse DateTime 返回的字符串格式: "YYYY-MM-DD HH:mm:ss"
+                // 将其转换为 ISO 格式 "YYYY-MM-DDTHH:mm:ss.000Z" (UTC 时间)
+                const timestamp = row.timestamp.replace(' ', 'T') + '.000Z'
 
                 return {
                     id: row.id,

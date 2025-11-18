@@ -168,7 +168,7 @@ export class SessionReplayTransport implements Transport {
                     compressedSize: compressed ? compressedSize : 0,
                 },
                 trigger: replayEvent.trigger || 'manual',
-                timestamp: replayEvent.timestamp || new Date().toISOString(),
+                timestamp: replayEvent.timestamp || Date.now(),
             }
 
             return payload

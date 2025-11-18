@@ -89,8 +89,10 @@ export function createMonitoringConfig(options: MonitoringPresetOptions) {
         integrations.push(
             new SessionReplayIntegration({
                 mode: 'onError',
-                bufferDuration: 60,
+                beforeErrorDuration: 60,
                 afterErrorDuration: 10,
+                checkoutEveryNms: 30000,
+                maxSegments: 3,
                 maskAllInputs: true,
             })
         )
