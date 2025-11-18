@@ -360,7 +360,14 @@ export class MonitoringService {
      */
     private async insertEvents(appId: string, events: MonitoringEventDto[], userAgent?: string) {
         const timestamp = this.formatTimestamp(new Date())
-        const eventDataList = EventFieldMapper.mapBatchToClickhouse(events, appId, userAgent || '', timestamp, () => this.generateEventId())
+        const eventDataList = EventFieldMapper.mapBatchToClickhouse(
+            events,
+            appId,
+            userAgent || '',
+            timestamp,
+            () => this.generateEventId(),
+            this.formatTimestamp.bind(this)
+        )
 
         await this.clickhouseClient.insert({
             table: 'monitor_events',

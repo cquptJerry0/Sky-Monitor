@@ -193,17 +193,28 @@ export class EventFieldMapper {
         appId: string,
         userAgent: string,
         fallbackTimestamp: string,
-        generateId: () => string
+        generateId: () => string,
+        formatTimestamp: (date: Date) => string
     ) {
         return events.map(event => {
             // 使用事件自己的 timestamp，如果没有则使用 fallbackTimestamp
-            const timestamp = event.timestamp || fallbackTimestamp
+            // 如果 event.timestamp 是 number (Unix 毫秒时间戳),需要转换为 DateTime 字符串
+            let timestamp: string
+            if (event.timestamp) {
+                if (typeof event.timestamp === 'number') {
+                    timestamp = formatTimestamp(new Date(event.timestamp))
+                } else {
+                    timestamp = formatTimestamp(new Date(event.timestamp))
+                }
+            } else {
+                timestamp = fallbackTimestamp
+            }
 
             const commonFields = {
                 app_id: appId,
                 user_agent: userAgent,
                 timestamp,
-                created_at: fallbackTimestamp, // 显式设置 created_at 为服务器接收时间（UTC+8）
+                created_at: fallbackTimestamp,
             }
 
             return this.mapToClickhouse(event, commonFields, generateId())

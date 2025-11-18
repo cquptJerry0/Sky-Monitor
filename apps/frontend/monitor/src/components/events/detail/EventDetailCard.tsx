@@ -16,6 +16,7 @@ import {
     errorFields,
     httpErrorFields,
     performanceFields,
+    longTaskFields,
     resourceErrorFields,
     sessionFields,
     userFields,
@@ -23,7 +24,6 @@ import {
     deviceFields,
     networkFields,
     frameworkFields,
-    metadataFields,
     type DetailField,
 } from '../schemas/eventFieldSchema'
 
@@ -148,7 +148,7 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
                 </CardHeader>
                 <CardContent>
                     <Tabs defaultValue="overview" className="w-full">
-                        <TabsList className="grid w-full grid-cols-4">
+                        <TabsList className="grid w-full grid-cols-3">
                             <TabsTrigger value="overview">概览</TabsTrigger>
                             <TabsTrigger value="context" disabled={!hasContextData}>
                                 上下文
@@ -156,7 +156,6 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
                             <TabsTrigger value="environment" disabled={!hasEnvironmentData}>
                                 环境
                             </TabsTrigger>
-                            <TabsTrigger value="metadata">元数据</TabsTrigger>
                         </TabsList>
 
                         {/* 概览 Tab */}
@@ -186,7 +185,9 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
                                             <Zap className="h-4 w-4" />
                                             性能详情
                                         </h3>
-                                        {renderFields(performanceFields, '')}
+                                        {event.event_name === 'long_task' || event.perf_category === 'longTask'
+                                            ? renderFields(longTaskFields, '')
+                                            : renderFields(performanceFields, '')}
                                     </div>
                                 </>
                             )}
@@ -303,25 +304,6 @@ export function EventDetailCard({ event }: EventDetailCardProps) {
                             )}
 
                             {event.framework && renderFields(frameworkFields, '框架信息')}
-                        </TabsContent>
-
-                        {/* 元数据 Tab */}
-                        <TabsContent value="metadata" className="space-y-6 mt-6">
-                            <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground">
-                                <p className="font-medium mb-2">关于元数据</p>
-                                <ul className="space-y-1 text-xs">
-                                    <li>
-                                        • <strong>去重计数</strong>: 相同错误被合并的次数,帮助识别高频错误
-                                    </li>
-                                    <li>
-                                        • <strong>采样率</strong>: 事件采样比例,用于控制数据量
-                                    </li>
-                                    <li>
-                                        • <strong>是否被采样</strong>: 该事件是否通过采样规则
-                                    </li>
-                                </ul>
-                            </div>
-                            {renderFields(metadataFields, 'SDK 元数据')}
                         </TabsContent>
                     </Tabs>
                 </CardContent>

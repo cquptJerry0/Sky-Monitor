@@ -47,6 +47,7 @@ export type ErrorEventName =
 export type PerformanceEventName =
     | 'http_performance' // HTTP请求性能
     | 'resource_timing' // 资源加载性能
+    | 'long_task' // 长任务监控
 
 /**
  * WebVital 事件名称 (二级分类)

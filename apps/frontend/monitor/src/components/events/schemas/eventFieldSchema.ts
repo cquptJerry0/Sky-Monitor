@@ -144,6 +144,61 @@ export const performanceFields: DetailField[] = [
     { label: '性能指标', key: 'metrics', type: 'json' },
 ]
 
+export const longTaskFields: DetailField[] = [
+    {
+        label: '任务名称',
+        key: 'task.name',
+        type: 'text',
+        extract: e => {
+            const data = typeof e.event_data === 'string' ? JSON.parse(e.event_data) : e.event_data
+            return (data?.task as any)?.name || '-'
+        },
+    },
+    {
+        label: '任务类型',
+        key: 'task.entryType',
+        type: 'badge',
+        extract: e => {
+            const data = typeof e.event_data === 'string' ? JSON.parse(e.event_data) : e.event_data
+            return (data?.task as any)?.entryType || '-'
+        },
+    },
+    {
+        label: '开始时间',
+        key: 'task.startTime',
+        type: 'text',
+        extract: e => {
+            const data = typeof e.event_data === 'string' ? JSON.parse(e.event_data) : e.event_data
+            const startTime = (data?.task as any)?.startTime
+            return startTime !== undefined ? `${Math.round(startTime)}ms` : '-'
+        },
+    },
+    {
+        label: '持续时间',
+        key: 'task.duration',
+        type: 'duration',
+        extract: e => {
+            const data = typeof e.event_data === 'string' ? JSON.parse(e.event_data) : e.event_data
+            return (data?.task as any)?.duration
+        },
+    },
+    {
+        label: '归因信息',
+        key: 'task.attribution',
+        type: 'json',
+        extract: e => {
+            const data = typeof e.event_data === 'string' ? JSON.parse(e.event_data) : e.event_data
+            const attribution = (data?.task as any)?.attribution
+            return attribution && Array.isArray(attribution) && attribution.length > 0 ? attribution : undefined
+        },
+        condition: e => {
+            const data = typeof e.event_data === 'string' ? JSON.parse(e.event_data) : e.event_data
+            const attribution = (data?.task as any)?.attribution
+            return attribution && Array.isArray(attribution) && attribution.length > 0
+        },
+    },
+]
+
 export const webVitalFields: DetailField[] = [
     {
         label: '指标名称',
@@ -231,26 +286,4 @@ export const frameworkFields: DetailField[] = [
     { label: '框架', key: 'framework', type: 'badge' },
     { label: '组件名称', key: 'component_name', type: 'text' },
     { label: '组件堆栈', key: 'component_stack', type: 'code' },
-]
-
-export const metadataFields: DetailField[] = [
-    {
-        label: '去重计数',
-        key: 'dedup_count',
-        type: 'number',
-        condition: e => !!e.dedup_count && e.dedup_count > 1,
-    },
-    {
-        label: '采样率',
-        key: 'sampling_rate',
-        type: 'number',
-        condition: e => !!e.sampling_rate,
-    },
-    {
-        label: '是否被采样',
-        key: 'sampling_sampled',
-        type: 'badge',
-        extract: e => (e.sampling_sampled ? '是' : '否'),
-        condition: e => e.sampling_sampled !== undefined,
-    },
 ]

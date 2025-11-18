@@ -9,7 +9,7 @@ import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components
 import { EventFilters, EventListRow, EventListSkeleton, EventStats } from '@/components/events'
 import type { EventFiltersState } from '@/components/events'
 import { PAGINATION, ROUTES } from '@/utils/constants'
-import { AlertCircle, RefreshCw } from 'lucide-react'
+import { AlertCircle, RefreshCw, Plus, Inbox } from 'lucide-react'
 import type { Event } from '@/api/types'
 
 export default function EventsPage() {
@@ -86,6 +86,35 @@ export default function EventsPage() {
             timeRange: '1h',
         })
         setPage(0)
+    }
+
+    if (!currentApp) {
+        return (
+            <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold">事件列表</h1>
+                        <p className="mt-1 text-muted-foreground">查看所有监控事件</p>
+                    </div>
+                </div>
+
+                <Card>
+                    <CardContent className="py-16">
+                        <div className="flex flex-col items-center justify-center text-center">
+                            <Inbox className="h-16 w-16 text-muted-foreground mb-4" />
+                            <h3 className="text-lg font-semibold mb-2">请先选择应用</h3>
+                            <p className="text-muted-foreground mb-6 max-w-md">
+                                你需要先选择一个应用才能查看事件数据。请在顶部导航栏选择应用,或创建一个新应用。
+                            </p>
+                            <Button onClick={() => navigate(ROUTES.APPLICATIONS)}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                创建应用
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        )
     }
 
     return (

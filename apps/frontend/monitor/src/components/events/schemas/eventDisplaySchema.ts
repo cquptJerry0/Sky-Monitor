@@ -53,12 +53,37 @@ export function extractEventMessage(event: Event): EventMessage {
         const category = event.event_name || event.perf_category || event.category
         const value = event.perf_value ?? event.duration ?? event.value
 
+        // 长任务特殊处理
+        if (category === 'long_task' || category === 'longTask') {
+            const taskData = eventData?.task as any
+            const duration = taskData?.duration ?? value
+            const displayValue = duration !== undefined ? `${Math.round(duration)}ms` : '-'
+
+            // 提取归因信息
+            let attribution = ''
+            if (taskData?.attribution && Array.isArray(taskData.attribution) && taskData.attribution.length > 0) {
+                const attr = taskData.attribution[0]
+                if (attr?.containerSrc) {
+                    attribution = ` · 来源: ${attr.containerSrc}`
+                } else if (attr?.containerName) {
+                    attribution = ` · 容器: ${attr.containerName}`
+                }
+            }
+
+            return {
+                primary: `长任务: ${displayValue}${attribution}`,
+                secondary: event.path || undefined,
+            }
+        }
+
         // 格式化类别名称
         const categoryMap: Record<string, string> = {
             http_performance: 'HTTP性能',
             resource_timing: '资源性能',
             http: 'HTTP请求',
             resourceTiming: '资源加载',
+            long_task: '长任务',
+            longTask: '长任务',
         }
         const displayCategory = categoryMap[category || ''] || category || '性能事件'
         const displayValue = value !== undefined ? `${Math.round(value)}ms` : '-'

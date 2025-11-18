@@ -1,4 +1,5 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { ClickHouseClient } from '@clickhouse/client'
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 
@@ -17,7 +18,9 @@ export class ApplicationService {
         @InjectRepository(DashboardEntity)
         private readonly dashboardRepository: Repository<DashboardEntity>,
         @InjectRepository(DashboardWidgetEntity)
-        private readonly widgetRepository: Repository<DashboardWidgetEntity>
+        private readonly widgetRepository: Repository<DashboardWidgetEntity>,
+        @Inject('CLICKHOUSE_CLIENT')
+        private readonly clickhouseClient: ClickHouseClient
     ) {}
 
     async create(payload) {
@@ -93,16 +96,48 @@ export class ApplicationService {
     }
 
     async delete(payload: { appId: string; userId: number }) {
+        const app = await this.applicationRepository.findOne({
+            where: {
+                appId: payload.appId,
+                userId: payload.userId,
+            },
+        })
+
+        if (!app) {
+            throw new NotFoundException('Application not found')
+        }
+
+        this.deleteClickHouseData(payload.appId).catch(error => {
+            this.logger.error(`Failed to delete ClickHouse data for appId ${payload.appId}: ${error.message}`)
+        })
+
         const res = await this.applicationRepository.delete({
             appId: payload.appId,
             userId: payload.userId,
         })
 
-        if (res.affected === 0) {
-            return new NotFoundException('Application not found')
-        }
+        this.logger.log(`Application deleted: appId=${payload.appId}, userId=${payload.userId}`)
 
         return res.affected
+    }
+
+    private async deleteClickHouseData(appId: string) {
+        try {
+            this.logger.log(`Deleting ClickHouse data for appId: ${appId}`)
+
+            await this.clickhouseClient.command({
+                query: `ALTER TABLE monitor_events DELETE WHERE app_id = '${appId}'`,
+            })
+
+            await this.clickhouseClient.command({
+                query: `ALTER TABLE session_replays DELETE WHERE app_id = '${appId}'`,
+            })
+
+            this.logger.log(`ClickHouse data deletion initiated for appId: ${appId}`)
+        } catch (error) {
+            this.logger.error(`Failed to delete ClickHouse data for appId ${appId}: ${error.message}`)
+            throw error
+        }
     }
 
     /**

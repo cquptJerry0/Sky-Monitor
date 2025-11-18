@@ -108,6 +108,7 @@ export type EventName =
     // 性能子类型
     | 'http_performance' // HTTP性能
     | 'resource_timing' // 资源性能
+    | 'long_task' // 长任务监控
     // Web Vitals子类型
     | 'LCP' // Largest Contentful Paint
     | 'FCP' // First Contentful Paint

@@ -32,5 +32,4 @@ export {
     deviceFields,
     networkFields,
     frameworkFields,
-    metadataFields,
 } from './schemas/eventFieldSchema'
