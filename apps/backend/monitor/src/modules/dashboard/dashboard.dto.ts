@@ -109,7 +109,7 @@ export type DeleteDashboardDto = z.infer<typeof deleteDashboardSchema>
 export const createWidgetSchema = z.object({
     dashboardId: z.string().uuid(),
     title: z.string().min(1).max(255),
-    widgetType: z.enum(['line', 'bar', 'area', 'table', 'world_map', 'big_number', 'radar']),
+    widgetType: z.enum(['line', 'bar', 'area', 'pie', 'table', 'world_map', 'big_number', 'radar']),
     queries: z.array(queryConfigSchema),
     displayConfig: displayConfigSchema.optional(),
     layout: layoutConfigSchema,
@@ -123,7 +123,7 @@ export type CreateWidgetDto = z.infer<typeof createWidgetSchema>
 export const updateWidgetSchema = z.object({
     id: z.string().uuid(),
     title: z.string().min(1).max(255).optional(),
-    widgetType: z.enum(['line', 'bar', 'area', 'table', 'world_map', 'big_number', 'radar']).optional(),
+    widgetType: z.enum(['line', 'bar', 'area', 'pie', 'table', 'world_map', 'big_number', 'radar']).optional(),
     queries: z.array(queryConfigSchema).optional(),
     displayConfig: displayConfigSchema.optional(),
     layout: layoutConfigSchema.optional(),

@@ -8,7 +8,7 @@
 /**
  * Widget 可视化类型
  */
-export type WidgetType = 'line' | 'bar' | 'area' | 'table' | 'big_number' | 'radar'
+export type WidgetType = 'line' | 'bar' | 'area' | 'pie' | 'table' | 'big_number' | 'radar'
 
 /**
  * 查询条件

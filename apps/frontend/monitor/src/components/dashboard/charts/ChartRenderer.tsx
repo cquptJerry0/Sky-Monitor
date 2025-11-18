@@ -1,9 +1,10 @@
-import { AreaChartIcon, BarChartIcon, HashIcon, LineChartIcon, TableIcon, RadarIcon } from 'lucide-react'
+import { AreaChartIcon, BarChartIcon, HashIcon, LineChartIcon, TableIcon, RadarIcon, PieChartIcon } from 'lucide-react'
 
 import { AreaChartWidget } from './AreaChartWidget'
 import { BarChartWidget } from './BarChartWidget'
 import { BigNumberWidget } from './BigNumberWidget'
 import { LineChartWidget } from './LineChartWidget'
+import { PieChartWidget } from './PieChartWidget'
 import { RadarChartWidget } from './RadarChartWidget'
 import { TableChartWidget } from './TableChartWidget'
 import { WebVitalsChartWidget } from './WebVitalsChartWidget'
@@ -34,6 +35,8 @@ export function ChartRenderer({ widgetType, data }: ChartRendererProps) {
             return <BarChartWidget data={data} />
         case 'area':
             return <AreaChartWidget data={data} />
+        case 'pie':
+            return <PieChartWidget data={data} />
         case 'table':
             return <TableChartWidget data={data} />
         case 'big_number':
@@ -77,6 +80,8 @@ export function getChartIcon(widgetType: WidgetType) {
             return BarChartIcon
         case 'area':
             return AreaChartIcon
+        case 'pie':
+            return PieChartIcon
         case 'table':
             return TableIcon
         case 'big_number':

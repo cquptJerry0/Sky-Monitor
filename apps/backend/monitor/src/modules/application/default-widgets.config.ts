@@ -147,26 +147,22 @@ export function generateDefaultWidgets(_dashboardId: string, appId: string): Omi
             layout: { x: 0, y: 3, w: 12, h: 6 },
         },
 
-        // 第三行: 错误趋势 + 错误类型雷达图
+        // 第三行: 事件类型分布饼图 + 错误类型雷达图
         {
-            title: '错误趋势',
-            widgetType: 'area',
+            title: '事件类型分布',
+            widgetType: 'pie',
             queries: [
                 {
-                    id: 'error-trend',
-                    fields: ['toStartOfHour(timestamp) as time', 'count()'],
-                    conditions: [
-                        { field: 'app_id', operator: '=', value: appId },
-                        { field: 'event_type', operator: 'IN', value: ['error', 'exception', 'unhandledrejection'] },
-                    ],
-                    groupBy: ['toStartOfHour(timestamp)'],
-                    orderBy: [{ field: 'toStartOfHour(timestamp)', direction: 'ASC' }],
-                    legend: '错误数量',
-                    color: '#ef4444',
+                    id: 'event-type-distribution',
+                    fields: ['event_type', 'count() as count'],
+                    conditions: [{ field: 'app_id', operator: '=', value: appId }],
+                    groupBy: ['event_type'],
+                    orderBy: [{ field: 'count()', direction: 'DESC' }],
+                    limit: 10,
                 },
             ],
             displayConfig: {
-                showLegend: false,
+                showLegend: true,
             },
             layout: { x: 0, y: 9, w: 6, h: 5 },
         },
