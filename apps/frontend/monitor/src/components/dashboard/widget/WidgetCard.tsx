@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Edit2, Trash2, MoreVertical } from 'lucide-react'
+import { Trash2, MoreVertical } from 'lucide-react'
 import { WidgetPreview } from './WidgetPreview'
 import { useExecuteQuery, useDeleteWidget } from '@/hooks/useDashboard'
 import { useDashboardStore } from '@/stores/dashboard.store'
@@ -20,14 +20,13 @@ import { Button } from '@/components/ui/button'
 
 interface WidgetCardProps {
     widget: DashboardWidget
-    onEdit?: (widget: DashboardWidget) => void
 }
 
 /**
  * Widget 卡片组件
  * 负责执行查询并渲染 Widget
  */
-export function WidgetCard({ widget, onEdit }: WidgetCardProps) {
+export function WidgetCard({ widget }: WidgetCardProps) {
     const { timeRange } = useDashboardStore()
     const currentAppId = useCurrentAppId()
     const [showDeleteDialog, setShowDeleteDialog] = useState(false)
@@ -68,10 +67,6 @@ export function WidgetCard({ widget, onEdit }: WidgetCardProps) {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => onEdit?.(widget)}>
-                                <Edit2 className="mr-2 h-4 w-4" />
-                                编辑
-                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setShowDeleteDialog(true)} className="text-destructive focus:text-destructive">
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 删除

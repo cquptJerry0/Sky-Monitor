@@ -16,7 +16,13 @@ export class QueryBuilderService {
      * @returns ClickHouse SQL 字符串
      */
     buildQuery(query: QueryConfig, timeRange: { start: Date; end: Date }, appId?: string | string[]): string {
-        const selectClause = this.buildSelectClause(query.fields)
+        // 如果提供了rawSql,直接使用
+        if (query.rawSql) {
+            return query.rawSql
+        }
+
+        // 否则通过配置构建SQL
+        const selectClause = this.buildSelectClause(query.fields!)
         const fromClause = 'FROM monitor_events'
         const whereClause = this.buildWhereClause(query.conditions, timeRange, appId)
         const groupByClause = this.buildGroupByClause(query.groupBy)
@@ -207,21 +213,34 @@ export class QueryBuilderService {
         // 处理别名 (如 "count() as total")
         const withoutAlias = trimmed.split(/\s+as\s+/i)[0].trim()
 
-        // 处理聚合函数 (如 "count(field)", "avg(field)")
-        const functionMatch = withoutAlias.match(/^[a-zA-Z]+\(([^)]+)\)$/)
-        if (functionMatch) {
-            const innerField = functionMatch[1].trim()
-            // 如果是 count(*) 或 count(DISTINCT field),返回 null
-            if (innerField === '*' || innerField.startsWith('DISTINCT')) {
-                return null
-            }
-            return innerField
-        }
+        // 递归提取嵌套函数中的字段名 (如 "round(avg(perf_value))" -> "perf_value")
+        let current = withoutAlias
+        let innerField: string | null = null
 
-        // 处理 ClickHouse 时间函数 (如 "toStartOfHour(timestamp)")
-        const timeMatch = withoutAlias.match(/^to[A-Z][a-zA-Z]+\(([^)]+)\)$/)
-        if (timeMatch) {
-            return timeMatch[1].trim()
+        while (true) {
+            // 处理聚合函数 (如 "count(field)", "avg(field)", "round(avg(field))")
+            const functionMatch = current.match(/^[a-zA-Z]+\(([^)]+)\)$/)
+            if (functionMatch) {
+                innerField = functionMatch[1].trim()
+                // 如果是 count(*) 或 count(DISTINCT field),返回 null
+                if (innerField === '*' || innerField.toUpperCase().startsWith('DISTINCT')) {
+                    return null
+                }
+                // 如果内部还是函数,继续递归
+                if (/^[a-zA-Z]+\(.+\)$/.test(innerField)) {
+                    current = innerField
+                    continue
+                }
+                return innerField
+            }
+
+            // 处理 ClickHouse 时间函数 (如 "toStartOfHour(timestamp)")
+            const timeMatch = current.match(/^to[A-Z][a-zA-Z]+\(([^)]+)\)$/)
+            if (timeMatch) {
+                return timeMatch[1].trim()
+            }
+
+            break
         }
 
         // 普通字段
@@ -233,7 +252,7 @@ export class QueryBuilderService {
      */
     private isAggregateOrFunction(field: string): boolean {
         const trimmed = field.trim().toLowerCase()
-        const aggregateFunctions = ['count', 'sum', 'avg', 'min', 'max', 'uniq', 'grouparray']
+        const aggregateFunctions = ['count', 'sum', 'avg', 'min', 'max', 'uniq', 'grouparray', 'round', 'floor', 'ceil']
         return aggregateFunctions.some(fn => trimmed.startsWith(fn + '('))
     }
 

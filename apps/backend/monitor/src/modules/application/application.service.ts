@@ -6,7 +6,7 @@ import { Repository } from 'typeorm'
 import { ApplicationEntity } from '../../entities/application.entity'
 import { DashboardEntity } from '../../entities/dashboard.entity'
 import { DashboardWidgetEntity } from '../../entities/dashboard-widget.entity'
-import { generateDefaultWidgets } from './default-widgets.config'
+import { generateDefaultDashboardWidgets } from '../dashboard/default-dashboard.template'
 
 @Injectable()
 export class ApplicationService {
@@ -43,7 +43,7 @@ export class ApplicationService {
 
             const savedDashboard = await this.dashboardRepository.save(dashboard)
 
-            const defaultWidgets = generateDefaultWidgets(savedDashboard.id, appId)
+            const defaultWidgets = generateDefaultDashboardWidgets(appId)
 
             const widgets = this.widgetRepository.create(
                 defaultWidgets.map(widgetConfig => ({
@@ -176,7 +176,7 @@ export class ApplicationService {
         const savedDashboard = await this.dashboardRepository.save(dashboard)
 
         // 创建默认Widgets
-        const defaultWidgets = generateDefaultWidgets(savedDashboard.id, appId)
+        const defaultWidgets = generateDefaultDashboardWidgets(appId)
 
         const widgets = this.widgetRepository.create(
             defaultWidgets.map(widgetConfig => ({

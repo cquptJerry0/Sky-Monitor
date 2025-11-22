@@ -9,7 +9,6 @@ import {
     DeleteDashboardDto,
     DeleteWidgetDto,
     ExecuteQueryDto,
-    GetTemplatesQueryDto,
     UpdateDashboardDto,
     UpdateWidgetDto,
     UpdateWidgetsLayoutDto,
@@ -19,7 +18,6 @@ import {
     deleteDashboardSchema,
     deleteWidgetSchema,
     executeQuerySchema,
-    getTemplatesQuerySchema,
     updateDashboardSchema,
     updateWidgetSchema,
     updateWidgetsLayoutSchema,
@@ -50,30 +48,6 @@ export class DashboardController {
     async listDashboards(@Request() req, @Query('appId') appId?: string) {
         const dashboards = await this.dashboardService.listDashboards(req.user.id, appId)
         return { data: dashboards, success: true }
-    }
-
-    // ==================== Widget 模板相关 API ====================
-    // 注意: 必须放在 @Get(':id') 之前,否则 'templates' 会被当作 id
-
-    /**
-     * 获取所有 Widget 模板
-     * GET /dashboards/templates
-     */
-    @Get('templates')
-    @UsePipes(new ZodValidationPipe(getTemplatesQuerySchema))
-    async getTemplates(@Query() query: GetTemplatesQueryDto) {
-        const templates = await this.dashboardService.getTemplates(query.category)
-        return { data: templates, success: true }
-    }
-
-    /**
-     * 获取单个 Widget 模板
-     * GET /dashboards/templates/:type
-     */
-    @Get('templates/:type')
-    async getTemplateByType(@Param('type') type: string) {
-        const template = await this.dashboardService.getTemplateByType(type)
-        return { data: template, success: true }
     }
 
     /**
@@ -164,17 +138,6 @@ export class DashboardController {
     }
 
     /**
-     * 从模板创建 Widget
-     * POST /dashboards/widgets/from-template
-     */
-    @Post('widgets/from-template')
-    @UsePipes(new ZodValidationPipe(createWidgetFromTemplateSchema))
-    async createWidgetFromTemplate(@Body() body: CreateWidgetFromTemplateDto, @Request() req) {
-        const widget = await this.dashboardService.createWidgetFromTemplate(body, req.user.id)
-        return { data: widget, success: true }
-    }
-
-    /**
      * 恢复默认 Widget
      * POST /dashboards/:dashboardId/reset-widgets
      */
@@ -182,5 +145,26 @@ export class DashboardController {
     async resetWidgets(@Param('dashboardId') dashboardId: string, @Request() req) {
         const widgets = await this.dashboardService.resetWidgets(dashboardId, req.user.id)
         return { data: widgets, success: true }
+    }
+
+    /**
+     * 获取Widget模版列表
+     * GET /dashboards/templates
+     */
+    @Get('templates')
+    async getTemplates() {
+        const templates = await this.dashboardService.getTemplates()
+        return { data: templates, success: true }
+    }
+
+    /**
+     * 从模版创建Widget
+     * POST /dashboards/widgets/from-template
+     */
+    @Post('widgets/from-template')
+    @UsePipes(new ZodValidationPipe(createWidgetFromTemplateSchema))
+    async createWidgetFromTemplate(@Body() body: CreateWidgetFromTemplateDto, @Request() req) {
+        const widget = await this.dashboardService.createWidgetFromTemplate(body, req.user.id)
+        return { data: widget, success: true }
     }
 }

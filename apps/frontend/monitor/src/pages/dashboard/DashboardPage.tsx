@@ -61,7 +61,6 @@ export default function DashboardPage() {
 
     // Widget Builder 弹窗状态
     const [widgetBuilderOpen, setWidgetBuilderOpen] = useState(false)
-    const [editingWidget, setEditingWidget] = useState<DashboardWidget | null>(null)
 
     // 恢复默认弹窗状态
     const [showResetDialog, setShowResetDialog] = useState(false)
@@ -125,19 +124,10 @@ export default function DashboardPage() {
     }, [dashboards, currentDashboardId, setCurrentDashboardId])
 
     /**
-     * 编辑 Widget
-     */
-    const handleEditWidget = (widget: DashboardWidget) => {
-        setEditingWidget(widget)
-        setWidgetBuilderOpen(true)
-    }
-
-    /**
      * 关闭 Widget Builder
      */
     const handleCloseWidgetBuilder = () => {
         setWidgetBuilderOpen(false)
-        setEditingWidget(null)
     }
 
     /**
@@ -236,12 +226,7 @@ export default function DashboardPage() {
 
             {/* Widget Builder 弹窗 */}
             {currentDashboardId && (
-                <WidgetBuilder
-                    dashboardId={currentDashboardId}
-                    open={widgetBuilderOpen}
-                    onOpenChange={handleCloseWidgetBuilder}
-                    editingWidget={editingWidget}
-                />
+                <WidgetBuilder dashboardId={currentDashboardId} open={widgetBuilderOpen} onOpenChange={handleCloseWidgetBuilder} />
             )}
 
             {/* 恢复默认 Widget 确认弹窗 */}
@@ -269,7 +254,7 @@ export default function DashboardPage() {
                     <div className="text-muted-foreground">加载中...</div>
                 </div>
             ) : currentDashboard?.widgets && currentDashboard.widgets.length > 0 ? (
-                <DashboardGrid dashboardId={currentDashboard.id} widgets={currentDashboard.widgets} onEditWidget={handleEditWidget} />
+                <DashboardGrid dashboardId={currentDashboard.id} widgets={currentDashboard.widgets} />
             ) : (
                 <div className="flex flex-col items-center justify-center h-96 space-y-4 border-2 border-dashed rounded-lg">
                     <div className="text-center">

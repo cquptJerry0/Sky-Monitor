@@ -69,18 +69,18 @@ function transformData(data: ExecuteQueryResponse): TransformedData[] {
     const result = data.results[0]
     if (!result || !result.data) return []
 
-    const errorTypeMap: Record<string, string> = {
-        error: 'JS Error',
-        unhandledrejection: 'Promise Rejection',
-        httpError: 'HTTP Error',
-        resourceError: 'Resource Error',
+    const errorNameMap: Record<string, string> = {
+        runtime_error: 'JS Error',
+        http_error: 'HTTP Error',
+        resource_error: 'Resource Error',
+        unhandled_rejection: 'Promise Rejection',
     }
 
     const items = result.data
         .map(row => {
-            const eventType = String(row.event_type || row.error_type || '')
+            const eventName = String(row.event_name || row.name || '')
             const count = Number(row.count || row.value || 0)
-            const label = errorTypeMap[eventType.toLowerCase()]
+            const label = errorNameMap[eventName.toLowerCase()]
 
             if (!label) return null
 

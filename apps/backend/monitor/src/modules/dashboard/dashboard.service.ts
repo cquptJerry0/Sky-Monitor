@@ -16,10 +16,8 @@ import {
     UpdateWidgetDto,
     UpdateWidgetsLayoutDto,
 } from './dashboard.dto'
+import { generateDefaultDashboardWidgets } from './default-dashboard.template'
 import { QueryBuilderService } from './query-builder.service'
-import { WidgetTemplateService } from './widget-template.service'
-import type { TemplateCategory, WidgetTemplateMeta } from './widget-template.types'
-import { generateDefaultWidgets } from '../application/default-widgets.config'
 
 @Injectable()
 export class DashboardService {
@@ -32,8 +30,7 @@ export class DashboardService {
         private readonly widgetRepository: Repository<DashboardWidgetEntity>,
         @Inject('CLICKHOUSE_CLIENT')
         private readonly clickhouseClient: ClickHouseClient,
-        private readonly queryBuilderService: QueryBuilderService,
-        private readonly widgetTemplateService: WidgetTemplateService
+        private readonly queryBuilderService: QueryBuilderService
     ) {}
 
     /**
@@ -131,6 +128,23 @@ export class DashboardService {
     }
 
     /**
+     * 计算新Widget应该放置的Y坐标(最下面)
+     */
+    private async calculateBottomY(dashboardId: string): Promise<number> {
+        const widgets = await this.widgetRepository.find({
+            where: { dashboardId },
+        })
+
+        if (widgets.length === 0) {
+            return 0
+        }
+
+        // 找到最大的 y + h
+        const maxBottom = Math.max(...widgets.map(w => (w.layout?.y || 0) + (w.layout?.h || 0)))
+        return maxBottom
+    }
+
+    /**
      * 创建 Widget
      */
     async createWidget(payload: CreateWidgetDto, userId: number) {
@@ -142,13 +156,20 @@ export class DashboardService {
             throw new NotFoundException('Dashboard not found')
         }
 
+        // 计算新Widget的Y坐标(放在最下面)
+        const bottomY = await this.calculateBottomY(payload.dashboardId)
+        const layout = {
+            ...payload.layout,
+            y: bottomY,
+        }
+
         const widget = new DashboardWidgetEntity({
             dashboardId: payload.dashboardId,
             title: payload.title,
             widgetType: payload.widgetType,
             queries: payload.queries as any,
             displayConfig: payload.displayConfig as any,
-            layout: payload.layout as any,
+            layout: layout as any,
         })
 
         return await this.widgetRepository.save(widget)
@@ -277,84 +298,9 @@ export class DashboardService {
         }
     }
 
-    // ==================== Widget 模板相关方法 ====================
-
-    /**
-     * 获取所有模板或按分类获取模板
-     */
-    async getTemplates(category?: TemplateCategory): Promise<{ templates: WidgetTemplateMeta[] }> {
-        if (category) {
-            const templates = this.widgetTemplateService.getTemplatesByCategory(category)
-            return { templates }
-        }
-        return this.widgetTemplateService.getAllTemplates()
-    }
-
-    /**
-     * 根据类型获取模板
-     */
-    async getTemplateByType(type: string): Promise<WidgetTemplateMeta> {
-        const template = this.widgetTemplateService.getTemplateByType(type as any)
-        return {
-            type: template.type,
-            name: template.name,
-            description: template.description,
-            category: template.category,
-            widgetType: template.widgetType,
-            icon: template.icon,
-            editableParams: template.editableParams,
-        }
-    }
-
-    /**
-     * 从模板创建 Widget
-     */
-    async createWidgetFromTemplate(payload: CreateWidgetFromTemplateDto, userId: number) {
-        // 验证 Dashboard 是否存在且属于当前用户
-        const dashboard = await this.dashboardRepository.findOne({
-            where: { id: payload.dashboardId },
-        })
-
-        if (!dashboard) {
-            throw new NotFoundException('Dashboard 不存在')
-        }
-
-        if (dashboard.userId !== userId) {
-            throw new NotFoundException('无权访问此 Dashboard')
-        }
-
-        // 验证模板参数
-        const validation = this.widgetTemplateService.validateTemplateParams(payload.templateType as any, payload.params)
-        if (!validation.valid) {
-            throw new BadRequestException(`模板参数验证失败: ${validation.errors.join(', ')}`)
-        }
-
-        // 从模板生成查询配置
-        const queries = this.widgetTemplateService.generateQueryFromTemplate(payload.templateType as any, payload.params)
-
-        // 获取模板元数据
-        const template = this.widgetTemplateService.getTemplateByType(payload.templateType as any)
-
-        // 默认布局配置
-        const defaultLayout = { x: 0, y: 0, w: 6, h: 4 }
-
-        // 创建 Widget
-        const widget = new DashboardWidgetEntity({
-            dashboardId: payload.dashboardId,
-            title: template.name,
-            widgetType: template.widgetType,
-            queries,
-            displayConfig: {},
-            layout: { ...defaultLayout, ...payload.layout },
-        })
-
-        return await this.widgetRepository.save(widget)
-    }
-
     /**
      * 恢复默认 Widget
-     * 1. 删除当前 Dashboard 的所有 Widget
-     * 2. 重新创建默认的 4 个 Widget
+     * 删除当前 Dashboard 的所有 Widget 并重新创建默认 Widget
      */
     async resetWidgets(dashboardId: string, userId: number) {
         const dashboard = await this.dashboardRepository.findOne({
@@ -371,7 +317,7 @@ export class DashboardService {
 
         await this.widgetRepository.delete({ dashboardId })
 
-        const defaultWidgets = generateDefaultWidgets(dashboardId, dashboard.appId)
+        const defaultWidgets = generateDefaultDashboardWidgets(dashboard.appId)
 
         const widgets = this.widgetRepository.create(
             defaultWidgets.map(widgetConfig => ({
@@ -385,5 +331,122 @@ export class DashboardService {
         this.logger.log(`Reset ${savedWidgets.length} default widgets for dashboard: ${dashboardId}`)
 
         return savedWidgets
+    }
+
+    /**
+     * 获取Widget模版列表
+     * 只返回大数字模版
+     */
+    async getTemplates() {
+        return {
+            templates: [
+                {
+                    type: 'big_number',
+                    name: '大数字',
+                    description: '显示总事件数的大数字卡片',
+                    widgetType: 'big_number',
+                },
+            ],
+        }
+    }
+
+    /**
+     * 从模版创建Widget - 支持大数字和折线图
+     * 使用fields+conditions构建查询,让后端自动添加时间范围
+     */
+    async createWidgetFromTemplate(payload: CreateWidgetFromTemplateDto, userId: number) {
+        const dashboard = await this.dashboardRepository.findOne({
+            where: { id: payload.dashboardId, userId },
+        })
+
+        if (!dashboard) {
+            throw new NotFoundException('Dashboard not found')
+        }
+
+        if (!dashboard.appId) {
+            throw new BadRequestException('Dashboard必须关联应用')
+        }
+
+        if (payload.templateType !== 'quick_create') {
+            throw new BadRequestException('只支持 quick_create 模版')
+        }
+
+        // 计算新Widget的Y坐标(放在最下面)
+        const bottomY = await this.calculateBottomY(payload.dashboardId)
+
+        // 构建查询条件 - 根据事件筛选
+        const conditions: any[] = []
+
+        if (payload.eventFilter && payload.eventFilter !== 'all') {
+            let eventTypes: string[] = []
+
+            switch (payload.eventFilter) {
+                case 'error':
+                    eventTypes = ['error', 'exception', 'unhandledrejection']
+                    break
+                case 'performance':
+                    eventTypes = ['performance', 'webVital']
+                    break
+                case 'user_behavior':
+                    eventTypes = ['custom', 'message']
+                    break
+            }
+
+            if (eventTypes.length > 0) {
+                conditions.push({ field: 'event_type', operator: 'IN', value: eventTypes })
+            }
+        }
+
+        // 根据事件筛选生成图例名称
+        let legendName = '全部事件'
+        switch (payload.eventFilter) {
+            case 'error':
+                legendName = '错误相关'
+                break
+            case 'performance':
+                legendName = '性能相关'
+                break
+            case 'user_behavior':
+                legendName = '用户行为'
+                break
+        }
+
+        // 根据图表类型构建查询和布局
+        let fields: string[]
+        let groupBy: string[] | undefined
+        let orderBy: any[] | undefined
+        let layout: { x: number; y: number; w: number; h: number }
+
+        if (payload.widgetType === 'big_number') {
+            fields = ['count() as value']
+            layout = { x: 0, y: bottomY, w: 3, h: 2 }
+        } else {
+            // 折线图
+            fields = ['toStartOfHour(timestamp) as time', 'count() as value']
+            groupBy = ['toStartOfHour(timestamp)']
+            orderBy = [{ field: 'toStartOfHour(timestamp)', direction: 'ASC' }]
+            layout = { x: 0, y: bottomY, w: 6, h: 4 }
+        }
+
+        // 创建Widget
+        const widget = new DashboardWidgetEntity({
+            dashboardId: payload.dashboardId,
+            title: payload.title,
+            widgetType: payload.widgetType,
+            queries: [
+                {
+                    id: crypto.randomUUID(),
+                    fields,
+                    conditions,
+                    groupBy,
+                    orderBy,
+                    legend: legendName,
+                    color: '#3b82f6', // 蓝色,与默认图表一致
+                },
+            ] as any,
+            layout: layout as any,
+        })
+
+        return await this.widgetRepository.save(widget)
     }
 }

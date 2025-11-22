@@ -21,10 +21,14 @@ export interface QueryCondition {
 
 /**
  * 查询配置
+ * 支持两种模式:
+ * 1. rawSql: 直接提供原始SQL
+ * 2. fields + conditions: 通过配置构建SQL
  */
 export interface QueryConfig {
     id: string
-    fields: string[]
+    rawSql?: string
+    fields?: string[]
     conditions?: QueryCondition[]
     groupBy?: string[]
     orderBy?: Array<{ field: string; direction: 'ASC' | 'DESC' }>
@@ -211,50 +215,12 @@ export interface ExecuteQueryResponse {
     results: QueryResult[]
 }
 
-// ==================== Widget 模板相关类型 ====================
+// ==================== Widget 模板相关类型 (简化版) ====================
 
 /**
- * Widget 模板类型枚举
+ * Widget 模板类型 - 快速创建
  */
-export type WidgetTemplateType =
-    // 性能监控类
-    | 'web_vitals_trend'
-    | 'page_performance_table'
-    | 'performance_distribution'
-    | 'network_performance'
-    | 'http_performance_table'
-    // 错误监控类
-    | 'error_trend'
-    | 'error_distribution'
-    | 'error_details_table'
-    | 'http_error_analysis'
-    // 用户行为类
-    | 'active_users'
-    | 'session_analysis'
-    | 'top_pages'
-    // 设备环境类
-    | 'browser_distribution'
-    | 'os_distribution'
-    | 'device_type_distribution'
-
-/**
- * 模板分类
- */
-export type TemplateCategory = 'performance' | 'error' | 'user' | 'device'
-
-/**
- * 时间粒度
- */
-export type TimeGranularity = 'minute' | 'hour' | 'day'
-
-/**
- * 模板参数
- */
-export interface TemplateParams {
-    appId?: string | string[]
-    timeGranularity?: TimeGranularity
-    limit?: number
-}
+export type WidgetTemplateType = 'quick_create'
 
 /**
  * Widget 模板元数据
@@ -263,22 +229,7 @@ export interface WidgetTemplateMeta {
     type: WidgetTemplateType
     name: string
     description: string
-    category: TemplateCategory
     widgetType: WidgetType
-    icon?: string
-    editableParams?: {
-        timeGranularity?: {
-            enabled: boolean
-            default: TimeGranularity
-            options: TimeGranularity[]
-        }
-        limit?: {
-            enabled: boolean
-            default: number
-            min: number
-            max: number
-        }
-    }
 }
 
 /**
@@ -289,11 +240,17 @@ export interface TemplateListResponse {
 }
 
 /**
+ * 事件筛选类型 - 按业务场景分类
+ */
+export type EventFilter = 'all' | 'error' | 'performance' | 'user_behavior'
+
+/**
  * 从模板创建 Widget DTO
  */
 export interface CreateWidgetFromTemplateDto {
     dashboardId: string
     templateType: WidgetTemplateType
-    params: TemplateParams
-    layout?: Partial<LayoutConfig>
+    title: string
+    widgetType: 'big_number' | 'line'
+    eventFilter?: EventFilter
 }

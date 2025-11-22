@@ -56,8 +56,11 @@ export function LineChartWidget({ data }: LineChartWidgetProps) {
         )
     }
 
-    // 获取所有系列的字段名 (用于渲染多条折线)
-    const seriesKeys = data.results.map(result => result.legend || result.queryId)
+    // 获取所有系列的字段名和颜色
+    const series = data.results.map((result, index) => ({
+        key: result.legend || result.queryId,
+        color: result.color || COLORS[index % COLORS.length], // 优先使用result.color
+    }))
 
     return (
         <ResponsiveContainer width="100%" height="100%">
@@ -68,15 +71,15 @@ export function LineChartWidget({ data }: LineChartWidgetProps) {
                 <Tooltip />
                 <Legend />
                 {/* 渲染多条折线 */}
-                {seriesKeys.map((key, index) => (
+                {series.map(({ key, color }) => (
                     <Line
                         key={key}
                         type="monotone" // 平滑曲线
                         dataKey={key} // 数据字段名
-                        stroke={COLORS[index % COLORS.length]} // 循环使用颜色
-                        strokeWidth={2}
-                        dot={{ r: 3 }} // 数据点大小
-                        activeDot={{ r: 5 }} // 悬停时数据点大小
+                        stroke={color} // 使用配置的颜色
+                        strokeWidth={1.5}
+                        dot={{ r: 2 }} // 数据点大小
+                        activeDot={{ r: 4 }} // 悬停时数据点大小
                     />
                 ))}
             </LineChart>

@@ -1,39 +1,26 @@
-import type { CreateWidgetDto } from '../dashboard/dashboard.dto'
+import type { QueryConfig } from '../../entities/dashboard-widget.entity'
 
 /**
- * 默认 Widget 配置
- * 为每个新创建的 Application 自动生成这些 Widget
- *
- * 新布局设计 (12列 x 10行):
- * 第一行 (h: 4):
- *   - 左侧 (w: 7): 4个关键指标 2x2 网格
- *   - 右侧 (w: 5): 事件类型分布饼图
- * 第二行 (h: 6):
- *   - 左侧 (w: 7): Web Vitals 性能趋势
- *   - 右侧 (w: 5): 错误类型雷达图
+ * 默认Dashboard模板
+ * 这是唯一的模板配置,用于创建应用时自动生成默认监控面板
  */
-
-/**
- * 生成默认 Widget 配置
- * @param _dashboardId Dashboard ID (保留参数以保持接口兼容)
- * @param appId Application ID
- * @returns 默认 Widget 配置数组
- */
-export function generateDefaultWidgets(_dashboardId: string, appId: string): Omit<CreateWidgetDto, 'dashboardId'>[] {
+export function generateDefaultDashboardWidgets(appId: string): Array<{
+    title: string
+    widgetType: 'line' | 'bar' | 'area' | 'pie' | 'table' | 'world_map' | 'big_number' | 'radar'
+    queries: QueryConfig[]
+    displayConfig?: any
+    layout: { x: number; y: number; w: number; h: number }
+}> {
     return [
-        // 第一行左侧: 4个关键指标卡片 (2x2网格, 共7列宽)
+        // 总事件数
         {
             title: '总事件数',
             widgetType: 'big_number',
-            queries: [
-                {
-                    id: 'total-events',
-                    fields: ['count() as value'],
-                    conditions: [{ field: 'app_id', operator: '=', value: appId }],
-                },
-            ],
+            queries: [{ id: 'total-events', fields: ['count() as value'], conditions: [{ field: 'app_id', operator: '=', value: appId }] }],
             layout: { x: 0, y: 0, w: 3, h: 2 },
         },
+
+        // 错误总数
         {
             title: '错误总数',
             widgetType: 'big_number',
@@ -43,12 +30,14 @@ export function generateDefaultWidgets(_dashboardId: string, appId: string): Omi
                     fields: ['count() as value'],
                     conditions: [
                         { field: 'app_id', operator: '=', value: appId },
-                        { field: 'event_type', operator: 'IN', value: ['error', 'exception', 'unhandledrejection'] },
+                        { field: 'event_type', operator: '=', value: 'error' },
                     ],
                 },
             ],
             layout: { x: 3, y: 0, w: 4, h: 2 },
         },
+
+        // 活跃用户
         {
             title: '活跃用户',
             widgetType: 'big_number',
@@ -64,6 +53,8 @@ export function generateDefaultWidgets(_dashboardId: string, appId: string): Omi
             ],
             layout: { x: 0, y: 2, w: 3, h: 2 },
         },
+
+        // 平均 LCP
         {
             title: '平均 LCP',
             widgetType: 'big_number',
@@ -78,13 +69,11 @@ export function generateDefaultWidgets(_dashboardId: string, appId: string): Omi
                     ],
                 },
             ],
-            displayConfig: {
-                unit: 'ms',
-            },
+            displayConfig: { unit: 'ms' },
             layout: { x: 3, y: 2, w: 4, h: 2 },
         },
 
-        // 第一行右侧: 事件类型分布饼图
+        // 事件类型分布
         {
             title: '事件类型分布',
             widgetType: 'pie',
@@ -98,13 +87,11 @@ export function generateDefaultWidgets(_dashboardId: string, appId: string): Omi
                     limit: 10,
                 },
             ],
-            displayConfig: {
-                showLegend: true,
-            },
+            displayConfig: { showLegend: true },
             layout: { x: 7, y: 0, w: 5, h: 4 },
         },
 
-        // 第二行左侧: Web Vitals 性能趋势 (7列宽)
+        // Web Vitals 性能趋势
         {
             title: 'Web Vitals 性能趋势',
             widgetType: 'line',
@@ -119,7 +106,7 @@ export function generateDefaultWidgets(_dashboardId: string, appId: string): Omi
                     ],
                     groupBy: ['toStartOfHour(timestamp)'],
                     orderBy: [{ field: 'toStartOfHour(timestamp)', direction: 'ASC' }],
-                    legend: 'TTFB (首字节时间)',
+                    legend: 'TTFB',
                     color: '#60a5fa',
                 },
                 {
@@ -132,7 +119,7 @@ export function generateDefaultWidgets(_dashboardId: string, appId: string): Omi
                     ],
                     groupBy: ['toStartOfHour(timestamp)'],
                     orderBy: [{ field: 'toStartOfHour(timestamp)', direction: 'ASC' }],
-                    legend: 'INP (交互延迟)',
+                    legend: 'INP',
                     color: '#3b82f6',
                 },
                 {
@@ -145,7 +132,7 @@ export function generateDefaultWidgets(_dashboardId: string, appId: string): Omi
                     ],
                     groupBy: ['toStartOfHour(timestamp)'],
                     orderBy: [{ field: 'toStartOfHour(timestamp)', direction: 'ASC' }],
-                    legend: 'FCP (首次内容绘制)',
+                    legend: 'FCP',
                     color: '#2563eb',
                 },
                 {
@@ -158,41 +145,33 @@ export function generateDefaultWidgets(_dashboardId: string, appId: string): Omi
                     ],
                     groupBy: ['toStartOfHour(timestamp)'],
                     orderBy: [{ field: 'toStartOfHour(timestamp)', direction: 'ASC' }],
-                    legend: 'LCP (最大内容绘制)',
+                    legend: 'LCP',
                     color: '#1d4ed8',
                 },
             ],
-            displayConfig: {
-                yAxis: { unit: 'ms', min: 0 },
-                showLegend: true,
-            },
+            displayConfig: { yAxis: { unit: 'ms', min: 0 }, showLegend: true },
             layout: { x: 0, y: 4, w: 7, h: 6 },
         },
 
-        // 第二行右侧: 错误类型雷达图
+        // 错误类型分布
         {
             title: '错误类型分布',
             widgetType: 'radar',
             queries: [
                 {
                     id: 'error-type-distribution',
-                    fields: ['event_type', 'count() as count'],
+                    fields: ['event_name', 'count() as count'],
                     conditions: [
                         { field: 'app_id', operator: '=', value: appId },
-                        {
-                            field: 'event_type',
-                            operator: 'IN',
-                            value: ['error', 'unhandledrejection', 'httpError', 'resourceError'],
-                        },
+                        { field: 'event_type', operator: '=', value: 'error' },
+                        { field: 'event_name', operator: '!=', value: '' },
                     ],
-                    groupBy: ['event_type'],
+                    groupBy: ['event_name'],
                     orderBy: [{ field: 'count()', direction: 'DESC' }],
                     limit: 5,
                 },
             ],
-            displayConfig: {
-                showLegend: false,
-            },
+            displayConfig: { showLegend: false },
             layout: { x: 7, y: 4, w: 5, h: 6 },
         },
     ]

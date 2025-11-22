@@ -10,10 +10,6 @@ export { WidgetBuilder } from './widget/WidgetBuilder'
 export { WidgetCard } from './widget/WidgetCard'
 export { WidgetPreview } from './widget/WidgetPreview'
 
-// 模板相关
-export { TemplateSelector } from './template/TemplateSelector'
-export { TemplateParamsEditor } from './template/TemplateParamsEditor'
-
 // SQL 相关
 export { SqlQueryBuilder } from './sql/SqlQueryBuilder'
 export { SqlEditor } from './sql/SqlEditor'

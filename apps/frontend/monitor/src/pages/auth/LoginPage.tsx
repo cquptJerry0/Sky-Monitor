@@ -123,8 +123,9 @@ export default function LoginPage() {
             <div className="w-full max-w-md p-8 bg-card border border-border rounded-lg shadow-lg">
                 {/* Logo 和标题 */}
                 <div className="text-center mb-8">
-                    <div className="flex justify-center mb-4">
-                        <img src="/logo-with-text.svg" alt="Sky Monitor" className="h-16" />
+                    <div className="flex justify-center items-center gap-3 mb-2">
+                        <img src="/logo.svg" alt="Sky Monitor" className="h-12 w-12" />
+                        <h1 className="text-3xl font-bold text-foreground">Sky Monitor</h1>
                     </div>
                     <p className="text-muted-foreground">前端监控平台</p>
                 </div>
