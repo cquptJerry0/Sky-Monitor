@@ -58,3 +58,6 @@ packages/vue/
 
 # 上传文件
 uploads/
+
+# DevContainer 配置
+.devcontainer/

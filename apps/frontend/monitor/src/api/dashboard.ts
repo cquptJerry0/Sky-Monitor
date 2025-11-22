@@ -93,30 +93,6 @@ export const dashboardApi = {
         return await client.post<ExecuteQueryResponse>('/dashboards/widgets/query', data)
     },
 
-    // ==================== Widget 模板相关 API ====================
-
-    /**
-     * 获取所有 Widget 模板
-     */
-    getTemplates: async (category?: string): Promise<TemplateListResponse> => {
-        const params = category ? { category } : {}
-        return await client.get<TemplateListResponse>('/dashboards/templates', { params })
-    },
-
-    /**
-     * 获取单个 Widget 模板
-     */
-    getTemplateByType: async (type: string): Promise<WidgetTemplateMeta> => {
-        return await client.get<WidgetTemplateMeta>(`/dashboards/templates/${type}`)
-    },
-
-    /**
-     * 从模板创建 Widget
-     */
-    createWidgetFromTemplate: async (data: CreateWidgetFromTemplateDto): Promise<DashboardWidget> => {
-        return await client.post<DashboardWidget>('/dashboards/widgets/from-template', data)
-    },
-
     /**
      * 恢复默认 Widget
      */

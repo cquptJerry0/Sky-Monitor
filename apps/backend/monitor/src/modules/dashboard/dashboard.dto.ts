@@ -19,11 +19,15 @@ export const orderByConfigSchema = z.object({
 
 /**
  * 查询配置 Schema
+ * 支持两种模式:
+ * 1. rawSql: 直接提供原始SQL
+ * 2. fields + conditions: 通过配置构建SQL
  */
 export const queryConfigSchema = z.object({
     id: z.string(),
-    fields: z.array(z.string()),
-    conditions: z.array(queryConditionSchema),
+    rawSql: z.string().optional(),
+    fields: z.array(z.string()).optional(),
+    conditions: z.array(queryConditionSchema).optional(),
     groupBy: z.array(z.string()).optional(),
     orderBy: z.array(orderByConfigSchema).optional(),
     limit: z.number().optional(),
@@ -169,36 +173,15 @@ export const executeQuerySchema = z.object({
 
 export type ExecuteQueryDto = z.infer<typeof executeQuerySchema>
 
-// ==================== Widget 模板相关 DTO ====================
-
 /**
- * 模板参数 Schema
- */
-export const templateParamsSchema = z.object({
-    appId: z.union([z.string(), z.array(z.string())]).optional(),
-    timeGranularity: z.enum(['minute', 'hour', 'day']).optional(),
-    limit: z.number().int().min(1).max(100).optional(),
-})
-
-export type TemplateParamsDto = z.infer<typeof templateParamsSchema>
-
-/**
- * 从模板创建 Widget Schema
+ * 从模版创建Widget Schema - 支持大数字和折线图
  */
 export const createWidgetFromTemplateSchema = z.object({
     dashboardId: z.string().uuid(),
-    templateType: z.string(),
-    params: templateParamsSchema,
-    layout: layoutConfigSchema.partial(),
+    templateType: z.enum(['quick_create']),
+    title: z.string().min(1).max(255),
+    widgetType: z.enum(['big_number', 'line']),
+    eventFilter: z.enum(['all', 'error', 'performance', 'user_behavior']).optional(),
 })
 
 export type CreateWidgetFromTemplateDto = z.infer<typeof createWidgetFromTemplateSchema>
-
-/**
- * 获取模板列表查询参数 Schema
- */
-export const getTemplatesQuerySchema = z.object({
-    category: z.enum(['performance', 'error', 'user', 'device']).optional(),
-})
-
-export type GetTemplatesQueryDto = z.infer<typeof getTemplatesQuerySchema>

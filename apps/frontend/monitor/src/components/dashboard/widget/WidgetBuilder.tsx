@@ -1,83 +1,62 @@
-import { ArrowLeft } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { ArrowLeft, Hash, Table } from 'lucide-react'
+import { useState } from 'react'
 
 import { SqlQueryBuilder } from '../sql/SqlQueryBuilder'
-import { TemplateParamsEditor } from '../template/TemplateParamsEditor'
-import { TemplateSelector } from '../template/TemplateSelector'
-import { WidgetPreview } from './WidgetPreview'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useCreateWidget, useUpdateWidget } from '@/hooks/useDashboard'
+import { useCreateWidget } from '@/hooks/useDashboard'
 import { useCreateWidgetFromTemplate } from '@/hooks/useWidgetTemplate'
 import { useCurrentAppId } from '@/hooks/useCurrentApp'
-import type { CreateWidgetDto, DashboardWidget, TemplateParams, WidgetTemplateMeta, WidgetType } from '@/types/dashboard'
+import type { CreateWidgetDto, EventFilter } from '@/types/dashboard'
 
 interface WidgetBuilderProps {
     dashboardId: string
     open: boolean
     onOpenChange: (open: boolean) => void
-    editingWidget?: DashboardWidget | null
 }
 
-type BuilderMode = 'select-template' | 'edit-params' | 'sql-editor'
+type BuilderMode = 'select-mode' | 'quick-create' | 'custom-sql'
 
-export function WidgetBuilder({ dashboardId, open, onOpenChange, editingWidget }: WidgetBuilderProps) {
+export function WidgetBuilder({ dashboardId, open, onOpenChange }: WidgetBuilderProps) {
     const currentAppId = useCurrentAppId()
     const createWidget = useCreateWidget()
-    const updateWidget = useUpdateWidget()
     const createFromTemplate = useCreateWidgetFromTemplate()
 
-    const isEditMode = !!editingWidget
-
-    const [mode, setMode] = useState<BuilderMode>('select-template')
-    const [selectedTemplate, setSelectedTemplate] = useState<WidgetTemplateMeta | null>(null)
-
+    const [mode, setMode] = useState<BuilderMode>('select-mode')
     const [title, setTitle] = useState('')
-    const [widgetType, setWidgetType] = useState<WidgetType>('line')
+    const [widgetType, setWidgetType] = useState<'big_number' | 'line'>('big_number')
+    const [eventFilter, setEventFilter] = useState<EventFilter>('all')
     const [rawSql, setRawSql] = useState('')
 
-    useEffect(() => {
-        if (editingWidget && open) {
-            setMode('sql-editor')
-            setTitle(editingWidget.title)
-            setWidgetType(editingWidget.widgetType)
-            setRawSql('')
-        } else if (!open) {
-            setMode('select-template')
-            setSelectedTemplate(null)
-            setTitle('')
-            setWidgetType('line')
-            setRawSql('')
-        }
-    }, [editingWidget, open])
-
-    const handleSelectTemplate = (template: WidgetTemplateMeta) => {
-        setSelectedTemplate(template)
-        setMode('edit-params')
+    const handleReset = () => {
+        setMode('select-mode')
+        setTitle('')
+        setWidgetType('big_number')
+        setEventFilter('all')
+        setRawSql('')
     }
 
-    const handleConfirmTemplate = async (params: TemplateParams) => {
-        if (!selectedTemplate) return
+    const handleQuickCreate = async () => {
+        if (!title.trim()) return
 
         await createFromTemplate.mutateAsync({
             dashboardId,
-            templateType: selectedTemplate.type,
-            params,
+            templateType: 'quick_create',
+            title,
+            widgetType,
+            eventFilter,
         })
 
+        handleReset()
         onOpenChange(false)
     }
 
-    const handleSubmit = async () => {
-        if (!title.trim() || !rawSql.trim()) {
-            return
-        }
+    const handleCreateCustomSQL = async () => {
+        if (!title.trim() || !rawSql.trim()) return
 
-        // 将 SQL 转换为 QueryConfig 格式
         const queryConfig = {
             id: crypto.randomUUID(),
             rawSql,
@@ -86,143 +65,151 @@ export function WidgetBuilder({ dashboardId, open, onOpenChange, editingWidget }
             legend: title,
         }
 
-        if (isEditMode && editingWidget) {
-            await updateWidget.mutateAsync({
-                id: editingWidget.id,
-                title,
-                widgetType,
-                queries: [queryConfig],
-            })
-        } else {
-            const widgetData: CreateWidgetDto = {
-                dashboardId,
-                title,
-                widgetType,
-                queries: [queryConfig],
-                layout: {
-                    x: 0,
-                    y: 0,
-                    w: 6,
-                    h: 4,
-                },
-            }
-            await createWidget.mutateAsync(widgetData)
+        const widgetData: CreateWidgetDto = {
+            dashboardId,
+            title,
+            widgetType: 'table',
+            queries: [queryConfig],
+            layout: {
+                x: 0,
+                y: 0,
+                w: 12,
+                h: 6,
+            },
         }
 
+        await createWidget.mutateAsync(widgetData)
+
+        handleReset()
         onOpenChange(false)
     }
 
-    if (mode === 'select-template' && !isEditMode) {
+    // 选择创建方式
+    if (mode === 'select-mode') {
         return (
             <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>创建 Widget</DialogTitle>
                     </DialogHeader>
 
-                    <div className="space-y-4">
-                        <TemplateSelector onSelect={handleSelectTemplate} />
+                    <div className="grid grid-cols-2 gap-4 py-6">
+                        <Button variant="outline" className="h-32 flex flex-col gap-2" onClick={() => setMode('quick-create')}>
+                            <Hash className="h-12 w-12" />
+                            <div className="text-sm">快速创建</div>
+                            <div className="text-xs text-muted-foreground">选择图表类型和筛选条件</div>
+                        </Button>
 
-                        <div className="flex justify-center pt-4 border-t">
-                            <Button variant="outline" onClick={() => setMode('sql-editor')}>
-                                或使用 SQL 编辑器
-                            </Button>
-                        </div>
+                        <Button variant="outline" className="h-32 flex flex-col gap-2" onClick={() => setMode('custom-sql')}>
+                            <Table className="h-12 w-12" />
+                            <div className="text-sm">自定义 SQL</div>
+                            <div className="text-xs text-muted-foreground">使用SQL查询创建表格</div>
+                        </Button>
                     </div>
                 </DialogContent>
             </Dialog>
         )
     }
 
-    if (mode === 'edit-params' && selectedTemplate && !isEditMode) {
+    // 快速创建模式
+    if (mode === 'quick-create') {
         return (
             <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-md">
                     <DialogHeader>
                         <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="sm" onClick={() => setMode('select-template')}>
+                            <Button variant="ghost" size="sm" onClick={() => setMode('select-mode')}>
                                 <ArrowLeft className="h-4 w-4" />
                             </Button>
-                            <DialogTitle>配置模板参数</DialogTitle>
+                            <DialogTitle>快速创建 Widget</DialogTitle>
                         </div>
                     </DialogHeader>
 
-                    <TemplateParamsEditor
-                        template={selectedTemplate}
-                        appId={currentAppId || ''}
-                        onConfirm={handleConfirmTemplate}
-                        onCancel={() => setMode('select-template')}
-                    />
-                </DialogContent>
-            </Dialog>
-        )
-    }
-
-    return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                    <div className="flex items-center gap-2">
-                        {!isEditMode && (
-                            <Button variant="ghost" size="sm" onClick={() => setMode('select-template')}>
-                                <ArrowLeft className="h-4 w-4" />
-                            </Button>
-                        )}
-                        <DialogTitle>{isEditMode ? '编辑 Widget' : 'SQL 编辑器'}</DialogTitle>
-                    </div>
-                </DialogHeader>
-
-                <div className="space-y-6">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-4 py-4">
                         <div className="space-y-2">
                             <Label>Widget 标题</Label>
-                            <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="输入 Widget 标题" />
+                            <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="例如: 错误趋势" />
                         </div>
 
                         <div className="space-y-2">
                             <Label>图表类型</Label>
-                            <Select value={widgetType} onValueChange={value => setWidgetType(value as WidgetType)}>
+                            <Select value={widgetType} onValueChange={value => setWidgetType(value as 'big_number' | 'line')}>
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="line">折线图</SelectItem>
-                                    <SelectItem value="bar">柱状图</SelectItem>
-                                    <SelectItem value="area">面积图</SelectItem>
-                                    <SelectItem value="pie">饼图</SelectItem>
-                                    <SelectItem value="radar">雷达图</SelectItem>
-                                    <SelectItem value="table">表格</SelectItem>
                                     <SelectItem value="big_number">大数字</SelectItem>
+                                    <SelectItem value="line">折线图</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
+
+                        <div className="space-y-2">
+                            <Label>事件筛选</Label>
+                            <Select value={eventFilter} onValueChange={value => setEventFilter(value as EventFilter)}>
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">全部事件</SelectItem>
+                                    <SelectItem value="error">错误相关 (error + exception + unhandledrejection)</SelectItem>
+                                    <SelectItem value="performance">性能相关 (performance + webVital)</SelectItem>
+                                    <SelectItem value="user_behavior">用户行为 (custom + message)</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="text-sm text-muted-foreground">
+                            {widgetType === 'big_number' ? '大数字: 显示事件总数' : '折线图: X轴为时间(按小时), Y轴为事件总数'}
+                        </div>
                     </div>
 
-                    <Tabs defaultValue="query" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="query">SQL 查询</TabsTrigger>
-                            <TabsTrigger value="preview">预览</TabsTrigger>
-                        </TabsList>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setMode('select-mode')}>
+                            返回
+                        </Button>
+                        <Button onClick={handleQuickCreate} disabled={!title.trim() || createFromTemplate.isPending}>
+                            {createFromTemplate.isPending ? '创建中...' : '创建'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        )
+    }
 
-                        <TabsContent value="query" className="space-y-4">
-                            <SqlQueryBuilder sql={rawSql} onChange={setRawSql} />
-                        </TabsContent>
+    // 自定义SQL模式
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                    <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => setMode('select-mode')}>
+                            <ArrowLeft className="h-4 w-4" />
+                        </Button>
+                        <DialogTitle>自定义 SQL Widget</DialogTitle>
+                    </div>
+                </DialogHeader>
 
-                        <TabsContent value="preview">
-                            <WidgetPreview widgetType={widgetType} title={title || '未命名 Widget'} data={undefined} isLoading={false} />
-                        </TabsContent>
-                    </Tabs>
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                        <Label>Widget 标题</Label>
+                        <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="输入 Widget 标题" />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>SQL 查询</Label>
+                        <SqlQueryBuilder sql={rawSql} onChange={setRawSql} />
+                    </div>
+
+                    <div className="text-sm text-muted-foreground">将创建一个表格类型的 Widget,显示查询结果</div>
                 </div>
 
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>
-                        取消
+                    <Button variant="outline" onClick={() => setMode('select-mode')}>
+                        返回
                     </Button>
-                    <Button
-                        onClick={handleSubmit}
-                        disabled={!title.trim() || !rawSql.trim() || createWidget.isPending || updateWidget.isPending}
-                    >
-                        {isEditMode ? (updateWidget.isPending ? '保存中...' : '保存') : createWidget.isPending ? '创建中...' : '创建'}
+                    <Button onClick={handleCreateCustomSQL} disabled={!title.trim() || !rawSql.trim() || createWidget.isPending}>
+                        {createWidget.isPending ? '创建中...' : '创建'}
                     </Button>
                 </DialogFooter>
             </DialogContent>

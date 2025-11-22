@@ -16,7 +16,6 @@ const COLS = { lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }
 interface DashboardGridProps {
     dashboardId: string
     widgets: DashboardWidget[]
-    onEditWidget?: (widget: DashboardWidget) => void
 }
 
 /**
@@ -55,7 +54,7 @@ interface DashboardGridProps {
  * - 使用 `.widget-drag-handle` 类名标记拖拽区域
  * - 只能通过标题栏拖拽,避免误操作
  */
-export function DashboardGrid({ dashboardId, widgets, onEditWidget }: DashboardGridProps) {
+export function DashboardGrid({ dashboardId, widgets }: DashboardGridProps) {
     const updateWidgetsLayout = useUpdateWidgetsLayout()
     const { toast } = useToast()
 
@@ -168,7 +167,7 @@ export function DashboardGrid({ dashboardId, widgets, onEditWidget }: DashboardG
         >
             {widgets.map(widget => (
                 <div key={widget.id}>
-                    <WidgetCard widget={widget} onEdit={onEditWidget} />
+                    <WidgetCard widget={widget} />
                 </div>
             ))}
         </ResponsiveGridLayout>

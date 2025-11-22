@@ -29,6 +29,7 @@ export interface OrderByConfig {
  */
 export interface QueryConfig {
     id: string // 查询 ID,用于多查询对比
+    rawSql?: string // 原始SQL (如果提供,则优先使用,忽略其他字段)
     fields: string[] // 查询字段,如 ['count()', 'quantile(0.95)(duration)']
     conditions: QueryCondition[] // 过滤条件
     groupBy?: string[] // 分组字段,如 ['toStartOfHour(timestamp)', 'browser_name']

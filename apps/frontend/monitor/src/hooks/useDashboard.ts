@@ -197,24 +197,25 @@ export function useCreateWidget() {
 }
 
 /**
- * 更新 Widget
+ * 更新 Widget (已废弃 - 不再支持编辑Widget)
  *
  * ## 缓存失效策略
  * - 失效所有 Dashboard 相关缓存 (因为不知道 Widget 属于哪个 Dashboard)
  * - 更激进的失效策略，确保数据一致性
  *
  * @returns TanStack Query Mutation 对象
+ * @deprecated 不再支持编辑Widget,请删除后重新创建
  */
-export function useUpdateWidget() {
-    const queryClient = useQueryClient()
-
-    return useMutation({
-        mutationFn: (data: UpdateWidgetDto) => dashboardApi.updateWidget(data),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: dashboardKeys.all })
-        },
-    })
-}
+// export function useUpdateWidget() {
+//     const queryClient = useQueryClient()
+//
+//     return useMutation({
+//         mutationFn: (data: UpdateWidgetDto) => dashboardApi.updateWidget(data),
+//         onSuccess: () => {
+//             queryClient.invalidateQueries({ queryKey: dashboardKeys.all })
+//         },
+//     })
+// }
 
 /**
  * 删除 Widget

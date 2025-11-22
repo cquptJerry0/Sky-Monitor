@@ -1,9 +1,9 @@
 import { Settings, Bug, Zap, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
-import { Switch } from '@/components/ui/switch'
+
 import { Separator } from '@/components/ui/separator'
-import { useSdkConfigStore } from '@/store/sdk-config'
+
 import { toast } from '@/hooks/use-toast'
 import {
     simulateJavaScriptError,
@@ -16,15 +16,6 @@ import { simulateLongTask, simulateSlowAPI, measurePerformance } from '@/utils/p
 import { captureEvent, captureMessage } from '@/sdk'
 
 export function SdkDebugPanel() {
-    const {
-        enableErrorMonitoring,
-        enablePerformanceMonitoring,
-        enableSessionReplay,
-        setEnableErrorMonitoring,
-        setEnablePerformanceMonitoring,
-        setEnableSessionReplay,
-    } = useSdkConfigStore()
-
     const handleTriggerError = async (type: string) => {
         switch (type) {
             case 'js':

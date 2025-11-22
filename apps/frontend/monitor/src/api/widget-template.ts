@@ -1,15 +1,10 @@
-import type { CreateWidgetFromTemplateDto, TemplateListResponse, WidgetTemplateMeta, WidgetTemplateType } from '@/types/dashboard'
+import type { CreateWidgetFromTemplateDto, TemplateListResponse } from '@/types/dashboard'
 
 import { client } from './client'
 
 export const widgetTemplateApi = {
-    getTemplates: async (category?: string): Promise<TemplateListResponse> => {
-        const params = category ? { category } : {}
-        return await client.get<TemplateListResponse>('/dashboards/templates', { params })
-    },
-
-    getTemplateByType: async (type: WidgetTemplateType): Promise<WidgetTemplateMeta> => {
-        return await client.get<WidgetTemplateMeta>(`/dashboards/templates/${type}`)
+    getTemplates: async (): Promise<TemplateListResponse> => {
+        return await client.get<TemplateListResponse>('/dashboards/templates')
     },
 
     createWidgetFromTemplate: async (data: CreateWidgetFromTemplateDto) => {
